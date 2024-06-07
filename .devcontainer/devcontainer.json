@@ -1,0 +1,5 @@
+SATI miner from Poland ; ) the fork POW {
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "features": {
+  }
+}
