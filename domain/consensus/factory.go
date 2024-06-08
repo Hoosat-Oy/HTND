@@ -68,11 +68,12 @@ const (
 type Config struct {
 	dagconfig.Params
 	// IsArchival tells the consensus if it should not prune old blocks
-	IsArchival bool
+	IsArchival 						bool
+	NodeFee						 	uint64
+	NodeFeeAddress				 	string
 	// EnableSanityCheckPruningUTXOSet checks the full pruning point utxo set against the commitment at every pruning movement
 	EnableSanityCheckPruningUTXOSet bool
-
-	SkipAddingGenesis bool
+	SkipAddingGenesis 				bool
 }
 
 // Factory instantiates new Consensuses
@@ -240,6 +241,8 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	coinbaseManager := coinbasemanager.New(
 		dbManager,
 
+		config.NodeFeeAddress,
+		config.NodeFee,
 		config.SubsidyGenesisReward,
 		config.PreDeflationaryPhaseBaseSubsidy,
 		config.CoinbasePayloadScriptPublicKeyMaxLength,

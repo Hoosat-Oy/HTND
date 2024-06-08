@@ -17,6 +17,8 @@ func TestCalcDeflationaryPeriodBlockSubsidy(t *testing.T) {
 	deflationaryPhaseCurveFactor := dagconfig.MainnetParams.DeflationaryPhaseCurveFactor
 	coinbaseManagerInterface := New(
 		nil,
+		"hoosat:qzm5vg7uv66ze6mv8d32xhv50sxwhthkz9ly7049e87hr2rm7wr6zjxytztv7",
+		1,
 		0,
 		0,
 		0,
@@ -94,6 +96,8 @@ func TestBuildSubsidyTable(t *testing.T) {
 	}
 	coinbaseManagerInterface := New(
 		nil,
+		"hoosat:qzm5vg7uv66ze6mv8d32xhv50sxwhthkz9ly7049e87hr2rm7wr6zjxytztv7",
+		1,
 		0,
 		0,
 		0,

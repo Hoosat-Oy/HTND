@@ -35,6 +35,8 @@ const (
 	defaultErrLogFilename      = "htnd_err.log"
 	defaultTargetOutboundPeers = 4
 	defaultMaxInboundPeers     = 117
+	defaultNodeFee			   = 1
+	defaultNodeFeeAddress      = "hoosat:qzm5vg7uv66ze6mv8d32xhv50sxwhthkz9ly7049e87hr2rm7wr6zjxytztv7"
 	defaultBanDuration         = time.Hour * 24
 	defaultBanThreshold        = 100
 	//DefaultConnectTimeout is the default connection timeout when dialing
@@ -85,6 +87,8 @@ type Flags struct {
 	ConnectPeers                    []string      `long:"connect" description:"Connect only to the specified peers at startup"`
 	DisableListen                   bool          `long:"nolisten" description:"Disable listening for incoming connections -- NOTE: Listening is automatically disabled if the --connect or --proxy options are used without also specifying listen interfaces via --listen"`
 	Listeners                       []string      `long:"listen" description:"Add an interface/port to listen for connections (default all interfaces port: 42421, testnet: 42423)"`
+	NodeFee							uint64		  `long:"nodefee" description:"Fee for rewarding miners on the node."`
+	NodeFeeAddress					string	 	  `long:"nodefeeaddress" description:"The address where fee for rewarding miners on the node is sent to."`
 	TargetOutboundPeers             int           `long:"outpeers" description:"Target number of outbound peers"`
 	MaxInboundPeers                 int           `long:"maxinpeers" description:"Max number of inbound peers"`
 	EnableBanning                   bool          `long:"enablebanning" description:"Enable banning of misbehaving peers"`
@@ -184,6 +188,8 @@ func defaultFlags() *Flags {
 		RPCMaxWebsockets:     defaultMaxRPCWebsockets,
 		RPCMaxConcurrentReqs: defaultMaxRPCConcurrentReqs,
 		AppDir:               defaultDataDir,
+		NodeFee:			  defaultNodeFee,
+		NodeFeeAddress:		  defaultNodeFeeAddress,	
 		RPCKey:               defaultRPCKeyFile,
 		RPCCert:              defaultRPCCertFile,
 		BlockMaxMass:         defaultBlockMaxMass,
@@ -320,6 +326,8 @@ func LoadConfig() (*Config, error) {
 	}
 	cfg.RelayNonStd = relayNonStd
 
+
+
 	cfg.AppDir = cleanAndExpandPath(cfg.AppDir)
 	// Append the network type to the app directory so it is "namespaced"
 	// per network.
@@ -439,6 +447,7 @@ func LoadConfig() (*Config, error) {
 	if cfg.DisableRPC {
 		log.Infof("RPC service is disabled")
 	}
+
 
 	// Add the default RPC listener if none were specified. The default
 	// RPC listener is all addresses on the RPC listen port for the

@@ -189,6 +189,7 @@ type Params struct {
 	MaxBlockLevel int
 
 	MergeDepth uint64
+
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default

@@ -9,11 +9,15 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/hashset"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/subnetworks"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/transactionhelper"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/txscript"
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
+	"github.com/Hoosat-Oy/HTND/util"
 	"github.com/pkg/errors"
 )
 
 type coinbaseManager struct {
+	NodeFeeAddress							string
+	NodeFee									uint64
 	subsidyGenesisReward                    uint64
 	preDeflationaryPhaseBaseSubsidy         uint64
 	coinbasePayloadScriptPublicKeyMaxLength uint8
@@ -61,13 +65,13 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 	txOuts := make([]*externalapi.DomainTransactionOutput, 0, len(ghostdagData.MergeSetBlues()))
 	acceptanceDataMap := acceptanceDataFromArrayToMap(acceptanceData)
 	for _, blue := range ghostdagData.MergeSetBlues() {
-		txOut, hasReward, err := c.coinbaseOutputForBlueBlock(stagingArea, blue, acceptanceDataMap[*blue], daaAddedBlocksSet)
+		txOutRewards, hasReward, err := c.coinbaseOutputForBlueBlock(stagingArea, blue, acceptanceDataMap[*blue], daaAddedBlocksSet)
 		if err != nil {
 			return nil, false, err
 		}
 
 		if hasReward {
-			txOuts = append(txOuts, txOut)
+			txOuts = append(txOuts, txOutRewards...)
 		}
 	}
 
@@ -117,14 +121,17 @@ func (c *coinbaseManager) daaAddedBlocksSet(stagingArea *model.StagingArea, bloc
 // If blueBlock gets no fee - returns nil for txOut
 func (c *coinbaseManager) coinbaseOutputForBlueBlock(stagingArea *model.StagingArea,
 	blueBlock *externalapi.DomainHash, blockAcceptanceData *externalapi.BlockAcceptanceData,
-	mergingBlockDAAAddedBlocksSet hashset.HashSet) (*externalapi.DomainTransactionOutput, bool, error) {
+	mergingBlockDAAAddedBlocksSet hashset.HashSet) ([]*externalapi.DomainTransactionOutput, bool, error) {
 
 	blockReward, err := c.calcMergedBlockReward(stagingArea, blueBlock, blockAcceptanceData, mergingBlockDAAAddedBlocksSet)
 	if err != nil {
 		return nil, false, err
 	}
 
-	if blockReward == 0 {
+	nodeFee := blockReward / 100 * c.NodeFee
+	blockReward = blockReward - nodeFee
+
+	if blockReward <= 0 {
 		return nil, false, nil
 	}
 
@@ -134,12 +141,27 @@ func (c *coinbaseManager) coinbaseOutputForBlueBlock(stagingArea *model.StagingA
 		return nil, false, err
 	}
 
-	txOut := &externalapi.DomainTransactionOutput{
-		Value:           blockReward,
-		ScriptPublicKey: coinbaseData.ScriptPublicKey,
+	NodeFeeDecodedAddress, err := util.DecodeAddress(c.NodeFeeAddress, util.Bech32PrefixHoosat)
+	if err != nil {
+		return nil, false, err
+	}
+	NodeFeeScriptPublicKey, err := txscript.PayToAddrScript(NodeFeeDecodedAddress)
+	if err != nil {
+		return nil, false, err
 	}
 
-	return txOut, true, nil
+	txOuts := []*externalapi.DomainTransactionOutput{
+		{
+			Value:           blockReward,
+			ScriptPublicKey: coinbaseData.ScriptPublicKey,
+		},
+		{
+			Value:           nodeFee,
+			ScriptPublicKey: NodeFeeScriptPublicKey,
+		},
+	}
+
+	return txOuts, true, nil
 }
 
 func (c *coinbaseManager) coinbaseOutputForRewardFromRedBlocks(stagingArea *model.StagingArea,
@@ -268,6 +290,8 @@ func (c *coinbaseManager) calcMergedBlockReward(stagingArea *model.StagingArea, 
 func New(
 	databaseContext model.DBReader,
 
+	NodeFeeAddress string,
+	NodeFee uint64,
 	subsidyGenesisReward uint64,
 	preDeflationaryPhaseBaseSubsidy uint64,
 	coinbasePayloadScriptPublicKeyMaxLength uint8,
