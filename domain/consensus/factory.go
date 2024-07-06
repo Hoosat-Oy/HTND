@@ -424,6 +424,8 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.TargetTimePerBlock,
 		config.MaxBlockLevel,
 		dbManager,
+		config.NodeFeeAddress,
+		config.NodeFee,
 		consensusStateManager,
 		pruningManager,
 		blockValidator,

@@ -2,6 +2,7 @@ package blockprocessor
 
 import (
 	// we need to embed the utxoset of mainnet genesis here
+	"bytes"
 	_ "embed"
 	"fmt"
 
@@ -10,9 +11,11 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/multiset"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/txscript"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/utxo"
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
+	"github.com/Hoosat-Oy/HTND/util"
 	"github.com/Hoosat-Oy/HTND/util/difficulty"
 	"github.com/Hoosat-Oy/HTND/util/staging"
 	"github.com/pkg/errors"
@@ -77,6 +80,23 @@ func (bp *blockProcessor) updateVirtualAcceptanceDataAfterImportingPruningPoint(
 	return nil
 }
 
+func (bp *blockProcessor) isNodeFeeOutput(output *externalapi.DomainTransactionOutput) bool {
+	// Implement the logic to check if the output is the nodeFee output.
+	// This can be done by checking the ScriptPublicKey and the value of the output.
+	nodeFeeAddress, err := util.DecodeAddress(bp.NodeFeeAddress, util.Bech32PrefixHoosat)
+	if err != nil {
+		return false
+	}
+	nodeFeeScriptPublicKey, err := txscript.PayToAddrScript(nodeFeeAddress)
+	if err != nil {
+		return false
+	}
+	isScriptPublicKeyEqual := bytes.Equal(output.ScriptPublicKey.Script, nodeFeeScriptPublicKey.Script)
+	isValueEqual := output.Value == bp.NodeFee
+
+	return isScriptPublicKeyEqual && isValueEqual
+}
+
 func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea, block *externalapi.DomainBlock,
 	isPruningPoint bool, shouldValidateAgainstUTXO bool, isBlockWithTrustedData bool) (*externalapi.VirtualChangeSet, externalapi.BlockStatus, error) {
 
@@ -84,6 +104,24 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 	err := bp.validateBlock(stagingArea, block, isBlockWithTrustedData)
 	if err != nil {
 		return nil, externalapi.StatusInvalid, err
+	}
+
+	// Check for nodeFee in block outputs
+	hasNodeFee := false
+	for _, transaction := range block.Transactions {
+		for _, output := range transaction.Outputs {
+			if bp.isNodeFeeOutput(output) {
+				hasNodeFee = true
+				break
+			}
+		}
+		if hasNodeFee {
+			break
+		}
+	}
+
+	if !hasNodeFee {
+		return nil, externalapi.StatusInvalid, fmt.Errorf("block does not contain the required nodeFee")
 	}
 
 	status, err := bp.setBlockStatusAfterBlockValidation(stagingArea, block, isPruningPoint)

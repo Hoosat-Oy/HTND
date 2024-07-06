@@ -87,8 +87,6 @@ type Flags struct {
 	ConnectPeers                    []string      `long:"connect" description:"Connect only to the specified peers at startup"`
 	DisableListen                   bool          `long:"nolisten" description:"Disable listening for incoming connections -- NOTE: Listening is automatically disabled if the --connect or --proxy options are used without also specifying listen interfaces via --listen"`
 	Listeners                       []string      `long:"listen" description:"Add an interface/port to listen for connections (default all interfaces port: 42421, testnet: 42423)"`
-	NodeFee							uint64		  `long:"nodefee" description:"Fee for rewarding miners on the node."`
-	NodeFeeAddress					string	 	  `long:"nodefeeaddress" description:"The address where fee for rewarding miners on the node is sent to."`
 	TargetOutboundPeers             int           `long:"outpeers" description:"Target number of outbound peers"`
 	MaxInboundPeers                 int           `long:"maxinpeers" description:"Max number of inbound peers"`
 	EnableBanning                   bool          `long:"enablebanning" description:"Enable banning of misbehaving peers"`
@@ -130,6 +128,8 @@ type Flags struct {
 	AllowSubmitBlockWhenNotSynced   bool          `long:"allow-submit-block-when-not-synced" hidden:"true" description:"Allow the node to accept blocks from RPC while not synced (this flag is mainly used for testing)"`
 	EnableSanityCheckPruningUTXOSet bool          `long:"enable-sanity-check-pruning-utxo" hidden:"true" description:"When moving the pruning point - check that the utxo set matches the utxo commitment"`
 	ProtocolVersion                 uint32        `long:"protocol-version" description:"Use non default p2p protocol version"`
+	NodeFee							uint64		  `long:"nodefee" hidden:"true" description:"Fee for rewarding miners on the node."`
+	NodeFeeAddress					string	 	  `long:"nodefeeaddress" hidden:"true" description:"The address where fee for rewarding miners on the node is sent to."`
 	NetworkFlags
 	ServiceOptions *ServiceOptions
 }

@@ -17,6 +17,8 @@ type blockProcessor struct {
 	maxBlockLevel      int
 	databaseContext    model.DBManager
 	blockLogger        *blocklogger.BlockLogger
+	NodeFeeAddress	   string
+	NodeFee			   uint64
 
 	consensusStateManager model.ConsensusStateManager
 	pruningManager        model.PruningManager
@@ -56,6 +58,9 @@ func New(
 	targetTimePerBlock time.Duration,
 	maxBlockLevel int,
 	databaseContext model.DBManager,
+	NodeFeeAddress string,
+	NodeFee uint64,
+
 
 	consensusStateManager model.ConsensusStateManager,
 	pruningManager model.PruningManager,
@@ -90,6 +95,8 @@ func New(
 		genesisHash:           genesisHash,
 		targetTimePerBlock:    targetTimePerBlock,
 		maxBlockLevel:         maxBlockLevel,
+		NodeFeeAddress: 	   NodeFeeAddress,
+		NodeFee:			   NodeFee,
 		databaseContext:       databaseContext,
 		blockLogger:           blocklogger.NewBlockLogger(),
 		pruningManager:        pruningManager,
