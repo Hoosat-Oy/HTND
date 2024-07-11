@@ -10,7 +10,7 @@ import (
 const eps float64 = 1e-9
 
 // type matrix [64][64]uint16
-type matrix [128][128]uint16
+type matrix [64][64]uint16
 
 // func generateMatrix(hash *externalapi.DomainHash) *matrix {
 // 	var mat matrix
