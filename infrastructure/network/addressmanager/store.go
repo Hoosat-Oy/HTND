@@ -104,20 +104,13 @@ func (as *addressStore) add(key addressKey, address *address) error {
 	}
 
 	port, err := strconv.ParseUint(config.DefaultConfig().ActiveNetParams.DefaultPort, 10, 16)
-	if err != nil {
-		return errors.New("failed to parse default port")
-	}
-
-	if uint16(port) == address.netAddress.Port {
+	if err == nil && uint16(port) == address.netAddress.Port {
 		as.notBannedAddresses[key] = address
 		databaseKey := as.notBannedDatabaseKey(key)
 		serializedAddress := as.serializeAddress(address)
-		if err := as.database.Put(databaseKey, serializedAddress); err != nil {
-			return errors.New("failed to put address into database: " + err.Error())
-		}
-		return nil
+		return as.database.Put(databaseKey, serializedAddress); 
 	} else {
-		return errors.New("port mismatch")
+		return nil
 	}
 }
 
