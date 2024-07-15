@@ -3,8 +3,10 @@ package addressmanager
 import (
 	"encoding/binary"
 	"net"
+	"strconv"
 
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
+	"github.com/Hoosat-Oy/HTND/infrastructure/config"
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
 	"github.com/Hoosat-Oy/HTND/util/mstime"
 	"github.com/pkg/errors"
@@ -59,7 +61,10 @@ func (as *addressStore) restoreNotBannedAddresses() error {
 			return err
 		}
 		netAddress := as.deserializeAddress(serializedNetAddress)
-		as.notBannedAddresses[key] = netAddress
+		port, err := strconv.ParseUint(config.DefaultConfig().ActiveNetParams.DefaultPort, 10, 16)
+		if err == nil && uint16(port) == netAddress.netAddress.Port {
+			as.notBannedAddresses[key] = netAddress
+		}
 	}
 	return nil
 }
@@ -92,16 +97,28 @@ func (as *addressStore) notBannedCount() int {
 	return len(as.notBannedAddresses)
 }
 
+
 func (as *addressStore) add(key addressKey, address *address) error {
 	if _, ok := as.notBannedAddresses[key]; ok {
 		return nil
 	}
 
-	as.notBannedAddresses[key] = address
+	port, err := strconv.ParseUint(config.DefaultConfig().ActiveNetParams.DefaultPort, 10, 16)
+	if err != nil {
+		return errors.New("failed to parse default port")
+	}
 
-	databaseKey := as.notBannedDatabaseKey(key)
-	serializedAddress := as.serializeAddress(address)
-	return as.database.Put(databaseKey, serializedAddress)
+	if uint16(port) == address.netAddress.Port {
+		as.notBannedAddresses[key] = address
+		databaseKey := as.notBannedDatabaseKey(key)
+		serializedAddress := as.serializeAddress(address)
+		if err := as.database.Put(databaseKey, serializedAddress); err != nil {
+			return errors.New("failed to put address into database: " + err.Error())
+		}
+		return nil
+	} else {
+		return errors.New("port mismatch")
+	}
 }
 
 // updateNotBanned updates the not-banned address collection
