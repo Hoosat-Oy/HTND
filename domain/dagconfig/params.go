@@ -204,6 +204,11 @@ func (p *Params) FinalityDepth() uint64 {
 
 // PruningDepth returns the pruning duration represented in blocks
 func (p *Params) PruningDepth() uint64 {
+	// k = 18
+	// TargetTimePerBlock = 1s
+	// FinalityDuration = 24h
+	// MergeSetSizeLimit = K * 10 = 180
+	// 2 * FinalityDuration / TargetTimePerBlock + 4 * MergeSetSizeLimit * K + 2 * k + 2
 	return 2*p.FinalityDepth() + 4*p.MergeSetSizeLimit*uint64(p.K) + 2*uint64(p.K) + 2
 }
 
