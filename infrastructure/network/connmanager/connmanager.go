@@ -105,7 +105,7 @@ func (c *ConnectionManager) initiateConnection(address string) error {
 	return c.netAdapter.P2PConnect(address)
 }
 
-const connectionsLoopInterval = 60 * time.Second
+const connectionsLoopInterval = 30 * time.Second
 
 func (c *ConnectionManager) connectionsLoop() {
 

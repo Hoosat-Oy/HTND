@@ -10,6 +10,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
+	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 )
 
@@ -19,20 +20,31 @@ func (flow *handleIBDFlow) ibdWithHeadersProof(
 	if err != nil {
 		return err
 	}
-
-	err = flow.downloadHeadersAndPruningUTXOSet(syncerHeaderSelectedTipHash, relayBlockHash, highBlockDAAScore)
-	if err != nil {
-		if !flow.IsRecoverableError(err) {
+	retryLimit := 3
+	retryCount := 0
+	for {
+		err = flow.downloadHeadersAndPruningUTXOSet(syncerHeaderSelectedTipHash, relayBlockHash, highBlockDAAScore)
+		if err == nil {
+			break;
+		}
+		if errors.Is(err, router.ErrRouteClosed) {
+			log.Infof("RouteClosed error encountered. Retrying %d/%d...", retryCount, retryLimit)
+			retryCount++;
+			time.Sleep(1 * time.Second)
+			continue;
+		}
+		if err != nil {
+			log.Infof("IBD with pruning proof from %s was unsuccessful. Deleting the staging consensus. (%s)", flow.peer, err)
+			deleteStagingConsensusErr := flow.Domain().DeleteStagingConsensus()
+			if deleteStagingConsensusErr != nil {
+				return deleteStagingConsensusErr
+			}
 			return err
 		}
-
-		log.Infof("IBD with pruning proof from %s was unsuccessful. Deleting the staging consensus. (%s)", flow.peer, err)
-		deleteStagingConsensusErr := flow.Domain().DeleteStagingConsensus()
-		if deleteStagingConsensusErr != nil {
-			return deleteStagingConsensusErr
+		if retryCount >= retryLimit {
+			log.Infof("Exceeded retry limit for RouteClosed error. Aborting.")
+			return err
 		}
-
-		return err
 	}
 
 	log.Infof("Header download stage of IBD with pruning proof completed successfully from %s. "+
@@ -214,7 +226,7 @@ func (flow *handleIBDFlow) syncPruningPointsAndPruningPointAnticone(proofPruning
 		return err
 	}
 
-	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	message, err := flow.incomingRoute.Dequeue()
 	if err != nil {
 		return err
 	}
