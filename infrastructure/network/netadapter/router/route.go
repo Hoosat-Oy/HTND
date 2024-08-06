@@ -10,20 +10,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	// DefaultMaxMessages is the default capacity for a route with a capacity defined | 200 original
-	DefaultMaxMessages = 200
-)
-
 var (
 	// ErrTimeout signifies that one of the router functions had a timeout.
 	ErrTimeout = protocolerrors.New(false, "timeout expired")
 
 	// ErrRouteClosed indicates that a route was closed while reading/writing.
 	ErrRouteClosed = errors.New("route is closed")
-
-	// ErrRouteCapacityReached indicates that route's capacity has been reached
-	ErrRouteCapacityReached = protocolerrors.New(false, "route capacity has been reached")
 )
 
 // Route represents an incoming or outgoing Router route
@@ -39,15 +31,10 @@ type Route struct {
 
 // NewRoute create a new Route
 func NewRoute(name string) *Route {
-	return newRouteWithCapacity(name, DefaultMaxMessages)
-}
-
-func newRouteWithCapacity(name string, capacity int) *Route {
 	return &Route{
-		name:     name,
-		channel:  make(chan appmessage.Message, capacity),
-		closed:   false,
-		capacity: capacity,
+		name:    name,
+		channel: make(chan appmessage.Message),
+		closed:  false,
 	}
 }
 
@@ -55,28 +42,20 @@ func newRouteWithCapacity(name string, capacity int) *Route {
 func (r *Route) Enqueue(message appmessage.Message) error {
 	r.closeLock.Lock()
 	defer r.closeLock.Unlock()
-
 	if r.closed {
 		return errors.WithStack(ErrRouteClosed)
 	}
-	if len(r.channel) == r.capacity {
-		return errors.Wrapf(ErrRouteCapacityReached, "route '%s' reached capacity of %d", r.name, r.capacity)
-	}
 	r.channel <- message
+	log.Infof("Message enqueued, currently %d", len(r.channel))
 	return nil
 }
 
-// MaybeEnqueue enqueues a message to the route, but doesn't throw an error
-// if it's closed or its capacity has been reached.
+// MaybeEnqueue enqueues a message to the route,
+// but doesn't throw an error if it's closed.
 func (r *Route) MaybeEnqueue(message appmessage.Message) error {
 	err := r.Enqueue(message)
 	if errors.Is(err, ErrRouteClosed) {
 		log.Infof("Couldn't send message to closed route '%s'", r.name)
-		return nil
-	}
-
-	if errors.Is(err, ErrRouteCapacityReached) {
-		log.Infof("Capacity (%d) of route '%s' has been reached. Couldn't send message", r.capacity, r.name)
 		return nil
 	}
 
@@ -86,6 +65,7 @@ func (r *Route) MaybeEnqueue(message appmessage.Message) error {
 // Dequeue dequeues a message from the Route
 func (r *Route) Dequeue() (appmessage.Message, error) {
 	message, isOpen := <-r.channel
+	log.Infof("Message dequeued, currently %d", len(r.channel))
 	if !isOpen {
 		//log.Infof("Couldn't read message from closed route '%s'", r.name)
 		return nil, errors.Wrapf(ErrRouteClosed, "route '%s' is closed", r.name)

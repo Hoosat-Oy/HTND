@@ -33,7 +33,7 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond 
 	// a high chance we'll get disconnected from the node, so we make the channel
 	// capacity router.DefaultMaxMessages/2 (we give some slack for getBlockTemplate
 	// requests)
-	foundBlockChan := make(chan *externalapi.DomainBlock, router.DefaultMaxMessages/2)
+	foundBlockChan := make(chan *externalapi.DomainBlock)
 
 	spawn("templatesLoop", func() {
 		templatesLoop(client, miningAddr, errChan)

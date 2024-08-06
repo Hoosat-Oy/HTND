@@ -8,8 +8,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const outgoingRouteMaxMessages = appmessage.MaxInvPerMsg + DefaultMaxMessages
-
 // OnRouteCapacityReachedHandler is a function that is to
 // be called when one of the routes reaches capacity.
 type OnRouteCapacityReachedHandler func()
@@ -27,7 +25,7 @@ type Router struct {
 func NewRouter(name string) *Router {
 	router := Router{
 		incomingRoutes: make(map[appmessage.MessageCommand]*Route),
-		outgoingRoute:  newRouteWithCapacity(fmt.Sprintf("%s - outgoing", name), outgoingRouteMaxMessages),
+		outgoingRoute:  NewRoute(fmt.Sprintf("%s - outgoing", name)),
 	}
 	return &router
 }
@@ -46,7 +44,7 @@ func (r *Router) AddIncomingRoute(name string, messageTypes []appmessage.Message
 // AddIncomingRouteWithCapacity registers the messages of types `messageTypes` to
 // be routed to the given `route` with a capacity of `capacity`
 func (r *Router) AddIncomingRouteWithCapacity(name string, capacity int, messageTypes []appmessage.MessageCommand) (*Route, error) {
-	route := newRouteWithCapacity(fmt.Sprintf("%s - incoming", name), capacity)
+	route := NewRoute(fmt.Sprintf("%s - incoming", name))
 	err := r.initializeIncomingRoute(route, messageTypes)
 	if err != nil {
 		return nil, err
