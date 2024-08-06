@@ -113,7 +113,9 @@ func (na *NetAdapter) P2PConnections() []*NetConnection {
 	netConnections := make([]*NetConnection, 0, len(na.p2pConnections))
 
 	for netConnection := range na.p2pConnections {
-		netConnections = append(netConnections, netConnection)
+		if netConnection.id != nil {
+			netConnections = append(netConnections, netConnection)
+		}
 	}
 
 	return netConnections
