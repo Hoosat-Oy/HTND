@@ -111,6 +111,7 @@ func (c *ConnectionManager) connectionsLoop() {
 
 	for atomic.LoadUint32(&c.stop) == 0 {
 		connections := c.netAdapter.P2PConnections()
+		log.Infof("Connection loop running with %d connections", len(connections))
 
 		// We convert the connections list to a set, so that connections can be found quickly
 		// Then we go over the set, classifying connection by category: requested, outgoing or incoming.

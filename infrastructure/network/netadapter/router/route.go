@@ -87,7 +87,7 @@ func (r *Route) MaybeEnqueue(message appmessage.Message) error {
 func (r *Route) Dequeue() (appmessage.Message, error) {
 	message, isOpen := <-r.channel
 	if !isOpen {
-		log.Infof("Couldn't read message from closed route '%s'", r.name)
+		//log.Infof("Couldn't read message from closed route '%s'", r.name)
 		return nil, errors.Wrapf(ErrRouteClosed, "route '%s' is closed", r.name)
 	}
 	return message, nil
