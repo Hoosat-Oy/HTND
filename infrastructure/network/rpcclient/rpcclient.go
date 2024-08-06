@@ -83,7 +83,7 @@ func (c *RPCClient) disconnect() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Disconnected from %s", c.rpcAddress)
+	log.Debugf("Disconnected from %s", c.rpcAddress)
 	return nil
 }
 

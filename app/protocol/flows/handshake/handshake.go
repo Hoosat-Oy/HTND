@@ -108,7 +108,7 @@ func handleError(err error, flowName string, isStopping *uint32, errChan chan er
 	}
 
 	if protocolErr := (protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
-		log.Errorf("Handshake protocol error from %s: %s", flowName, err)
+		log.Debugf("Handshake protocol error from %s: %s", flowName, err)
 		if atomic.AddUint32(isStopping, 1) == 1 {
 			errChan <- err
 		}
