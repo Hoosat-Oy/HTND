@@ -20,31 +20,17 @@ func (flow *handleIBDFlow) ibdWithHeadersProof(
 	if err != nil {
 		return err
 	}
-	retryLimit := 3
-	retryCount := 0
-	for {
-		err = flow.downloadHeadersAndPruningUTXOSet(syncerHeaderSelectedTipHash, relayBlockHash, highBlockDAAScore)
-		if err == nil {
-			break;
-		}
+	err = flow.downloadHeadersAndPruningUTXOSet(syncerHeaderSelectedTipHash, relayBlockHash, highBlockDAAScore)
+	if err != nil {
 		if errors.Is(err, router.ErrRouteClosed) {
-			log.Infof("RouteClosed error encountered. Retrying %d/%d...", retryCount, retryLimit)
-			retryCount++;
-			time.Sleep(1 * time.Second)
-			continue;
-		}
-		if err != nil {
-			log.Infof("IBD with pruning proof from %s was unsuccessful. Deleting the staging consensus. (%s)", flow.peer, err)
-			deleteStagingConsensusErr := flow.Domain().DeleteStagingConsensus()
-			if deleteStagingConsensusErr != nil {
-				return deleteStagingConsensusErr
-			}
 			return err
 		}
-		if retryCount >= retryLimit {
-			log.Infof("Exceeded retry limit for RouteClosed error. Aborting.")
-			return err
+		log.Infof("IBD with pruning proof from %s was unsuccessful. Deleting the staging consensus. (%s)", flow.peer, err)
+		deleteStagingConsensusErr := flow.Domain().DeleteStagingConsensus()
+		if deleteStagingConsensusErr != nil {
+			return deleteStagingConsensusErr
 		}
+		return err
 	}
 
 	log.Infof("Header download stage of IBD with pruning proof completed successfully from %s. "+
