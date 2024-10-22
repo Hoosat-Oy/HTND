@@ -1,6 +1,6 @@
 module github.com/Hoosat-Oy/HTND
 
-go 1.18
+go 1.23
 
 require (
 	github.com/btcsuite/btcutil v1.0.2

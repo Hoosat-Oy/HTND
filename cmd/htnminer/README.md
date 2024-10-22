@@ -4,7 +4,7 @@ Hoosatminer is a CPU-based miner for htnd
 
 ## Requirements
 
-Go 1.19 or later.
+Go 1.23 or later.
 
 ## Installation
 
@@ -30,7 +30,7 @@ $ go install .
 - Kapaminer should now be installed in `$(go env GOPATH)/bin`. If you did
   not already add the bin directory to your system path during Go installation,
   you are encouraged to do so now.
-  
+
 ## Usage
 
 The full hoosatminer configuration options can be seen with:
@@ -40,6 +40,7 @@ $ hoosatminer --help
 ```
 
 But the minimum configuration needed to run it is:
+
 ```bash
-$ hoosatminer --miningaddr=<YOUR_MINING_ADDRESS>
+$ kaspaminer --miningaddr=<YOUR_MINING_ADDRESS>
 ```

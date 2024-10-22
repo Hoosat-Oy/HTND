@@ -1,3 +1,11 @@
+HTND v1.0.7 - 2024-08-17
+===========================
+
+* Cherry pick work from Kaspa Golang reference node, even though it was supposed to be deprecated.
+  which includes: Fee estimation to wallet, Broadcast Replacement, Transaction Mass changes KIP9, and other changes.
+
+
+
 HTND v1.0.6 - 2024-08-17
 ===========================
 
@@ -59,7 +67,7 @@ HTND v0.12.15 - 2023-12-16
 * Fix windows asset building by increasing go version (#2245)
 * Added a mainnet dnsseeder (#2247)
 * Fix extract atomic swap data pushes (#2203)
-* Adapt kaspawallet to support testnet 11 (#2211)
+* Adapt htnwallet to support testnet 11 (#2211)
 * Fix type detection in RemoveInvalidTransactions (#2252)
 
 HTND v0.12.14 - 2023-09-26

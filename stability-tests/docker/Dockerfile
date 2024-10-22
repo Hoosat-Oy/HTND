@@ -4,7 +4,7 @@ ARG HOOSATMINER_IMAGE
 FROM ${HOOSATD_IMAGE} as htnd
 FROM ${HOOSATMINER_IMAGE} as hoosatminer
 
-FROM golang:1.19-alpine
+FROM golang:1.23-alpine
 
 RUN mkdir -p /go/src/github.com/Hoosat-Oy/HTND
 

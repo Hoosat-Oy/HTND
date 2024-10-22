@@ -13,7 +13,7 @@ Hoosat Network is an attempt at a ASIC resistant proof-of-work cryptocurrency wi
 
 ## Requirements
 
-Go 1.18 or later.
+Go 1.23 or later.
 
 ## Installation
 

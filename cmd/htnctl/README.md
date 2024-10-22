@@ -4,7 +4,7 @@ htnctl is an RPC client for htnd
 
 ## Requirements
 
-Go 1.19 or later.
+Go 1.23 or later.
 
 ## Installation
 

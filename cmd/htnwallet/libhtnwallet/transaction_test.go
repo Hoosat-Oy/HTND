@@ -5,12 +5,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
-
 	"github.com/Hoosat-Oy/HTND/cmd/htnwallet/libhtnwallet"
+	"github.com/Hoosat-Oy/HTND/cmd/htnwallet/libhtnwallet/serialization"
 	"github.com/Hoosat-Oy/HTND/domain/consensus"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/testutils"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/txscript"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/utxo"
@@ -25,6 +25,20 @@ func forSchnorrAndECDSA(t *testing.T, testFunc func(t *testing.T, ecdsa bool)) {
 	t.Run("ecdsa", func(t *testing.T) {
 		testFunc(t, true)
 	})
+}
+
+func createUnsignedTransactionSerialized(
+	extendedPublicKeys []string,
+	minimumSignatures uint32,
+	payments []*libhtnwallet.Payment,
+	selectedUTXOs []*libhtnwallet.UTXO) ([]byte, error) {
+
+	tx, err := libhtnwallet.CreateUnsignedTransaction(extendedPublicKeys, minimumSignatures, payments, selectedUTXOs)
+	if err != nil {
+		return nil, err
+	}
+
+	return serialization.SerializePartiallySignedTransaction(tx)
 }
 
 func TestMultisig(t *testing.T) {
@@ -103,7 +117,7 @@ func TestMultisig(t *testing.T) {
 				},
 			}
 
-			unsignedTransaction, err := libhtnwallet.CreateUnsignedTransaction(publicKeys, minimumSignatures,
+			unsignedTransaction, err := createUnsignedTransactionSerialized(publicKeys, minimumSignatures,
 				[]*libhtnwallet.Payment{{
 					Address: address,
 					Amount:  10,
@@ -264,7 +278,7 @@ func TestP2PK(t *testing.T) {
 				},
 			}
 
-			unsignedTransaction, err := libhtnwallet.CreateUnsignedTransaction(publicKeys, minimumSignatures,
+			unsignedTransaction, err := createUnsignedTransactionSerialized(publicKeys, minimumSignatures,
 				[]*libhtnwallet.Payment{{
 					Address: address,
 					Amount:  10,
@@ -426,7 +440,7 @@ func TestMaxSompi(t *testing.T) {
 			},
 		}
 
-		unsignedTxWithLargeInputAmount, err := libhtnwallet.CreateUnsignedTransaction(publicKeys, minimumSignatures,
+		unsignedTxWithLargeInputAmount, err := createUnsignedTransactionSerialized(publicKeys, minimumSignatures,
 			[]*libhtnwallet.Payment{{
 				Address: address,
 				Amount:  10,
@@ -477,7 +491,7 @@ func TestMaxSompi(t *testing.T) {
 			},
 		}
 
-		unsignedTxWithLargeInputAndOutputAmount, err := libhtnwallet.CreateUnsignedTransaction(publicKeys, minimumSignatures,
+		unsignedTxWithLargeInputAndOutputAmount, err := createUnsignedTransactionSerialized(publicKeys, minimumSignatures,
 			[]*libhtnwallet.Payment{{
 				Address: address,
 				Amount:  22e6 * constants.SompiPerHoosat,

@@ -17,7 +17,7 @@ func (x *HoosatdMessage_GetCurrentNetworkResponse) toAppMessage() (appmessage.Me
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "HoosatdMessage_GetCurrentNetworkResponse is nil")
 	}
-	return x.toAppMessage()
+	return x.GetCurrentNetworkResponse.toAppMessage()
 }
 
 func (x *HoosatdMessage_GetCurrentNetworkResponse) fromAppMessage(message *appmessage.GetCurrentNetworkResponseMessage) error {
