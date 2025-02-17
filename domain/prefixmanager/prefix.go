@@ -50,7 +50,7 @@ func InactivePrefix(dataAccessor database.DataAccessor) (*prefix.Prefix, bool, e
 func DeleteInactivePrefix(db database.Database) error {
 	prefixBytes, err := db.Get(inactivePrefixKey)
 	if database.IsNotFoundError(err) {
-		return nil
+		return db.Compact()
 	}
 
 	if err != nil {
