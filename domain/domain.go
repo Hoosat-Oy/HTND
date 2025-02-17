@@ -180,10 +180,9 @@ func (d *domain) DeleteStagingConsensus() error {
 // New instantiates a new instance of a Domain object
 func New(consensusConfig *consensus.Config, mempoolConfig *mempool.Config, db infrastructuredatabase.Database) (Domain, error) {
 	err := prefixmanager.DeleteInactivePrefix(db)
-	// don't error if inactive prefix delete fails
-	// if err != nil {
-	// 	return nil, err
-	// }
+	if err != nil {
+		return nil, err
+	}
 
 	activePrefix, exists, err := prefixmanager.ActivePrefix(db)
 	if err != nil {
