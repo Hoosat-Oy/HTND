@@ -74,7 +74,8 @@ func (db *LevelDB) Get(key *database.Key) ([]byte, error) {
 	data, err := db.ldb.Get(key.Bytes(), nil)
 	if err != nil {
 		if errors.Is(err, leveldb.ErrNotFound) {
-			return nil, leveldb.ErrNotFound
+			return nil, errors.Wrapf(database.ErrNotFound,
+				"key %s not found", key)
 		}
 		return nil, errors.WithStack(err)
 	}
