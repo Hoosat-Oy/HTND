@@ -9,7 +9,6 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/hashes"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/serialization"
 	"github.com/Hoosat-Oy/HTND/util/difficulty"
-	"golang.org/x/crypto/blake2b"
 
 	"math/big"
 
@@ -30,19 +29,10 @@ func generateHoohashLookupTable() {
 	}
 }
 
-func timeMemoryTradeoff(input uint64) uint64 {
-	result := input
-	for i := 0; i < 1000; i++ { // Number of lookups
-		index := result % tableSize
-		result ^= lookupTable[index]
-		result = (result << 1) | (result >> 63) // Rotate left by 1
-	}
-	return result
-}
-
 // State is an intermediate data structure with pre-computed values to speed up mining.
 type State struct {
 	mat          matrix
+	floatMat     floatMatrix
 	Timestamp    int64
 	Nonce        uint64
 	Target       big.Int
@@ -70,6 +60,15 @@ func NewState(header externalapi.MutableBlockHeader) *State {
 			Nonce:        nonce,
 			blockVersion: header.Version(),
 		}
+	} else if header.Version() == 4 {
+		return &State{
+			Target:       *target,
+			prePowHash:   *prePowHash,
+			floatMat:     *GenerateHoohashMatrix102(prePowHash),
+			Timestamp:    timestamp,
+			Nonce:        nonce,
+			blockVersion: header.Version(),
+		}
 	}
 	return &State{
 		Target:       *target,
@@ -81,54 +80,6 @@ func NewState(header externalapi.MutableBlockHeader) *State {
 	}
 }
 
-func memoryHardFunction(input []byte) []byte {
-	const memorySize = 1 << 10 // 2^16 = 65536
-	const iterations = 2
-
-	memory := make([]uint64, memorySize)
-
-	// Initialize memory
-	for i := range memory {
-		memory[i] = binary.LittleEndian.Uint64(input)
-	}
-
-	// Perform memory-hard computations
-	for i := 0; i < iterations; i++ {
-		for j := 0; j < memorySize; j++ {
-			index1 := memory[j] % uint64(memorySize)
-			index2 := (memory[j] >> 32) % uint64(memorySize)
-
-			hash, _ := blake2b.New512(nil)
-			binary.Write(hash, binary.LittleEndian, memory[index1])
-			binary.Write(hash, binary.LittleEndian, memory[index2])
-
-			memory[j] = binary.LittleEndian.Uint64(hash.Sum(nil))
-		}
-	}
-
-	// Combine results
-	result := make([]byte, 64)
-	for i := 0; i < 8; i++ {
-		binary.LittleEndian.PutUint64(result[i*8:], memory[i])
-	}
-	return result
-}
-
-func verifiableDelayFunction(input []byte) []byte {
-	const iterations = 10000000 // Adjust based on desired delay
-	// 1000 = 350µs
-	// Create a prime field
-	p, _ := new(big.Int).SetString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F", 16)
-	// Convert input to big.Int
-	x := new(big.Int).SetBytes(input)
-	// Perform repeated squaring
-	for i := 0; i < iterations; i++ {
-		x.Mul(x, x)
-		x.Mod(x, p)
-	}
-	hash := sha256.Sum256(x.Bytes())
-	return hash[:]
-}
 func (state *State) CalculateProofOfWorkValue() (*big.Int, *externalapi.DomainHash) {
 	if state.blockVersion == 1 {
 		return state.CalculateProofOfWorkValuePyrinhash()
@@ -136,33 +87,11 @@ func (state *State) CalculateProofOfWorkValue() (*big.Int, *externalapi.DomainHa
 		return state.CalculateProofOfWorkValueHoohashV1()
 	} else if state.blockVersion >= 3 {
 		return state.CalculateProofOfWorkValueHoohashV101()
+	} else if state.blockVersion >= 4 {
+		return state.CalculateProofOfWorkValueHoohashV110()
 	} else {
 		return state.CalculateProofOfWorkValuePyrinhash() // default to the oldest version.
 	}
-}
-
-func (state *State) CalculateProofOfWorkValueHoohashV2() (*big.Int, *externalapi.DomainHash) {
-	// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
-	writer := hashes.Blake3HashWriter()
-	writer.InfallibleWrite(state.prePowHash.ByteSlice())
-	err := serialization.WriteElement(writer, state.Timestamp)
-	if err != nil {
-		panic(errors.Wrap(err, "this should never happen. Hash digest should never return an error"))
-	}
-	zeroes := [32]byte{}
-	writer.InfallibleWrite(zeroes[:])
-	err = serialization.WriteElement(writer, state.Nonce)
-	if err != nil {
-		panic(errors.Wrap(err, "this should never happen. Hash digest should never return an error"))
-	}
-	powHash := writer.Finalize()
-	memoryHardResult := memoryHardFunction(powHash.ByteSlice())
-	tradeoffResult := timeMemoryTradeoff(binary.BigEndian.Uint64(memoryHardResult))
-	vdfResult := verifiableDelayFunction(memoryHardResult)
-	combined := append(memoryHardResult, vdfResult...)
-	combined = append(combined, byte(tradeoffResult))
-	hash := state.mat.HoohashMatrixMultiplicationV101(externalapi.NewDomainHashFromByteArray((*[32]byte)(combined)))
-	return toBig(hash), hash
 }
 
 func (state *State) CalculateProofOfWorkValueHoohashV1() (*big.Int, *externalapi.DomainHash) {
@@ -200,6 +129,25 @@ func (state *State) CalculateProofOfWorkValueHoohashV101() (*big.Int, *externala
 	}
 	powHash := writer.Finalize()
 	multiplied := state.mat.HoohashMatrixMultiplicationV101(powHash)
+	return toBig(multiplied), multiplied
+}
+
+func (state *State) CalculateProofOfWorkValueHoohashV110() (*big.Int, *externalapi.DomainHash) {
+	// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
+	writer := hashes.Blake3HashWriter()
+	writer.InfallibleWrite(state.prePowHash.ByteSlice())
+	err := serialization.WriteElement(writer, state.Timestamp)
+	if err != nil {
+		panic(errors.Wrap(err, "this should never happen. Hash digest should never return an error"))
+	}
+	zeroes := [32]byte{}
+	writer.InfallibleWrite(zeroes[:])
+	err = serialization.WriteElement(writer, state.Nonce)
+	if err != nil {
+		panic(errors.Wrap(err, "this should never happen. Hash digest should never return an error"))
+	}
+	powHash := writer.Finalize()
+	multiplied := state.floatMat.HoohashMatrixMultiplicationV110(powHash)
 	return toBig(multiplied), multiplied
 }
 

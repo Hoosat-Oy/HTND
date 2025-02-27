@@ -352,7 +352,7 @@ var TestnetParams = Params{
 
 	MaxBlockLevel: 250,
 	MergeDepth:    defaultMergeDepth,
-	POWScores:     []uint64{5, 15, 25},
+	POWScores:     []uint64{5, 15, 25, 30},
 }
 
 // SimnetParams defines the network parameters for the simulation test Hoosat

@@ -13,6 +13,7 @@ const eps float64 = 1e-9
 
 // type matrix [64][64]uint16
 type matrix [64][64]uint16
+type floatMatrix [64][64]float64
 
 // func generateMatrix(hash *externalapi.DomainHash) *matrix {
 // 	var mat matrix
@@ -96,6 +97,22 @@ func GenerateHoohashMatrix(hash *externalapi.DomainHash) *matrix {
 			return &mat
 		}
 	}
+}
+
+func GenerateHoohashMatrix102(hash *externalapi.DomainHash) *floatMatrix {
+	var mat floatMatrix
+	generator := newxoShiRo256PlusPlus(hash)
+	const normalize float64 = 100000000
+
+	for i := 0; i < 64; i++ {
+		for j := 0; j < 64; j++ {
+			val := generator.Uint64()
+			lower4Bytes := uint32(val & 0xFFFFFFFF)
+			matrixVal := float64(lower4Bytes)/float64(math.MaxUint32)*(normalize*2) - normalize
+			mat[i][j] = matrixVal
+		}
+	}
+	return &mat
 }
 
 // func generateMatrix(hash *externalapi.DomainHash) *matrix {
@@ -422,6 +439,68 @@ func (mat *matrix) HoohashMatrixMultiplicationV101(hash *externalapi.DomainHash)
 	return writer.Finalize()
 }
 
+const COMPLEX_OUTPUT_CLAMP = 100000
+const PRODUCT_VALUE_SCALE_MULTIPLIER = 0.00001
+
+func ForComplex(forComplex float64) float64 {
+	var complex float64
+	complex = ComplexNonLinear(forComplex)
+	for complex >= COMPLEX_OUTPUT_CLAMP {
+		forComplex *= 0.1
+		complex = ComplexNonLinear(forComplex)
+	}
+	return complex
+}
+
+func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.DomainHash) *externalapi.DomainHash {
+	hashBytes := hash.ByteArray()
+	var vector [64]float64
+	var product [64]float64
+
+	// Populate the vector with floating-point values from the hash bytes
+	for i := 0; i < 32; i++ {
+		vector[2*i] = float64(hashBytes[i] >> 4)     // Upper 4 bits
+		vector[2*i+1] = float64(hashBytes[i] & 0x0F) // Lower 4 bits
+	}
+
+	// Perform the matrix-vector multiplication with nonlinear adjustments
+	for i := 0; i < 64; i++ {
+		for j := 0; j < 64; j++ {
+			switch (i * j) % 20 {
+			case 0: // Complex non-linear function
+				product[i] += ForComplex(mat[i][j] * vector[j])
+			case 1, 5, 9, 13, 17: // Division
+				if vector[j] != 0 {
+					product[i] += mat[i][j] / vector[j]
+				} else {
+					product[i] += mat[i][j] / 1.0 // Safeguard against division by zero
+				}
+			case 2, 6, 10, 14, 18: // Multiplication
+				product[i] += mat[i][j] * vector[j] * PRODUCT_VALUE_SCALE_MULTIPLIER
+			case 3, 7, 11, 15, 19: // Addition
+				product[i] += mat[i][j] + vector[j]
+			case 4, 8, 12, 16: // Subtraction
+				product[i] += mat[i][j] - vector[j]
+			default: // Fallback multiplication
+				product[i] += mat[i][j] * vector[j] * PRODUCT_VALUE_SCALE_MULTIPLIER
+			}
+		}
+	}
+
+	// Generate the result bytes
+	var res [32]uint8
+	var scaledValues [32]uint8
+	for i := 0; i < 64; i += 2 {
+		scaledValues[i/2] = uint8((product[i] + product[i+1]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
+	}
+	for i := 0; i < 32; i++ {
+		res[i] = hashBytes[i] ^ scaledValues[i]
+	}
+	writer := hashes.Blake3HashWriter()
+	writer.InfallibleWrite(res[:32])
+	return writer.Finalize()
+}
+
 func (mat *matrix) bHeavyHash(hash *externalapi.DomainHash) *externalapi.DomainHash {
 	hashBytes := hash.ByteArray()
 	var vector [64]uint16
@@ -499,67 +578,6 @@ func (mat *matrix) kHeavyHash(hash *externalapi.DomainHash) *externalapi.DomainH
 	var res [32]byte
 	for i := range res {
 		res[i] = hashBytes[i] ^ (byte(product[2*i]<<4) | byte(product[2*i+1]))
-	}
-	// Hash again
-	writer := hashes.KeccakHeavyHashWriter()
-	writer.InfallibleWrite(res[:])
-	return writer.Finalize()
-}
-
-func (mat *matrix) walahash(hash *externalapi.DomainHash) *externalapi.DomainHash {
-	hashBytes := hash.ByteArray()
-	var vector [64]uint16
-	var product [64]uint16
-	for i := 0; i < 32; i++ {
-		vector[2*i] = uint16(hashBytes[i] >> 4)
-		vector[2*i+1] = uint16(hashBytes[i] & 0x0F)
-	}
-	// Matrix-vector multiplication, and convert to 4 bits.
-	for i := 0; i < 64; i++ {
-		var sum uint16
-		for j := 0; j < 64; j++ {
-			sum += mat[i][j] * vector[j]
-		}
-		product[i] = sum >> 10
-	}
-
-	// Concatenate 4 LSBs back to 8 bit xor with sum1
-	var res [32]byte
-	for i := range res {
-		res[i] = hashBytes[i] ^ (byte(product[2*i]<<4) | byte(product[2*i+1]))
-	}
-	// Hash again
-	keccakWriter := hashes.KeccakHeavyHashWriter()
-	keccakWriter.InfallibleWrite(res[:])
-	blakeWriter := hashes.BlakeHeavyHashWriter()
-	keccakFinalized := keccakWriter.Finalize()
-	blakeWriter.InfallibleWrite([]byte(keccakFinalized.String()))
-	return blakeWriter.Finalize()
-}
-
-func (mat *matrix) ComplexNonLinearkHeavyHash(hash *externalapi.DomainHash) *externalapi.DomainHash {
-	hashBytes := hash.ByteArray()
-	var vector [64]float64
-	var product [64]float64
-	for i := 0; i < 32; i++ {
-		vector[2*i] = float64(hashBytes[i] >> 4)
-		vector[2*i+1] = float64(hashBytes[i] & 0x0F)
-	}
-	// Matrix-vector multiplication with floating point operations
-	for i := 0; i < 64; i++ {
-		var sum float64
-		for j := 0; j < 64; j++ {
-			sum += float64(mat[i][j]) * BasicComplexNonLinear(vector[j]) // Introduce non-linear operations
-		}
-		product[i] = sum
-	}
-
-	// Convert product back to uint16 and then to byte array
-	var res [32]byte
-	for i := range res {
-		high := uint16(math.Mod(product[2*i], 16))
-		low := uint16(math.Mod(product[2*i+1], 16))
-		res[i] = hashBytes[i] ^ (byte(high<<4) | byte(low))
 	}
 	// Hash again
 	writer := hashes.KeccakHeavyHashWriter()
