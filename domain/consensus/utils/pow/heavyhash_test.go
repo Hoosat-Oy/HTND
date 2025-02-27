@@ -129,7 +129,7 @@ func (mat *floatMatrix) HoohashMatrixMultiplication102Test(hash *externalapi.Dom
 	// Perform the matrix-vector multiplication with nonlinear adjustments
 	for i := 0; i < 64; i++ {
 		for j := 0; j < 64; j++ {
-			switch (i * j) % 20 {
+			switch (i * j) % 100 {
 			case 0: // Complex non-linear function
 				product[i] += ForComplex(mat[i][j] * vector[j])
 			case 1, 5, 9, 13, 17: // Division
@@ -178,28 +178,28 @@ func (mat *floatMatrix) HoohashMatrixMultiplication102Test(hash *externalapi.Dom
 }
 
 func TestMatrixHoohashRev102(t *testing.T) {
-	for i := 0; i < 10000; i++ {
-		fmt.Printf("------------------------------\n")
-		Nonce := int64(i)
-		fmt.Printf("Test %d\n", int64(i))
-		prePowHash, _ := hex.DecodeString("82b1d17c5e2200a0565956b711485a2cba6da909e588261582c2f465ec2e3d3f")
-		Timestamp := int64(1727011258677)
-		// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
-		writer := hashes.Blake3HashWriter()
-		fmt.Printf("PRE_POW_HASH: %v\n", hex.EncodeToString(prePowHash))
-		writer.InfallibleWrite(prePowHash)
-		fmt.Printf("TIME: %d\n", Timestamp)
-		serialization.WriteElement(writer, Timestamp)
-		zeroes := [32]byte{}
-		writer.InfallibleWrite(zeroes[:])
-		fmt.Printf("Nonce: %d\n", Nonce)
-		serialization.WriteElement(writer, Nonce)
-		powHash := writer.Finalize()
-		matrix := GenerateHoohashMatrix102(externalapi.NewDomainHashFromByteArray((*[32]byte)(prePowHash)))
-		//fmt.Printf("Matrix: %v\n", matrix)
-		multiplied := matrix.HoohashMatrixMultiplication102Test(powHash, t)
-		fmt.Printf("POW HASH: %v\n", multiplied)
-	}
+	// for i := 0; i < 1; i++ {
+	// 	fmt.Printf("------------------------------\n")
+	// 	Nonce := int64(i)
+	// 	fmt.Printf("Test %d\n", int64(i))
+	// 	prePowHash, _ := hex.DecodeString("82b1d17c5e2200a0565956b711485a2cba6da909e588261582c2f465ec2e3d3f")
+	// 	Timestamp := int64(1727011258677)
+	// 	// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
+	// 	writer := hashes.Blake3HashWriter()
+	// 	fmt.Printf("PRE_POW_HASH: %v\n", hex.EncodeToString(prePowHash))
+	// 	writer.InfallibleWrite(prePowHash)
+	// 	fmt.Printf("TIME: %d\n", Timestamp)
+	// 	serialization.WriteElement(writer, Timestamp)
+	// 	zeroes := [32]byte{}
+	// 	writer.InfallibleWrite(zeroes[:])
+	// 	fmt.Printf("Nonce: %d\n", Nonce)
+	// 	serialization.WriteElement(writer, Nonce)
+	// 	powHash := writer.Finalize()
+	// 	matrix := GenerateHoohashMatrix102(externalapi.NewDomainHashFromByteArray((*[32]byte)(prePowHash)))
+	// 	//fmt.Printf("Matrix: %v\n", matrix)
+	// 	multiplied := matrix.HoohashMatrixMultiplication102Test(powHash, t)
+	// 	fmt.Printf("POW HASH: %v\n", multiplied)
+	// }
 	fmt.Printf("------------------------------\n")
 	Nonce := int64(7794931619413402210)
 	prePowHash, _ := hex.DecodeString("82b1d17c5e2200a0565956b711485a2cba6da909e588261582c2f465ec2e3d3f")

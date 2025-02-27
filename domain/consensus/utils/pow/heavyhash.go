@@ -466,7 +466,7 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.Domain
 	// Perform the matrix-vector multiplication with nonlinear adjustments
 	for i := 0; i < 64; i++ {
 		for j := 0; j < 64; j++ {
-			switch ((i * j) + int(mat[i][j])*int(vector[j])) % 100 {
+			switch (i * j) % 100 {
 			case 0: // Complex non-linear function
 				product[i] += ForComplex(mat[i][j] * vector[j])
 			case 1, 5, 9, 13, 17: // Division
