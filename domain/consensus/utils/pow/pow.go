@@ -85,9 +85,9 @@ func (state *State) CalculateProofOfWorkValue() (*big.Int, *externalapi.DomainHa
 		return state.CalculateProofOfWorkValuePyrinhash()
 	} else if state.blockVersion == 2 {
 		return state.CalculateProofOfWorkValueHoohashV1()
-	} else if state.blockVersion >= 3 {
+	} else if state.blockVersion == 3 || state.blockVersion == 4 {
 		return state.CalculateProofOfWorkValueHoohashV101()
-	} else if state.blockVersion >= 4 {
+	} else if state.blockVersion >= 5 {
 		return state.CalculateProofOfWorkValueHoohashV110()
 	} else {
 		return state.CalculateProofOfWorkValuePyrinhash() // default to the oldest version.
