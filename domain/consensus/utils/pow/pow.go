@@ -51,7 +51,16 @@ func NewState(header externalapi.MutableBlockHeader) *State {
 	prePowHash := consensushashing.HeaderHash(header)
 	header.SetTimeInMilliseconds(timestamp)
 	header.SetNonce(nonce)
-	if header.Version() == 2 {
+	if header.Version() == 1 {
+		return &State{
+			Target:       *target,
+			prePowHash:   *prePowHash,
+			mat:          *GenerateMatrix(prePowHash),
+			Timestamp:    timestamp,
+			Nonce:        nonce,
+			blockVersion: header.Version(),
+		}
+	} else if header.Version() == 2 {
 		return &State{
 			Target:       *target,
 			prePowHash:   *prePowHash,
@@ -60,7 +69,16 @@ func NewState(header externalapi.MutableBlockHeader) *State {
 			Nonce:        nonce,
 			blockVersion: header.Version(),
 		}
-	} else if header.Version() == 4 {
+	} else if header.Version() == 3 || header.Version() == 4 {
+		return &State{
+			Target:       *target,
+			prePowHash:   *prePowHash,
+			mat:          *GenerateMatrix(prePowHash),
+			Timestamp:    timestamp,
+			Nonce:        nonce,
+			blockVersion: header.Version(),
+		}
+	} else if header.Version() >= 5 {
 		return &State{
 			Target:       *target,
 			prePowHash:   *prePowHash,
@@ -69,15 +87,17 @@ func NewState(header externalapi.MutableBlockHeader) *State {
 			Nonce:        nonce,
 			blockVersion: header.Version(),
 		}
+	} else {
+		return &State{
+			Target:       *target,
+			prePowHash:   *prePowHash,
+			mat:          *GenerateMatrix(prePowHash),
+			Timestamp:    timestamp,
+			Nonce:        nonce,
+			blockVersion: header.Version(),
+		}
 	}
-	return &State{
-		Target:       *target,
-		prePowHash:   *prePowHash,
-		mat:          *GenerateMatrix(prePowHash),
-		Timestamp:    timestamp,
-		Nonce:        nonce,
-		blockVersion: header.Version(),
-	}
+
 }
 
 func (state *State) CalculateProofOfWorkValue() (*big.Int, *externalapi.DomainHash) {
