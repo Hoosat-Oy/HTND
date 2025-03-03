@@ -82,7 +82,7 @@ func NewState(header externalapi.MutableBlockHeader) *State {
 		return &State{
 			Target:       *target,
 			prePowHash:   *prePowHash,
-			floatMat:     *GenerateHoohashMatrix102(prePowHash),
+			floatMat:     *GenerateHoohashMatrixV110(prePowHash),
 			Timestamp:    timestamp,
 			Nonce:        nonce,
 			blockVersion: header.Version(),
@@ -167,7 +167,7 @@ func (state *State) CalculateProofOfWorkValueHoohashV110() (*big.Int, *externala
 		panic(errors.Wrap(err, "this should never happen. Hash digest should never return an error"))
 	}
 	powHash := writer.Finalize()
-	multiplied := state.floatMat.HoohashMatrixMultiplicationV110(powHash)
+	multiplied := state.floatMat.HoohashMatrixMultiplicationV110(powHash, state.Nonce)
 	return toBig(multiplied), multiplied
 }
 
