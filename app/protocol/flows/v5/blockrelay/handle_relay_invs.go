@@ -498,6 +498,17 @@ func (flow *handleRelayInvsFlow) isBlockInOrphanResolutionRange(blockHash *exter
 	return false, nil
 }
 
+func (flow *handleRelayInvsFlow) OrphanRootInQueue(invMessages []invRelayBlock, root *externalapi.DomainHash) bool {
+	exists := false
+	for _, invRelayBlock := range invMessages {
+		if invRelayBlock.Hash == root {
+			exists = true
+			break
+		}
+	}
+	return exists
+}
+
 func (flow *handleRelayInvsFlow) AddOrphanRootsToQueue(orphan *externalapi.DomainHash) error {
 	orphanRoots, orphanExists, err := flow.GetOrphanRoots(orphan)
 	if err != nil {
@@ -506,7 +517,7 @@ func (flow *handleRelayInvsFlow) AddOrphanRootsToQueue(orphan *externalapi.Domai
 
 	if !orphanExists {
 		log.Debugf("Orphan block %s was missing from the orphan pool while requesting for its roots. This "+
-			"probably happened because it was randomly evicted immediately after it was added.", orphan)
+			"probably happened because it was randomly e	victed immediately after it was added.", orphan)
 	}
 
 	if len(orphanRoots) == 0 {
@@ -517,6 +528,10 @@ func (flow *handleRelayInvsFlow) AddOrphanRootsToQueue(orphan *externalapi.Domai
 
 	invMessages := make([]invRelayBlock, len(orphanRoots))
 	for i, root := range orphanRoots {
+		if flow.OrphanRootInQueue(invMessages, root) {
+			log.Debugf("Skip adding duplicate missing ancestor %s to the invs queue", root)
+			continue
+		}
 		log.Infof("Adding missing ancestor %s to the invs queue", root)
 		invMessages[i] = invRelayBlock{Hash: root, IsOrphanRoot: true}
 	}
