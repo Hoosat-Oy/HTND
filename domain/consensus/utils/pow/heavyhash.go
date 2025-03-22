@@ -467,7 +467,7 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.Domain
 	// Perform the matrix-vector multiplication with nonlinear adjustments
 	for i := 0; i < 64; i++ {
 		for j := 0; j < 64; j++ {
-			sw := ((i * int(vector[j])) * (j * int(vector[i]))) % 128
+			sw := ((i * int(vector[j])) * (j * int(vector[i]))) % 127
 			switch sw {
 			case 0:
 				transformFactor := math.Mod(mat[i][j]*PRODUCT_VALUE_SCALE_MULTIPLIER, 1)
@@ -552,37 +552,37 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.Domain
 			case 30, 94, 31, 95:
 				product[i] -= (mat[j][i] * float64(vector[i])) + float64(vector[j])
 			case 32, 33, 96:
-				product[i] += (mat[i][j] * float64(vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER) + float64(vector[i])
+				product[i] += (mat[i][j] * (float64(vector[j]) + float64(vector[i])) * PRODUCT_VALUE_SCALE_MULTIPLIER)
 			case 34, 97:
-				product[i] += (mat[i][j] * float64(vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER) - float64(vector[i])
+				product[i] += (mat[i][j] * (float64(vector[j]) - float64(vector[i])) * PRODUCT_VALUE_SCALE_MULTIPLIER)
 			case 35, 98:
-				product[i] += (mat[i][j] * float64(vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER) - float64(vector[j])
+				product[i] += (mat[i][j] * (float64(vector[i]) - float64(vector[j])) * PRODUCT_VALUE_SCALE_MULTIPLIER)
 			case 36, 99:
-				product[i] += (mat[i][j] * float64(vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER) + float64(vector[j])
+				product[i] += (mat[i][j] * (float64(vector[i]) + float64(vector[j])) * PRODUCT_VALUE_SCALE_MULTIPLIER)
 			case 37, 100:
-				product[i] += (mat[j][i] * float64(vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER) + float64(vector[j])
+				product[i] += (mat[j][i] * (float64(vector[i]) + float64(vector[j])) * PRODUCT_VALUE_SCALE_MULTIPLIER)
 			case 38, 101:
-				product[i] += (mat[j][i] * float64(vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER) - float64(vector[j])
+				product[i] += (mat[j][i] * (float64(vector[i]) - float64(vector[j])) * PRODUCT_VALUE_SCALE_MULTIPLIER)
 			case 39, 102:
-				product[i] += (mat[j][i] * float64(vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER) + float64(vector[i])
+				product[i] += (mat[j][i] * (float64(vector[j]) + float64(vector[i])) * PRODUCT_VALUE_SCALE_MULTIPLIER)
 			case 40, 103:
-				product[i] += (mat[j][i] * float64(vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER) - float64(vector[i])
+				product[i] += (mat[j][i] * (float64(vector[j]) - float64(vector[i])) * PRODUCT_VALUE_SCALE_MULTIPLIER)
 			case 41, 104:
-				product[i] -= (mat[i][j] * float64(vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER) + float64(vector[i])
+				product[i] -= (mat[i][j] * (float64(vector[j]) + float64(vector[i])) * PRODUCT_VALUE_SCALE_MULTIPLIER)
 			case 42, 105:
-				product[i] -= (mat[i][j] * float64(vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER) - float64(vector[i])
+				product[i] -= (mat[i][j] * (float64(vector[j]) - float64(vector[i])) * PRODUCT_VALUE_SCALE_MULTIPLIER)
 			case 43, 106:
-				product[i] -= (mat[i][j] * float64(vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER) - float64(vector[j])
+				product[i] -= (mat[i][j] * (float64(vector[i]) - float64(vector[j])) * PRODUCT_VALUE_SCALE_MULTIPLIER)
 			case 44, 107:
-				product[i] -= (mat[i][j] * float64(vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER) + float64(vector[j])
+				product[i] -= (mat[i][j] * (float64(vector[i]) + float64(vector[j])) * PRODUCT_VALUE_SCALE_MULTIPLIER)
 			case 45, 108:
-				product[i] -= (mat[j][i] * float64(vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER) + float64(vector[j])
+				product[i] -= (mat[j][i] * (float64(vector[i]) + float64(vector[j])) * PRODUCT_VALUE_SCALE_MULTIPLIER)
 			case 46, 109:
-				product[i] -= (mat[j][i] * float64(vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER) - float64(vector[j])
+				product[i] -= (mat[j][i] * (float64(vector[i]) - float64(vector[j])) * PRODUCT_VALUE_SCALE_MULTIPLIER)
 			case 47, 110:
-				product[i] -= (mat[j][i] * float64(vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER) + float64(vector[i])
+				product[i] -= (mat[j][i] * (float64(vector[j]) + float64(vector[i])) * PRODUCT_VALUE_SCALE_MULTIPLIER)
 			case 48, 112:
-				product[i] -= (mat[j][i] * float64(vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER) - float64(vector[i])
+				product[i] -= (mat[j][i] * (float64(vector[j]) - float64(vector[i])) * PRODUCT_VALUE_SCALE_MULTIPLIER)
 			case 49, 113:
 				product[i] += float64(int(vector[j]) % int(vector[i]))
 			case 50, 114:
