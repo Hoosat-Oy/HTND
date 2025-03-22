@@ -470,19 +470,7 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.Domain
 			sw := ((i * int(vector[j])) * (j * int(vector[i]))) % 127
 			switch sw {
 			case 0:
-				transformFactor := math.Mod(mat[i][j]*PRODUCT_VALUE_SCALE_MULTIPLIER, 1)
-				if transformFactor < 0 {
-					transformFactor += 1.0
-				}
-				if transformFactor < 0.25 {
-					product[i] += ForComplex(mat[i][j] * PRODUCT_VALUE_SCALE_MULTIPLIER * nonceModifier * float64(vector[j]))
-				} else if transformFactor < 0.5 {
-					product[i] += ForComplex(mat[i][j] * PRODUCT_VALUE_SCALE_MULTIPLIER * nonceModifier * float64(vector[i]))
-				} else if transformFactor < 0.75 {
-					product[i] += ForComplex(mat[j][i] * PRODUCT_VALUE_SCALE_MULTIPLIER * nonceModifier * float64(vector[j]))
-				} else {
-					product[i] += ForComplex(mat[j][i] * PRODUCT_VALUE_SCALE_MULTIPLIER * nonceModifier * float64(vector[i]))
-				}
+				product[i] += ForComplex(mat[i][j] * PRODUCT_VALUE_SCALE_MULTIPLIER * nonceModifier * float64(vector[j]))
 			default:
 				product[i] += mat[i][j] * float64(vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER
 			}

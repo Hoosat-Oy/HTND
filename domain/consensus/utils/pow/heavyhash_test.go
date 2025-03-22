@@ -6,7 +6,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"math"
 	"math/big"
 	"math/rand"
 	"testing"
@@ -137,22 +136,141 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV111Test(hash *externalapi.Do
 			sw := ((i * int(vector[j])) * (j * int(vector[i]))) % 127
 			switch sw {
 			case 0:
-				//fmt.Printf("%f \n", mat[i][j]*PRODUCT_VALUE_SCALE_MULTIPLIER*floatNonce)
-				transformFactor := math.Mod(mat[i][j]*PRODUCT_VALUE_SCALE_MULTIPLIER, 1)
-				if transformFactor < 0 {
-					transformFactor += 1.0
-				}
 				// printf("TansformFactor %f\n", transformFactor);
 				calls++
-				if transformFactor < 0.25 {
-					product[i] += ForComplex(mat[i][j] * PRODUCT_VALUE_SCALE_MULTIPLIER * nonceModifier * float64(vector[j]))
-				} else if transformFactor < 0.5 {
-					product[i] += ForComplex(mat[i][j] * PRODUCT_VALUE_SCALE_MULTIPLIER * nonceModifier * float64(vector[i]))
-				} else if transformFactor < 0.75 {
-					product[i] += ForComplex(mat[j][i] * PRODUCT_VALUE_SCALE_MULTIPLIER * nonceModifier * float64(vector[j]))
+				product[i] += ForComplex(mat[i][j] * PRODUCT_VALUE_SCALE_MULTIPLIER * nonceModifier * float64(vector[j]))
+			case 1, 67:
+				product[i] += mat[i][j] + mat[j][i]
+			case 2, 68:
+				if mat[i][j] > mat[j][i] {
+					product[i] += mat[i][j] - mat[j][i]
 				} else {
-					product[i] += ForComplex(mat[j][i] * PRODUCT_VALUE_SCALE_MULTIPLIER * nonceModifier * float64(vector[i]))
+					product[i] += mat[j][i] - mat[i][j]
 				}
+			case 3, 69:
+				product[i] += mat[i][j] + float64(vector[j])
+			case 4, 70:
+				product[i] += (mat[j][i] - float64(vector[j])) * float64(vector[j])
+			case 5, 71:
+				if float64(vector[j]) != 0 {
+					product[i] += mat[i][j] / float64(vector[j])
+				} else {
+					product[i] += mat[i][j] / 1.0 // Safeguard against division by zero.
+				}
+			case 6, 72:
+				product[i] += mat[i][j]
+			case 7, 73:
+				product[i] += mat[j][i]
+			case 8, 74:
+				product[i] += (mat[i][j] - float64(vector[i])) * float64(vector[j])
+			case 9, 75:
+				product[i] += float64(vector[i])
+			case 10, 76:
+				product[i] += float64(vector[j])
+			case 11, 77:
+				product[i] -= float64(vector[j])
+			case 12, 78:
+				product[i] += (mat[i][j] - float64(vector[j])) * float64(vector[i])
+			case 13, 79:
+				product[i] -= float64(vector[i])
+			case 14, 80:
+				product[i] -= mat[j][i]
+			case 15, 16, 81:
+				product[i] += mat[i][j] - float64(vector[j])
+			case 18, 82:
+				product[i] -= mat[i][j]
+			case 19, 83:
+				product[i] -= (mat[i][j] - float64(vector[i])) * float64(vector[j])
+			case 20, 84:
+				product[i] -= (mat[j][i] - float64(vector[i])) * float64(vector[j])
+			case 21, 85:
+				product[i] -= (mat[i][j] - float64(vector[j])) * float64(vector[i])
+			case 22, 86:
+				product[i] -= (mat[j][i] - float64(vector[j])) * float64(vector[i])
+			case 23, 87:
+				product[i] += mat[i][j] - float64(vector[i])
+			case 24, 88:
+				product[i] += mat[j][i] - float64(vector[i])
+			case 25, 89:
+				product[i] -= (mat[j][i] * float64(vector[j])) + float64(vector[i])
+			case 26, 90:
+				product[i] += mat[i][j] * float64(vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER
+			case 27, 91:
+				if mat[i][j] > mat[j][i] {
+					product[i] += mat[i][j] / mat[j][i]
+				} else {
+					product[i] += mat[j][i] / mat[i][j]
+				}
+			case 28, 92:
+				product[i] += mat[i][j] + float64(vector[i])
+			case 29, 93:
+				product[i] += mat[j][i] + float64(vector[i])
+			case 30, 94, 31, 95:
+				product[i] -= (mat[j][i] * float64(vector[i])) + float64(vector[j])
+			case 32, 33, 96:
+				product[i] += (mat[i][j] * float64(vector[j]+vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
+			case 34, 97:
+				product[i] += (mat[i][j] * float64(vector[j]-vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
+			case 35, 98:
+				product[i] += (mat[i][j] * float64(vector[i]-vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
+			case 36, 99:
+				product[i] += (mat[i][j] * float64(vector[i]+vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
+			case 37, 100:
+				product[i] += (mat[j][i] * float64(vector[i]+vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
+			case 38, 101:
+				product[i] += (mat[j][i] * float64(vector[i]-vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
+			case 39, 102:
+				product[i] += (mat[j][i] * float64(vector[j]+vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
+			case 40, 103:
+				product[i] += (mat[j][i] * float64(vector[j]-vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
+			case 41, 104:
+				product[i] -= (mat[i][j] * float64(vector[j]+vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
+			case 42, 105:
+				product[i] -= (mat[i][j] * float64(vector[j]-vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
+			case 43, 106:
+				product[i] -= (mat[i][j] * float64(vector[i]-vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
+			case 44, 107:
+				product[i] -= (mat[i][j] * float64(vector[i]+vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
+			case 45, 108:
+				product[i] -= (mat[j][i] * float64(vector[i]+vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
+			case 46, 109:
+				product[i] -= (mat[j][i] * float64(vector[i]-vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
+			case 47, 110:
+				product[i] -= (mat[j][i] * float64(vector[j]+vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
+			case 48, 112:
+				product[i] -= (mat[j][i] * float64(vector[j]-vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
+			case 49, 113:
+				product[i] += float64(int(vector[j]) % int(vector[i]))
+			case 50, 114:
+				product[i] += float64(int(vector[i]) % int(vector[j]))
+			case 51, 115:
+				product[i] -= float64(int(vector[j]) % int(vector[i]))
+			case 52, 116:
+				product[i] -= float64(int(vector[i]) % int(vector[j]))
+			case 53, 117:
+				product[i] += float64(int(vector[i]) & int(vector[j]))
+			case 54, 118:
+				product[i] -= float64(int(vector[i]) & int(vector[j]))
+			case 56, 119:
+				product[i] += float64(int(vector[i]) | int(vector[j]))
+			case 57, 120:
+				product[i] -= float64(int(vector[i]) | int(vector[j]))
+			case 58, 121:
+				product[i] += mat[i][j] * float64(int(vector[j])%int(vector[i])) * PRODUCT_VALUE_SCALE_MULTIPLIER
+			case 59, 122:
+				product[i] += mat[i][j] * float64(int(vector[i])%int(vector[j])) * PRODUCT_VALUE_SCALE_MULTIPLIER
+			case 60, 123:
+				product[i] -= mat[i][j] * float64(int(vector[j])%int(vector[i])) * PRODUCT_VALUE_SCALE_MULTIPLIER
+			case 61, 124:
+				product[i] -= mat[i][j] * float64(int(vector[i])%int(vector[j])) * PRODUCT_VALUE_SCALE_MULTIPLIER
+			case 63, 125:
+				product[i] += mat[i][j] * float64(int(vector[i])&int(vector[j])) * PRODUCT_VALUE_SCALE_MULTIPLIER
+			case 64, 126:
+				product[i] -= mat[i][j] * float64(int(vector[i])&int(vector[j])) * PRODUCT_VALUE_SCALE_MULTIPLIER
+			case 65, 127:
+				product[i] += mat[i][j] * float64(int(vector[i])|int(vector[j])) * PRODUCT_VALUE_SCALE_MULTIPLIER
+			case 66, 128:
+				product[i] -= mat[i][j] * float64(int(vector[i])|int(vector[j])) * PRODUCT_VALUE_SCALE_MULTIPLIER
 			default:
 				product[i] += mat[i][j] * float64(vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER
 			}
