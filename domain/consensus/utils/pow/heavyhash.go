@@ -470,7 +470,7 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.Domain
 	for i := 0; i < 64; i++ {
 		for j := 0; j < 64; j++ {
 			sw := (Nonce ^ (uint64(hashBytes[i%32]) * uint64(hashBytes[j%32]))) % 100
-			if sw <= 1 {
+			if sw <= 2 {
 				product[i] += ForComplex(mat[i][j] * modifier * float64(vector[j]))
 			} else {
 				product[i] += mat[i][j] * float64(vector[j])
