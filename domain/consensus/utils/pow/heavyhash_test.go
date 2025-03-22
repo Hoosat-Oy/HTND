@@ -149,8 +149,7 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.Do
 	for i := 0; i < 64; i++ {
 		for j := 0; j < 64; j++ {
 			sw := (Nonce ^ (uint64(hashBytes[i%32]) * uint64(hashBytes[j%32]))) % 100
-			fmt.Printf("%d\n", sw)
-			if sw <= 5 {
+			if sw <= 1 {
 				calls++
 				product[i] += ForComplexTest((mat[i][j] * modifier * float64(vector[j])))
 			} else {
