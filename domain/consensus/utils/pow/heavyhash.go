@@ -469,7 +469,7 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.Domain
 	// Perform the matrix-vector multiplication with nonlinear adjustments
 	for i := 0; i < 64; i++ {
 		for j := 0; j < 64; j++ {
-			sw := (Nonce ^ uint64(hashBytes[j%32])) % 100
+			sw := (Nonce ^ (uint64(hashBytes[i%32]) * uint64(hashBytes[j%32]))) % 100
 			if sw <= 5 {
 				product[i] += ForComplex(mat[i][j] * modifier * float64(vector[j]))
 			} else {

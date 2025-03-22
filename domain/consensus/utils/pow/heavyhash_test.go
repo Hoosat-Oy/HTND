@@ -130,9 +130,7 @@ func ForComplexTest(forComplex float64) float64 {
 }
 
 func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.DomainHash, Nonce uint64, t *testing.T) *externalapi.DomainHash {
-	fmt.Printf("%d\n", Nonce)
 	modifier := float64(Nonce & 4294967295 /*(2 ^ 32 - 1)*/)
-	fmt.Printf("%f\n", modifier)
 	hashBytes := hash.ByteArray()
 	var vector [64]byte
 	var product [64]float64
@@ -143,19 +141,18 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.Do
 		vector[2*i+1] = hashBytes[i] & 0x0F // Lower 4 bits
 	}
 
-	fmt.Printf("Vector: %v\n\n", vector)
+	// fmt.Printf("Vector: %v\n\n", vector)
 	calls := 0
-
 	complexRounds = 0
+
 	// Perform the matrix-vector multiplication with nonlinear adjustments
 	for i := 0; i < 64; i++ {
 		for j := 0; j < 64; j++ {
-			sw := (Nonce ^ uint64(hashBytes[j%32])) % 100
+			sw := (Nonce ^ (uint64(hashBytes[i%32]) * uint64(hashBytes[j%32]))) % 100
+			fmt.Printf("%d\n", sw)
 			if sw <= 5 {
 				calls++
-				complex := ForComplexTest((mat[i][j] * modifier * float64(vector[j])))
-				//fmt.Printf("%f\n", complex)
-				product[i] += complex
+				product[i] += ForComplexTest((mat[i][j] * modifier * float64(vector[j])))
 			} else {
 				product[i] += mat[i][j] * float64(vector[j])
 			}
@@ -193,7 +190,7 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.Do
 }
 
 func TestMatrixHoohashRev110(t *testing.T) {
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 4; i++ {
 		fmt.Printf("------------------------------\n")
 		Nonce := uint64(i)
 		fmt.Printf("Test %d\n", int64(i))
@@ -231,7 +228,7 @@ func TestMatrixHoohashRev110(t *testing.T) {
 	serialization.WriteElement(writer, Nonce)
 	powHash := writer.Finalize()
 	matrix := GenerateHoohashMatrixV110(externalapi.NewDomainHashFromByteArray((*[32]byte)(prePowHash)))
-	fmt.Printf("Matrix: %v\n\n", matrix[0])
+	//fmt.Printf("Matrix: %v\n\n", matrix[0])
 	multiplied := matrix.HoohashMatrixMultiplicationV110Test(powHash, Nonce, t)
 	fmt.Printf("POW HASH: %v\n", multiplied)
 	t.Fail()
