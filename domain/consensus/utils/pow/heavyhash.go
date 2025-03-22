@@ -439,22 +439,24 @@ func (mat *matrix) HoohashMatrixMultiplicationV101(hash *externalapi.DomainHash)
 	return writer.Finalize()
 }
 
-const COMPLEX_OUTPUT_CLAMP = 100000
+const COMPLEX_OUTPUT_CLAMP = 100000000
 const PRODUCT_VALUE_SCALE_MULTIPLIER = 0.00001
 
 func ForComplex(forComplex float64) float64 {
 	var complex float64
+	rounds := 0
 	complex = ComplexNonLinear(forComplex)
 	for complex >= COMPLEX_OUTPUT_CLAMP {
 		forComplex *= 0.1
+		rounds++
 		complex = ComplexNonLinear(forComplex)
 	}
-	return complex
+	return complex * float64(rounds)
 }
 
 func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.DomainHash, Nonce uint64) *externalapi.DomainHash {
 	hashBytes := hash.ByteArray()
-	nonceModifier := float64(Nonce/2) * PRODUCT_VALUE_SCALE_MULTIPLIER
+	modifier := float64(Nonce & 4294967295 /*(2 ^ 32 - 1)*/)
 	var vector [64]byte
 	var product [64]float64
 
@@ -467,12 +469,11 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.Domain
 	// Perform the matrix-vector multiplication with nonlinear adjustments
 	for i := 0; i < 64; i++ {
 		for j := 0; j < 64; j++ {
-			sw := ((i * int(vector[j])) * (j * int(vector[i]))) % 127
-			switch sw {
-			case 0:
-				product[i] += ForComplex(mat[i][j] * PRODUCT_VALUE_SCALE_MULTIPLIER * nonceModifier * float64(vector[j]))
-			default:
-				product[i] += mat[i][j] * float64(vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER
+			sw := (Nonce ^ uint64(hashBytes[j%32])) % 100
+			if sw <= 5 {
+				product[i] += ForComplex(mat[i][j] * modifier * float64(vector[j]))
+			} else {
+				product[i] += mat[i][j] * float64(vector[j])
 			}
 		}
 	}

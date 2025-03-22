@@ -113,10 +113,26 @@ func TestGenerateMatrix102(t *testing.T) {
 	t.Fail()
 }
 
-func (mat *floatMatrix) HoohashMatrixMultiplicationV111Test(hash *externalapi.DomainHash, Nonce uint64, t *testing.T) *externalapi.DomainHash {
+var complexRounds = 0
+
+func ForComplexTest(forComplex float64) float64 {
+	var complex float64
+	rounds := 0
+	complex = ComplexNonLinear(forComplex)
+	for complex >= COMPLEX_OUTPUT_CLAMP {
+		forComplex *= 0.1
+		complexRounds++
+		rounds++
+		complex = ComplexNonLinear(forComplex)
+	}
+	// fmt.Printf("%d\n", rounds)
+	return complex * float64(rounds)
+}
+
+func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.DomainHash, Nonce uint64, t *testing.T) *externalapi.DomainHash {
 	fmt.Printf("%d\n", Nonce)
-	nonceModifier := float64(Nonce/2) * PRODUCT_VALUE_SCALE_MULTIPLIER
-	fmt.Printf("%f\n", nonceModifier)
+	modifier := float64(Nonce & 4294967295 /*(2 ^ 32 - 1)*/)
+	fmt.Printf("%f\n", modifier)
 	hashBytes := hash.ByteArray()
 	var vector [64]byte
 	var product [64]float64
@@ -130,153 +146,23 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV111Test(hash *externalapi.Do
 	fmt.Printf("Vector: %v\n\n", vector)
 	calls := 0
 
+	complexRounds = 0
 	// Perform the matrix-vector multiplication with nonlinear adjustments
 	for i := 0; i < 64; i++ {
 		for j := 0; j < 64; j++ {
-			sw := ((i * int(vector[j])) * (j * int(vector[i]))) % 127
-			switch sw {
-			case 0:
-				// printf("TansformFactor %f\n", transformFactor);
+			sw := (Nonce ^ uint64(hashBytes[j%32])) % 100
+			if sw <= 5 {
 				calls++
-				product[i] += ForComplex(mat[i][j] * PRODUCT_VALUE_SCALE_MULTIPLIER * nonceModifier * float64(vector[j]))
-			case 1, 67:
-				product[i] += mat[i][j] + mat[j][i]
-			case 2, 68:
-				if mat[i][j] > mat[j][i] {
-					product[i] += mat[i][j] - mat[j][i]
-				} else {
-					product[i] += mat[j][i] - mat[i][j]
-				}
-			case 3, 69:
-				product[i] += mat[i][j] + float64(vector[j])
-			case 4, 70:
-				product[i] += (mat[j][i] - float64(vector[j])) * float64(vector[j])
-			case 5, 71:
-				if float64(vector[j]) != 0 {
-					product[i] += mat[i][j] / float64(vector[j])
-				} else {
-					product[i] += mat[i][j] / 1.0 // Safeguard against division by zero.
-				}
-			case 6, 72:
-				product[i] += mat[i][j]
-			case 7, 73:
-				product[i] += mat[j][i]
-			case 8, 74:
-				product[i] += (mat[i][j] - float64(vector[i])) * float64(vector[j])
-			case 9, 75:
-				product[i] += float64(vector[i])
-			case 10, 76:
-				product[i] += float64(vector[j])
-			case 11, 77:
-				product[i] -= float64(vector[j])
-			case 12, 78:
-				product[i] += (mat[i][j] - float64(vector[j])) * float64(vector[i])
-			case 13, 79:
-				product[i] -= float64(vector[i])
-			case 14, 80:
-				product[i] -= mat[j][i]
-			case 15, 16, 81:
-				product[i] += mat[i][j] - float64(vector[j])
-			case 18, 82:
-				product[i] -= mat[i][j]
-			case 19, 83:
-				product[i] -= (mat[i][j] - float64(vector[i])) * float64(vector[j])
-			case 20, 84:
-				product[i] -= (mat[j][i] - float64(vector[i])) * float64(vector[j])
-			case 21, 85:
-				product[i] -= (mat[i][j] - float64(vector[j])) * float64(vector[i])
-			case 22, 86:
-				product[i] -= (mat[j][i] - float64(vector[j])) * float64(vector[i])
-			case 23, 87:
-				product[i] += mat[i][j] - float64(vector[i])
-			case 24, 88:
-				product[i] += mat[j][i] - float64(vector[i])
-			case 25, 89:
-				product[i] -= (mat[j][i] * float64(vector[j])) + float64(vector[i])
-			case 26, 90:
-				product[i] += mat[i][j] * float64(vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER
-			case 27, 91:
-				if mat[i][j] > mat[j][i] {
-					product[i] += mat[i][j] / mat[j][i]
-				} else {
-					product[i] += mat[j][i] / mat[i][j]
-				}
-			case 28, 92:
-				product[i] += mat[i][j] + float64(vector[i])
-			case 29, 93:
-				product[i] += mat[j][i] + float64(vector[i])
-			case 30, 94, 31, 95:
-				product[i] -= (mat[j][i] * float64(vector[i])) + float64(vector[j])
-			case 32, 33, 96:
-				product[i] += (mat[i][j] * float64(vector[j]+vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
-			case 34, 97:
-				product[i] += (mat[i][j] * float64(vector[j]-vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
-			case 35, 98:
-				product[i] += (mat[i][j] * float64(vector[i]-vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
-			case 36, 99:
-				product[i] += (mat[i][j] * float64(vector[i]+vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
-			case 37, 100:
-				product[i] += (mat[j][i] * float64(vector[i]+vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
-			case 38, 101:
-				product[i] += (mat[j][i] * float64(vector[i]-vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
-			case 39, 102:
-				product[i] += (mat[j][i] * float64(vector[j]+vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
-			case 40, 103:
-				product[i] += (mat[j][i] * float64(vector[j]-vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
-			case 41, 104:
-				product[i] -= (mat[i][j] * float64(vector[j]+vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
-			case 42, 105:
-				product[i] -= (mat[i][j] * float64(vector[j]-vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
-			case 43, 106:
-				product[i] -= (mat[i][j] * float64(vector[i]-vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
-			case 44, 107:
-				product[i] -= (mat[i][j] * float64(vector[i]+vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
-			case 45, 108:
-				product[i] -= (mat[j][i] * float64(vector[i]+vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
-			case 46, 109:
-				product[i] -= (mat[j][i] * float64(vector[i]-vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
-			case 47, 110:
-				product[i] -= (mat[j][i] * float64(vector[j]+vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
-			case 48, 112:
-				product[i] -= (mat[j][i] * float64(vector[j]-vector[i]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
-			case 49, 113:
-				product[i] += float64(int(vector[j]) % int(vector[i]))
-			case 50, 114:
-				product[i] += float64(int(vector[i]) % int(vector[j]))
-			case 51, 115:
-				product[i] -= float64(int(vector[j]) % int(vector[i]))
-			case 52, 116:
-				product[i] -= float64(int(vector[i]) % int(vector[j]))
-			case 53, 117:
-				product[i] += float64(int(vector[i]) & int(vector[j]))
-			case 54, 118:
-				product[i] -= float64(int(vector[i]) & int(vector[j]))
-			case 56, 119:
-				product[i] += float64(int(vector[i]) | int(vector[j]))
-			case 57, 120:
-				product[i] -= float64(int(vector[i]) | int(vector[j]))
-			case 58, 121:
-				product[i] += mat[i][j] * float64(int(vector[j])%int(vector[i])) * PRODUCT_VALUE_SCALE_MULTIPLIER
-			case 59, 122:
-				product[i] += mat[i][j] * float64(int(vector[i])%int(vector[j])) * PRODUCT_VALUE_SCALE_MULTIPLIER
-			case 60, 123:
-				product[i] -= mat[i][j] * float64(int(vector[j])%int(vector[i])) * PRODUCT_VALUE_SCALE_MULTIPLIER
-			case 61, 124:
-				product[i] -= mat[i][j] * float64(int(vector[i])%int(vector[j])) * PRODUCT_VALUE_SCALE_MULTIPLIER
-			case 63, 125:
-				product[i] += mat[i][j] * float64(int(vector[i])&int(vector[j])) * PRODUCT_VALUE_SCALE_MULTIPLIER
-			case 64, 126:
-				product[i] -= mat[i][j] * float64(int(vector[i])&int(vector[j])) * PRODUCT_VALUE_SCALE_MULTIPLIER
-			case 65, 127:
-				product[i] += mat[i][j] * float64(int(vector[i])|int(vector[j])) * PRODUCT_VALUE_SCALE_MULTIPLIER
-			case 66, 128:
-				product[i] -= mat[i][j] * float64(int(vector[i])|int(vector[j])) * PRODUCT_VALUE_SCALE_MULTIPLIER
-			default:
-				product[i] += mat[i][j] * float64(vector[j]) * PRODUCT_VALUE_SCALE_MULTIPLIER
+				complex := ForComplexTest((mat[i][j] * modifier * float64(vector[j])))
+				//fmt.Printf("%f\n", complex)
+				product[i] += complex
+			} else {
+				product[i] += mat[i][j] * float64(vector[j])
 			}
 		}
 	}
 
+	fmt.Printf("Complexrounds %d\n", complexRounds)
 	fmt.Printf("For Complex called %d\n", calls)
 
 	fmt.Printf("Product: [")
@@ -306,7 +192,7 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV111Test(hash *externalapi.Do
 	return writer.Finalize()
 }
 
-func TestMatrixHoohashRev102(t *testing.T) {
+func TestMatrixHoohashRev110(t *testing.T) {
 	for i := 0; i < 10000; i++ {
 		fmt.Printf("------------------------------\n")
 		Nonce := uint64(i)
@@ -326,7 +212,7 @@ func TestMatrixHoohashRev102(t *testing.T) {
 		powHash := writer.Finalize()
 		matrix := GenerateHoohashMatrixV110(externalapi.NewDomainHashFromByteArray((*[32]byte)(prePowHash)))
 		//fmt.Printf("Matrix: %v\n", matrix)
-		multiplied := matrix.HoohashMatrixMultiplicationV111Test(powHash, Nonce, t)
+		multiplied := matrix.HoohashMatrixMultiplicationV110Test(powHash, Nonce, t)
 		fmt.Printf("POW HASH: %v\n", multiplied)
 	}
 	fmt.Printf("------------------------------\n")
@@ -346,7 +232,7 @@ func TestMatrixHoohashRev102(t *testing.T) {
 	powHash := writer.Finalize()
 	matrix := GenerateHoohashMatrixV110(externalapi.NewDomainHashFromByteArray((*[32]byte)(prePowHash)))
 	fmt.Printf("Matrix: %v\n\n", matrix[0])
-	multiplied := matrix.HoohashMatrixMultiplicationV111Test(powHash, Nonce, t)
+	multiplied := matrix.HoohashMatrixMultiplicationV110Test(powHash, Nonce, t)
 	fmt.Printf("POW HASH: %v\n", multiplied)
 	t.Fail()
 }
