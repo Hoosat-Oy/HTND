@@ -396,6 +396,9 @@ func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock, po
 }
 
 func (flow *handleRelayInvsFlow) relayBlock(block *externalapi.DomainBlock) error {
+	if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
+		return nil // Don't relay block without PoW hash.
+	}
 	blockHash := consensushashing.BlockHash(block)
 	return flow.Broadcast(appmessage.NewMsgInvBlock(blockHash))
 }
@@ -432,21 +435,18 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock) e
 			}
 
 			if isGenesisVirtualSelectedParent {
-				log.Infof("Cannot process orphan %s for a node with only the genesis block. The node needs to IBD "+
-					"to the recent pruning point before normal operation can resume.", blockHash)
+				log.Infof("Cannot process orphan %s for a node with only the genesis block. The node needs to IBD to the recent pruning point before normal operation can resume.", blockHash)
 				return nil
 			}
 		}
-		log.Debugf("Block %s is within orphan resolution range with right block version %d. "+
-			"Adding it to the orphan set", blockHash, block.Header.Version())
+		log.Infof("Block %s is within orphan resolution range, adding it to the orphan set", blockHash)
 		flow.AddOrphan(block)
 		log.Debugf("Requesting block %s missing ancestors", blockHash)
 		return flow.AddOrphanRootsToQueue(blockHash)
 	}
 
 	// Start IBD unless we already are in IBD
-	log.Infof("Block %s is out of orphan resolution range. "+
-		"Attempting to start IBD against it.", blockHash)
+	log.Infof("Block %s is out of orphan resolution range. Attempting to start IBD against it.", blockHash)
 
 	// Send the block to IBD flow via the IBDRequestChannel.
 	// Note that this is a non-blocking send, since if IBD is already running, there is no need to trigger it
@@ -498,15 +498,13 @@ func (flow *handleRelayInvsFlow) isBlockInOrphanResolutionRange(blockHash *exter
 	return false, nil
 }
 
-func (flow *handleRelayInvsFlow) OrphanRootInQueue(invMessages []invRelayBlock, root *externalapi.DomainHash) bool {
-	exists := false
-	for _, invRelayBlock := range invMessages {
-		if invRelayBlock.Hash == root {
-			exists = true
-			break
+func (flow *handleRelayInvsFlow) isOrphanRootInQueue(root *externalapi.DomainHash) bool {
+	for _, invRelayBlock := range flow.invsQueue {
+		if invRelayBlock.Hash.Equal(root) {
+			return true
 		}
 	}
-	return exists
+	return false
 }
 
 func (flow *handleRelayInvsFlow) AddOrphanRootsToQueue(orphan *externalapi.DomainHash) error {
@@ -517,7 +515,7 @@ func (flow *handleRelayInvsFlow) AddOrphanRootsToQueue(orphan *externalapi.Domai
 
 	if !orphanExists {
 		log.Debugf("Orphan block %s was missing from the orphan pool while requesting for its roots. This "+
-			"probably happened because it was randomly e	victed immediately after it was added.", orphan)
+			"probably happened because it was randomly evicted immediately after it was added.", orphan)
 	}
 
 	if len(orphanRoots) == 0 {
@@ -526,14 +524,14 @@ func (flow *handleRelayInvsFlow) AddOrphanRootsToQueue(orphan *externalapi.Domai
 	}
 	log.Debugf("Block %s has %d missing ancestors. Adding them to the invs queue...", orphan, len(orphanRoots))
 
-	invMessages := make([]invRelayBlock, len(orphanRoots))
-	for i, root := range orphanRoots {
-		if flow.OrphanRootInQueue(invMessages, root) {
-			log.Debugf("Skip adding duplicate missing ancestor %s to the invs queue", root)
+	invMessages := make([]invRelayBlock, 0, len(orphanRoots))
+	for _, root := range orphanRoots {
+		if flow.isOrphanRootInQueue(root) {
+			log.Infof("Skip adding duplicate missing ancestor %s to the invs queue", root)
 			continue
 		}
 		log.Infof("Adding missing ancestor %s to the invs queue", root)
-		invMessages[i] = invRelayBlock{Hash: root, IsOrphanRoot: true}
+		invMessages = append(invMessages, invRelayBlock{Hash: root, IsOrphanRoot: true})
 	}
 
 	flow.invsQueue = append(invMessages, flow.invsQueue...)

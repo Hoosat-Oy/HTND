@@ -12,6 +12,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/infrastructure/config"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
@@ -506,7 +507,7 @@ func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlo
 	block := &externalapi.DomainBlock{
 		Header:       header,
 		Transactions: nil,
-		PoWHash:      "SKIP_POW",
+		PoWHash:      "",
 	}
 	blockHash := consensushashing.BlockHash(block)
 	blockInfo, err := consensus.GetBlockInfo(blockHash)
@@ -688,8 +689,11 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 			if err != nil {
 				return err
 			}
-
-			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, updateVirtual, true)
+			powSkip := true
+			if block.Header.Version() >= constants.PoWIntegrityMinVersion {
+				powSkip = false
+			}
+			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, updateVirtual, powSkip)
 			if err != nil {
 				if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 					log.Debugf("Skipping IBD Block %s as it has already been added to the DAG", blockHash)
