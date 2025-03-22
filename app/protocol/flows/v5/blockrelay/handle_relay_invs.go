@@ -396,9 +396,9 @@ func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock, po
 }
 
 func (flow *handleRelayInvsFlow) relayBlock(block *externalapi.DomainBlock) error {
-	if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
-		return nil // Don't relay block without PoW hash.
-	}
+	// if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
+	// 	return nil // Don't relay block without PoW hash.
+	// }
 	blockHash := consensushashing.BlockHash(block)
 	return flow.Broadcast(appmessage.NewMsgInvBlock(blockHash))
 }
