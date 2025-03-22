@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"math/big"
 	"math/rand"
 	"testing"
@@ -129,6 +130,11 @@ func ForComplexTest(forComplex float64) float64 {
 	return complex * float64(rounds)
 }
 
+func TransformFactor(x uint64) float64 {
+	const granularity = 1024.0 // Increase for finer granularity
+	return math.Mod(float64(x), granularity) / granularity
+}
+
 func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.DomainHash, Nonce uint64, t *testing.T) *externalapi.DomainHash {
 	modifier := float64(Nonce & 4294967295 /*(2 ^ 32 - 1)*/)
 	hashBytes := hash.ByteArray()
@@ -148,8 +154,9 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.Do
 	// Perform the matrix-vector multiplication with nonlinear adjustments
 	for i := 0; i < 64; i++ {
 		for j := 0; j < 64; j++ {
-			sw := (Nonce ^ (uint64(hashBytes[i%32]) * uint64(hashBytes[j%32]))) % 100
-			if sw <= 2 {
+			// sw := (Nonce ^ (uint64(hashBytes[i%32]) * uint64(hashBytes[j%32]))) % 100
+			sw := TransformFactor(uint64(hashBytes[i%32]) * uint64(hashBytes[j%32]))
+			if sw <= 0.02 {
 				calls++
 				product[i] += ForComplexTest((mat[i][j] * modifier * float64(vector[j])))
 			} else {
@@ -189,7 +196,7 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.Do
 }
 
 func TestMatrixHoohashRev110(t *testing.T) {
-	for i := 0; i < 4; i++ {
+	for i := 0; i < 1000; i++ {
 		fmt.Printf("------------------------------\n")
 		Nonce := uint64(i)
 		fmt.Printf("Test %d\n", int64(i))

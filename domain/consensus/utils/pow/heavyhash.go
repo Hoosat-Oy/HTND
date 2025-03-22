@@ -440,7 +440,7 @@ func (mat *matrix) HoohashMatrixMultiplicationV101(hash *externalapi.DomainHash)
 }
 
 const COMPLEX_OUTPUT_CLAMP = 100000000
-const PRODUCT_VALUE_SCALE_MULTIPLIER = 0.00001
+const PRODUCT_VALUE_SCALE_MULTIPLIER = 0.000001
 
 func ForComplex(forComplex float64) float64 {
 	var complex float64
