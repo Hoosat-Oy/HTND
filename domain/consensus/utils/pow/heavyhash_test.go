@@ -136,7 +136,8 @@ func TransformFactor(x uint64) float64 {
 }
 
 func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.DomainHash, Nonce uint64, t *testing.T) *externalapi.DomainHash {
-	modifier := float64(Nonce & 4294967295 /*(2 ^ 32 - 1)*/)
+	modifierHigh := float64(Nonce >> 32)
+	modifierLow := float64(Nonce & 0xFFFFFFFF)
 	hashBytes := hash.ByteArray()
 	var vector [64]byte
 	var product [64]float64
@@ -158,7 +159,7 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.Do
 			sw := TransformFactor(uint64(hashBytes[i%32]) * uint64(hashBytes[j%32]))
 			if sw <= 0.02 {
 				calls++
-				product[i] += ForComplexTest((mat[i][j] * modifier * float64(vector[j])))
+				product[i] += ForComplexTest((mat[i][j] * modifierHigh * float64(vector[j]) * modifierLow))
 			} else {
 				product[i] += mat[i][j] * float64(vector[j])
 			}
