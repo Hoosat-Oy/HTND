@@ -382,12 +382,13 @@ func (mat *matrix) HoohashMatrixMultiplicationV101(hash *externalapi.DomainHash)
 func ForComplex(forComplex float64) float64 {
 	var complex float64
 	rounds := 1
-	complex = ComplexNonLinear(forComplex)
-	for complex >= COMPLEX_OUTPUT_CLAMP {
+	complex = ComplexNonLinear110(forComplex)
+	for math.IsNaN(float64(complex)) || math.IsInf(float64(complex), 0) {
 		forComplex *= 0.1
 		rounds++
-		complex = ComplexNonLinear(forComplex)
+		complex = ComplexNonLinear110(forComplex)
 	}
+	// fmt.Printf("%d\n", rounds)
 	return complex * float64(rounds)
 }
 
@@ -398,8 +399,9 @@ func TransformFactor(x uint64) float32 {
 func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.DomainHash, Nonce uint64) *externalapi.DomainHash {
 	hashBytes := hash.ByteArray()
 	H := hash.Uint32Array()
-	modifierHigh := float64(uint32(Nonce>>32) ^ H[0] ^ H[1] ^ H[2] ^ H[3] ^ H[4] ^ H[5] ^ H[6] ^ H[7])
-	modifierLow := float64(Nonce & 0xFFFFFFFF)
+	dividerOne := 0.001
+	hashMod := float64(H[0]^H[1]^H[2]^H[3]^H[4]^H[5]^H[6]^H[7]) * dividerOne
+	nonceMod := float64(Nonce&0xFF) * dividerOne
 	var vector [64]byte
 	var product [64]float64
 
@@ -412,11 +414,14 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.Domain
 	// Perform the matrix-vector multiplication with nonlinear adjustments
 	for i := 0; i < 64; i++ {
 		for j := 0; j < 64; j++ {
+			// sw := (Nonce ^ (uint64(hashBytes[i%32]) * uint64(hashBytes[j%32]))) % 100
 			sw := TransformFactor(uint64(hashBytes[i%32]) * uint64(hashBytes[j%32]))
 			if sw <= 0.02 {
-				product[i] += ForComplex(((mat[i][j] + modifierHigh) + (float64(vector[j]) * modifierLow)))
+				input := (mat[i][j]*nonceMod*float64(vector[j]) + hashMod)
+				output := ForComplex(input) * float64(vector[j])
+				product[i] += output
 			} else {
-				product[i] += mat[i][j] * float64(vector[j])
+				product[i] += mat[i][j] * dividerOne * float64(vector[j])
 			}
 		}
 	}
@@ -425,7 +430,8 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.Domain
 	var res [32]uint8
 	var scaledValues [32]uint8
 	for i := 0; i < 64; i += 2 {
-		scaledValues[i/2] = uint8((product[i] + product[i+1]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
+		pval := uint64(product[i]) + uint64(product[i+1])
+		scaledValues[i/2] = uint8(pval & 0xFF)
 	}
 	for i := 0; i < 32; i++ {
 		res[i] = hashBytes[i] ^ scaledValues[i]
