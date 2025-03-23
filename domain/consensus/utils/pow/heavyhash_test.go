@@ -6,7 +6,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"math"
 	"math/big"
 	"math/rand"
 	"testing"
@@ -16,12 +15,6 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/serialization"
 	"golang.org/x/crypto/blake2b"
 )
-
-func BenchmarkBasicComplexNonlinear(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		billionFlops(float64(i))
-	}
-}
 
 func BenchmarkMatrixHoohashRev2(b *testing.B) {
 	input := []byte("BenchmarkMatrix_HeavyHash")
@@ -118,27 +111,24 @@ var complexRounds = 0
 
 func ForComplexTest(forComplex float64) float64 {
 	var complex float64
-	rounds := 0
-	complex = ComplexNonLinear(forComplex)
+	rounds := 1
+	complex = ComplexNonLinear110(forComplex)
 	for complex >= COMPLEX_OUTPUT_CLAMP {
 		forComplex *= 0.1
 		complexRounds++
 		rounds++
-		complex = ComplexNonLinear(forComplex)
+		complex = ComplexNonLinear110(forComplex)
+		fmt.Printf("Input %f, Output %f\n", forComplex, complex)
 	}
 	// fmt.Printf("%d\n", rounds)
 	return complex * float64(rounds)
 }
 
-func TransformFactor(x uint64) float64 {
-	const granularity = 1024.0 // Increase for finer granularity
-	return math.Mod(float64(x), granularity) / granularity
-}
-
 func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.DomainHash, Nonce uint64, t *testing.T) *externalapi.DomainHash {
-	modifierHigh := float64(Nonce >> 32)
-	modifierLow := float64(Nonce & 0xFFFFFFFF)
 	hashBytes := hash.ByteArray()
+	H := hash.Uint32Array()
+	modifierHigh := float64(uint32(Nonce>>32) ^ H[0] ^ H[1] ^ H[2] ^ H[3] ^ H[4] ^ H[5] ^ H[6] ^ H[7])
+	modifierLow := float64(Nonce & 0xFFFFFFFF)
 	var vector [64]byte
 	var product [64]float64
 
@@ -159,12 +149,16 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.Do
 			sw := TransformFactor(uint64(hashBytes[i%32]) * uint64(hashBytes[j%32]))
 			if sw <= 0.02 {
 				calls++
-				product[i] += ForComplexTest((mat[i][j] * modifierHigh * float64(vector[j]) * modifierLow))
+				input := ((mat[i][j] + modifierHigh) + (float64(vector[j]) * modifierLow))
+				output := ForComplexTest(input)
+				product[i] += output
+				fmt.Printf("[%d][%d]: %f %f %f %f %f %f\n", i, j, mat[i][j], modifierHigh, float64(vector[j]), modifierLow, input, output)
 			} else {
 				product[i] += mat[i][j] * float64(vector[j])
 			}
 		}
 	}
+	fmt.Printf("\n")
 
 	fmt.Printf("Complexrounds %d\n", complexRounds)
 	fmt.Printf("For Complex called %d\n", calls)
@@ -180,12 +174,18 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.Do
 	fmt.Printf("]\n")
 
 	// Generate the result bytes
-	fmt.Printf("Final pass: [")
+
 	var res [32]uint8
 	var scaledValues [32]uint8
 	for i := 0; i < 64; i += 2 {
 		scaledValues[i/2] = uint8((product[i] + product[i+1]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
 	}
+	fmt.Printf("Scaled values: [")
+	for i := 0; i < 32; i++ {
+		fmt.Printf("%d, ", scaledValues[i])
+	}
+	fmt.Printf("]\n")
+	fmt.Printf("Final pass: [")
 	for i := 0; i < 32; i++ {
 		res[i] = hashBytes[i] ^ scaledValues[i]
 		fmt.Printf("%d, ", res[i])
@@ -197,12 +197,12 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.Do
 }
 
 func TestMatrixHoohashRev110(t *testing.T) {
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 5; i++ {
 		fmt.Printf("------------------------------\n")
 		Nonce := uint64(i)
 		fmt.Printf("Test %d\n", int64(i))
-		prePowHash, _ := hex.DecodeString("82b1d17c5e2200a0565956b711485a2cba6da909e588261582c2f465ec2e3d3f")
-		Timestamp := int64(1727011258677)
+		prePowHash, _ := hex.DecodeString("b7c8f43d8a99aecdd37912c9ad4f2e51c8009f7ce1cdf6e3be2767972cc68a1c")
+		Timestamp := int64(1725374568455)
 		// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
 		writer := hashes.Blake3HashWriter()
 		fmt.Printf("PRE_POW_HASH: %v\n", hex.EncodeToString(prePowHash))
@@ -531,7 +531,7 @@ func (mat *matrix) HoohashMatrixMultiplicationTest(hash *externalapi.DomainHash,
 			for forComplex > 14 {
 				forComplex = forComplex * 0.1
 			}
-			product[i] += ComplexNonLinear(forComplex)
+			product[i] += ComplexNonLinear(float64(forComplex))
 			// d := float64(mat[i][j]) * vector[j]
 			// forComplex := d
 			// for forComplex > 14 {

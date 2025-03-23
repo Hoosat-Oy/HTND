@@ -77,6 +77,20 @@ func (hash *DomainHash) ByteSlice() []byte {
 	return hash.ByteArray()[:]
 }
 
+// Uint32Array converts the hash bytes in DomainHash to an array of 8 uint32 values.
+// It combines 4 bytes at a time to create a uint32 value.
+func (hash *DomainHash) Uint32Array() [8]uint32 {
+	var result [8]uint32
+
+	for i := 0; i < 8; i++ {
+		result[i] = uint32(hash.hashArray[i*4])<<24 |
+			uint32(hash.hashArray[i*4+1])<<16 |
+			uint32(hash.hashArray[i*4+2])<<8 |
+			uint32(hash.hashArray[i*4+3])
+	}
+	return result
+}
+
 // If this doesn't compile, it means the type definition has been changed, so it's
 // an indication to update Equal and Clone accordingly.
 var _ DomainHash = DomainHash{hashArray: [DomainHashSize]byte{}}

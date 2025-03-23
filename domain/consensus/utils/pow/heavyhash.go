@@ -3,12 +3,17 @@ package pow
 import (
 	// "github.com/chewxy/math"
 
+	"fmt"
 	"math"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/hashes"
+	"github.com/chewxy/math32"
 )
 
+const COMPLEX_OUTPUT_CLAMP = 1000000000
+const PRODUCT_VALUE_SCALE_MULTIPLIER = 0.1
+const COMPLEX_TRANSFORM_MULTIPLIER = 0.000001
 const eps float64 = 1e-9
 
 // type matrix [64][64]uint16
@@ -115,25 +120,6 @@ func GenerateHoohashMatrixV110(hash *externalapi.DomainHash) *floatMatrix {
 	return &mat
 }
 
-// func generateMatrix(hash *externalapi.DomainHash) *matrix {
-// 	var mat matrix
-// 	generator := newxoShiRo256PlusPlus(hash)
-
-// 	for {
-// 		for i := range mat {
-// 			for j := 0; j < 128; j += 16 {
-// 				val := generator.Uint64()
-// 				for shift := 0; shift < 16; shift++ {
-// 					mat[i][j+shift] = uint16(val >> (4 * shift) & 0x0F)
-// 				}
-// 			}
-// 		}
-// 		if mat.computeRank() == 128 {
-// 			return &mat
-// 		}
-// 	}
-// }
-
 // Basic Non-linear Operations are fast but less computationally intensive.
 // Intermediate Non-linear Operations increase complexity with additional trigonometric functions.
 // Advanced Non-linear Operations involve more complex combinations of trigonometric, exponential, and logarithmic functions.
@@ -148,6 +134,10 @@ func MediumComplexNonLinear(x float64) float64 {
 	return math.Exp(math.Sin(x) + math.Cos(x))
 }
 
+func MediumComplexNonLinear32(x float32) float32 {
+	return float32(math.Exp(float64(math32.Sin(x) + math32.Cos(x))))
+}
+
 func IntermediateComplexNonLinear(x float64) float64 {
 	if x == math.Pi/2 || x == 3*math.Pi/2 {
 		return 0 // Avoid singularity
@@ -155,108 +145,23 @@ func IntermediateComplexNonLinear(x float64) float64 {
 	return math.Sin(x) * math.Cos(x) * math.Tan(x)
 }
 
-func AdvancedComplexNonLinear(x float64) float64 {
-	if x <= -1 {
-		return 0 // Avoid log domain error
+func IntermediateComplexNonLinear32(x float32) float32 {
+	if x == math.Pi/2 || x == 3*math.Pi/2 {
+		return 0 // Avoid singularity
 	}
-	return math.Exp(math.Sin(x)+math.Cos(x*x)) * math.Log1p(x*x+1)
+	sin := math.Sin(float64(x))
+	cos := math.Cos(float64(x))
+	ta := math32.Tan(x)
+	fmt.Printf("%f %f %f %f\n", x, sin, cos, ta)
+	return math32.Sin(x) * math32.Cos(x) * math32.Tan(x)
 }
 
 func HighComplexNonLinear(x float64) float64 {
 	return math.Exp(x) * math.Log(x+1)
 }
 
-func VeryComplexNonLinear(x float64) float64 {
-	if x == math.Pi/2 || x == 3*math.Pi/2 || x <= -1 {
-		return 0 // Avoid singularity and log domain error
-	}
-	return math.Exp(math.Sin(x)+math.Cos(x*x)+math.Tan(x)) * math.Log1p(x*x+1)
-}
-
-func HyperComplexNonLinear(x float64) float64 {
-	if x <= 0 {
-		return 0 // Avoid log domain error
-	}
-	return math.Pow(math.Exp(math.Sin(x)+math.Cos(x)), 1.5) * math.Log1p(x*x*x+1)
-}
-
-func UltraComplexNonLinear(x float64) float64 {
-	if x == math.Pi/2 || x == 3*math.Pi/2 || x <= -1 || x == 0 {
-		return 0 // Avoid singularity and log domain error
-	}
-	return math.Exp(math.Sin(x*x)+math.Cos(x*x*x)+math.Tan(x)) * math.Log1p(math.Abs(math.Tan(x*x+x)))
-}
-
-func MegaComplexNonLinear(x float64) float64 {
-	if x == math.Pi/2 || x == 3*math.Pi/2 || x <= -1 {
-		return 0 // Avoid singularity and log domain error
-	}
-	return math.Exp(math.Pow(math.Sin(x), 3)+math.Cos(math.Exp(x))) * math.Log1p(math.Pow(math.Tan(x), 2)+x*x)
-}
-
-func GigaComplexNonLinear(x float64) float64 {
-	if x <= 0 {
-		return 0 // Avoid log domain error
-	}
-	return math.Exp(math.Sin(x*x)+math.Cos(math.Exp(x))) * math.Log1p(math.Pow(x, 5)+1)
-}
-
-func TeraComplexNonLinear(x float64) float64 {
-	if x <= -1 {
-		return 0 // Avoid log domain error
-	}
-	return math.Exp(math.Sin(math.Exp(x))+math.Cos(math.Exp(x*x))) * math.Log1p(math.Pow(math.Abs(x), 3)+1)
-}
-
-func PetaComplexNonLinear(x float64) float64 {
-	if x == math.Pi/2 || x == 3*math.Pi/2 || x <= -1 {
-		return 0 // Avoid singularity and log domain error
-	}
-	return math.Exp(math.Sin(math.Exp(x))+math.Cos(math.Exp(x*x))+math.Tan(math.Exp(x))) * math.Log1p(math.Pow(math.Abs(x), 5)+1)
-}
-
-func ExaComplexNonLinear(x float64) float64 {
-	if x == math.Pi/2 || x == 3*math.Pi/2 || x <= -1 {
-		return 0 // Avoid singularity and log domain error
-	}
-	return math.Exp(math.Sin(math.Pow(x, 4))+math.Cos(math.Pow(x, 3))+math.Tan(math.Pow(x, 2))) * math.Log1p(math.Exp(math.Abs(x*x+x)))
-}
-
-func SuperComplexNonLinear(x float64) float64 {
-	if x == math.Pi/2 || x == 3*math.Pi/2 || x <= -1 {
-		return 0 // Avoid singularity and log domain error
-	}
-	return math.Exp(math.Sin(x)*math.Cos(x)+math.Tan(x*x)) * math.Log1p(x*x*x+1)
-}
-
-func ExtremlyComplexNonLinear(x float64) float64 {
-	if x == math.Pi/2 || x == 3*math.Pi/2 {
-		return 0 // Avoid singularity
-	}
-	return math.Exp(x*x*x) * math.Log1p(math.Abs(math.Tan(x)))
-}
-
-func billionFlops(x float64) float64 {
-	// Sum inside the exponential function
-	sum := float64(0.0)
-	for j := 1; j <= 100; j++ {
-		sum += math.Pow(x, float64(2*j)) + 1.0/float64(j)
-	}
-
-	// Exponential and Logarithm
-	expPart := math.Exp(sum)
-	logPart := math.Log1p(expPart)
-
-	// Product of trigonometric functions
-	product := float64(1.0)
-	for i := 1; i <= 1000; i++ {
-		powX := math.Pow(x, float64(i))
-		product *= math.Sin(powX) + math.Cos(math.Pow(x, float64(i+1))) + math.Tan(powX)
-	}
-
-	// Final result
-	result := product * logPart
-	return result
+func HighComplexNonLinear32(x float32) float32 {
+	return float32(math.Exp(float64(x))) * math32.Log(x+1)
 }
 
 func ComplexNonLinear(x float64) float64 {
@@ -271,7 +176,42 @@ func ComplexNonLinear(x float64) float64 {
 		} else {
 			return MediumComplexNonLinear(x / (1 + transformFactor))
 		}
-	} else if x < 10 {
+	} else if x < 100 {
+		if transformFactor < 0.25 {
+			return IntermediateComplexNonLinear(x + (1 + transformFactor))
+		} else if transformFactor < 0.5 {
+			return IntermediateComplexNonLinear(x - (1 + transformFactor))
+		} else if transformFactor < 0.75 {
+			return IntermediateComplexNonLinear(x * (1 + transformFactor))
+		} else {
+			return IntermediateComplexNonLinear(x / (1 + transformFactor))
+		}
+	} else {
+		if transformFactor < 0.25 {
+			return HighComplexNonLinear(x + (1 + transformFactor))
+		} else if transformFactor < 0.5 {
+			return HighComplexNonLinear(x - (1 + transformFactor))
+		} else if transformFactor < 0.75 {
+			return HighComplexNonLinear(x * (1 + transformFactor))
+		} else {
+			return HighComplexNonLinear(x / (1 + transformFactor))
+		}
+	}
+}
+
+func ComplexNonLinear110(x float64) float64 {
+	transformFactor := math.Mod(x*COMPLEX_TRANSFORM_MULTIPLIER, 4.0) / 4.0
+	if x < 1000 {
+		if transformFactor < 0.25 {
+			return MediumComplexNonLinear(x + (1 + transformFactor))
+		} else if transformFactor < 0.5 {
+			return MediumComplexNonLinear(x - (1 + transformFactor))
+		} else if transformFactor < 0.75 {
+			return MediumComplexNonLinear(x * (1 + transformFactor))
+		} else {
+			return MediumComplexNonLinear(x / (1 + transformFactor))
+		}
+	} else if x < 1000000 {
 		if transformFactor < 0.25 {
 			return IntermediateComplexNonLinear(x + (1 + transformFactor))
 		} else if transformFactor < 0.5 {
@@ -439,12 +379,9 @@ func (mat *matrix) HoohashMatrixMultiplicationV101(hash *externalapi.DomainHash)
 	return writer.Finalize()
 }
 
-const COMPLEX_OUTPUT_CLAMP = 100000000
-const PRODUCT_VALUE_SCALE_MULTIPLIER = 0.000001
-
 func ForComplex(forComplex float64) float64 {
 	var complex float64
-	rounds := 0
+	rounds := 1
 	complex = ComplexNonLinear(forComplex)
 	for complex >= COMPLEX_OUTPUT_CLAMP {
 		forComplex *= 0.1
@@ -454,9 +391,14 @@ func ForComplex(forComplex float64) float64 {
 	return complex * float64(rounds)
 }
 
+func TransformFactor(x uint64) float32 {
+	const granularity = 1024.0 // Increase for finer granularity
+	return math32.Mod(float32(x), granularity) / granularity
+}
 func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.DomainHash, Nonce uint64) *externalapi.DomainHash {
 	hashBytes := hash.ByteArray()
-	modifierHigh := float64(Nonce >> 32)
+	H := hash.Uint32Array()
+	modifierHigh := float64(uint32(Nonce>>32) ^ H[0] ^ H[1] ^ H[2] ^ H[3] ^ H[4] ^ H[5] ^ H[6] ^ H[7])
 	modifierLow := float64(Nonce & 0xFFFFFFFF)
 	var vector [64]byte
 	var product [64]float64
@@ -470,9 +412,9 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.Domain
 	// Perform the matrix-vector multiplication with nonlinear adjustments
 	for i := 0; i < 64; i++ {
 		for j := 0; j < 64; j++ {
-			sw := (Nonce ^ (uint64(hashBytes[i%32]) * uint64(hashBytes[j%32]))) % 100
-			if sw <= 2 {
-				product[i] += ForComplex((mat[i][j] * modifierHigh * float64(vector[j]) * modifierLow))
+			sw := TransformFactor(uint64(hashBytes[i%32]) * uint64(hashBytes[j%32]))
+			if sw <= 0.02 {
+				product[i] += ForComplex(((mat[i][j] + modifierHigh) + (float64(vector[j]) * modifierLow)))
 			} else {
 				product[i] += mat[i][j] * float64(vector[j])
 			}
