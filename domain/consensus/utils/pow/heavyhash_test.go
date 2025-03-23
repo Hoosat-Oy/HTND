@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"math/big"
 	"math/rand"
 	"testing"
@@ -107,18 +108,14 @@ func TestGenerateMatrix102(t *testing.T) {
 	t.Fail()
 }
 
-var complexRounds = 0
-
 func ForComplexTest(forComplex float64) float64 {
 	var complex float64
 	rounds := 1
 	complex = ComplexNonLinear110(forComplex)
-	for complex >= COMPLEX_OUTPUT_CLAMP {
+	for math.IsNaN(float64(complex)) || math.IsInf(float64(complex), 0) {
 		forComplex *= 0.1
-		complexRounds++
 		rounds++
 		complex = ComplexNonLinear110(forComplex)
-		fmt.Printf("Input %f, Output %f\n", forComplex, complex)
 	}
 	// fmt.Printf("%d\n", rounds)
 	return complex * float64(rounds)
@@ -127,8 +124,9 @@ func ForComplexTest(forComplex float64) float64 {
 func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.DomainHash, Nonce uint64, t *testing.T) *externalapi.DomainHash {
 	hashBytes := hash.ByteArray()
 	H := hash.Uint32Array()
-	modifierHigh := float64(uint32(Nonce>>32) ^ H[0] ^ H[1] ^ H[2] ^ H[3] ^ H[4] ^ H[5] ^ H[6] ^ H[7])
-	modifierLow := float64(Nonce & 0xFFFFFFFF)
+	dividerOne := 0.001
+	hashMod := float64(H[0]^H[1]^H[2]^H[3]^H[4]^H[5]^H[6]^H[7]) * dividerOne
+	nonceMod := float64(Nonce&0xFF) * dividerOne
 	var vector [64]byte
 	var product [64]float64
 
@@ -139,8 +137,6 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.Do
 	}
 
 	// fmt.Printf("Vector: %v\n\n", vector)
-	calls := 0
-	complexRounds = 0
 
 	// Perform the matrix-vector multiplication with nonlinear adjustments
 	for i := 0; i < 64; i++ {
@@ -148,43 +144,26 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.Do
 			// sw := (Nonce ^ (uint64(hashBytes[i%32]) * uint64(hashBytes[j%32]))) % 100
 			sw := TransformFactor(uint64(hashBytes[i%32]) * uint64(hashBytes[j%32]))
 			if sw <= 0.02 {
-				calls++
-				input := ((mat[i][j] + modifierHigh) + (float64(vector[j]) * modifierLow))
-				output := ForComplexTest(input)
+				input := (mat[i][j]*nonceMod*float64(vector[j]) + hashMod)
+				output := ForComplexTest(input) * float64(vector[j])
 				product[i] += output
-				fmt.Printf("[%d][%d]: %f %f %f %f %f %f\n", i, j, mat[i][j], modifierHigh, float64(vector[j]), modifierLow, input, output)
+				fmt.Printf("[%d][%d]: %f %f %f %f %f %f\n", i, j, mat[i][j], float64(vector[j]), hashMod, nonceMod, input, output)
 			} else {
-				product[i] += mat[i][j] * float64(vector[j])
+				product[i] += mat[i][j] * dividerOne * float64(vector[j])
 			}
 		}
 	}
 	fmt.Printf("\n")
-
-	fmt.Printf("Complexrounds %d\n", complexRounds)
-	fmt.Printf("For Complex called %d\n", calls)
-
-	fmt.Printf("Product: [")
-	for i, v := range product {
-		// Print each element with 2 decimal places
-		fmt.Printf("%.6f", v)
-		if i < len(product)-1 {
-			fmt.Printf(" ")
-		}
-	}
-	fmt.Printf("]\n")
 
 	// Generate the result bytes
 
 	var res [32]uint8
 	var scaledValues [32]uint8
 	for i := 0; i < 64; i += 2 {
-		scaledValues[i/2] = uint8((product[i] + product[i+1]) * PRODUCT_VALUE_SCALE_MULTIPLIER)
+		pval := uint64(product[i]) + uint64(product[i+1])
+		scaledValues[i/2] = uint8(pval & 0xFF)
+		fmt.Printf("[%d] -> %f + %f -> %d -> %d\n", i/2, product[i], product[i+1], pval, scaledValues[i/2])
 	}
-	fmt.Printf("Scaled values: [")
-	for i := 0; i < 32; i++ {
-		fmt.Printf("%d, ", scaledValues[i])
-	}
-	fmt.Printf("]\n")
 	fmt.Printf("Final pass: [")
 	for i := 0; i < 32; i++ {
 		res[i] = hashBytes[i] ^ scaledValues[i]

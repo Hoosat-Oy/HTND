@@ -107,14 +107,13 @@ func GenerateHoohashMatrix(hash *externalapi.DomainHash) *matrix {
 func GenerateHoohashMatrixV110(hash *externalapi.DomainHash) *floatMatrix {
 	var mat floatMatrix
 	generator := newxoShiRo256PlusPlus(hash)
-	const normalize float64 = 100000000
+	const normalize float64 = 1000000
 
 	for i := 0; i < 64; i++ {
 		for j := 0; j < 64; j++ {
 			val := generator.Uint64()
 			lower4Bytes := uint32(val & 0xFFFFFFFF)
-			matrixVal := float64(lower4Bytes)/float64(math.MaxUint32)*(normalize*2) - normalize
-			mat[i][j] = matrixVal
+			mat[i][j] = float64(lower4Bytes) / float64(math.MaxUint32) * normalize
 		}
 	}
 	return &mat
@@ -200,36 +199,37 @@ func ComplexNonLinear(x float64) float64 {
 }
 
 func ComplexNonLinear110(x float64) float64 {
-	transformFactor := math.Mod(x*COMPLEX_TRANSFORM_MULTIPLIER, 4.0) / 4.0
-	if x < 1000 {
-		if transformFactor < 0.25 {
-			return MediumComplexNonLinear(x + (1 + transformFactor))
-		} else if transformFactor < 0.5 {
-			return MediumComplexNonLinear(x - (1 + transformFactor))
-		} else if transformFactor < 0.75 {
-			return MediumComplexNonLinear(x * (1 + transformFactor))
+	transformFactorOne := math.Mod(x*COMPLEX_TRANSFORM_MULTIPLIER, 8.0) / 8.0
+	transformFactorTwo := math.Mod(x*COMPLEX_TRANSFORM_MULTIPLIER, 4.0) / 4.0
+	if transformFactorOne < 0.33 {
+		if transformFactorTwo < 0.25 {
+			return MediumComplexNonLinear(x + (1 + transformFactorTwo))
+		} else if transformFactorTwo < 0.5 {
+			return MediumComplexNonLinear(x - (1 + transformFactorTwo))
+		} else if transformFactorTwo < 0.75 {
+			return MediumComplexNonLinear(x * (1 + transformFactorTwo))
 		} else {
-			return MediumComplexNonLinear(x / (1 + transformFactor))
+			return MediumComplexNonLinear(x / (1 + transformFactorTwo))
 		}
-	} else if x < 1000000 {
-		if transformFactor < 0.25 {
-			return IntermediateComplexNonLinear(x + (1 + transformFactor))
-		} else if transformFactor < 0.5 {
-			return IntermediateComplexNonLinear(x - (1 + transformFactor))
-		} else if transformFactor < 0.75 {
-			return IntermediateComplexNonLinear(x * (1 + transformFactor))
+	} else if transformFactorOne < 0.66 {
+		if transformFactorTwo < 0.25 {
+			return IntermediateComplexNonLinear(x + (1 + transformFactorTwo))
+		} else if transformFactorTwo < 0.5 {
+			return IntermediateComplexNonLinear(x - (1 + transformFactorTwo))
+		} else if transformFactorTwo < 0.75 {
+			return IntermediateComplexNonLinear(x * (1 + transformFactorTwo))
 		} else {
-			return IntermediateComplexNonLinear(x / (1 + transformFactor))
+			return IntermediateComplexNonLinear(x / (1 + transformFactorTwo))
 		}
 	} else {
-		if transformFactor < 0.25 {
-			return HighComplexNonLinear(x + (1 + transformFactor))
-		} else if transformFactor < 0.5 {
-			return HighComplexNonLinear(x - (1 + transformFactor))
-		} else if transformFactor < 0.75 {
-			return HighComplexNonLinear(x * (1 + transformFactor))
+		if transformFactorTwo < 0.25 {
+			return HighComplexNonLinear(x + (1 + transformFactorTwo))
+		} else if transformFactorTwo < 0.5 {
+			return HighComplexNonLinear(x - (1 + transformFactorTwo))
+		} else if transformFactorTwo < 0.75 {
+			return HighComplexNonLinear(x * (1 + transformFactorTwo))
 		} else {
-			return HighComplexNonLinear(x / (1 + transformFactor))
+			return HighComplexNonLinear(x / (1 + transformFactorTwo))
 		}
 	}
 }
