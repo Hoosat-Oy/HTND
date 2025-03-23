@@ -456,7 +456,8 @@ func ForComplex(forComplex float64) float64 {
 
 func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.DomainHash, Nonce uint64) *externalapi.DomainHash {
 	hashBytes := hash.ByteArray()
-	modifier := float64(Nonce & 4294967295 /*(2 ^ 32 - 1)*/)
+	modifierHigh := float64(Nonce >> 32)
+	modifierLow := float64(Nonce & 0xFFFFFFFF)
 	var vector [64]byte
 	var product [64]float64
 
@@ -471,7 +472,7 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.Domain
 		for j := 0; j < 64; j++ {
 			sw := (Nonce ^ (uint64(hashBytes[i%32]) * uint64(hashBytes[j%32]))) % 100
 			if sw <= 2 {
-				product[i] += ForComplex(mat[i][j] * modifier * float64(vector[j]))
+				product[i] += ForComplex((mat[i][j] * modifierHigh * float64(vector[j]) * modifierLow))
 			} else {
 				product[i] += mat[i][j] * float64(vector[j])
 			}
