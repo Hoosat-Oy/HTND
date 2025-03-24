@@ -385,6 +385,9 @@ func ForComplex(forComplex float64) float64 {
 	complex = ComplexNonLinear110(forComplex)
 	for math.IsNaN(float64(complex)) || math.IsInf(float64(complex), 0) {
 		forComplex *= 0.1
+		if forComplex <= 0.0000000000001 {
+			return 0 * float64(rounds)
+		}
 		rounds++
 		complex = ComplexNonLinear110(forComplex)
 	}

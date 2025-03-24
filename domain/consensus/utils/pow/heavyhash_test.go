@@ -9,6 +9,7 @@ import (
 	"math"
 	"math/big"
 	"math/rand"
+	"os"
 	"testing"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
@@ -114,6 +115,9 @@ func ForComplexTest(forComplex float64) float64 {
 	complex = ComplexNonLinear110(forComplex)
 	for math.IsNaN(float64(complex)) || math.IsInf(float64(complex), 0) {
 		forComplex *= 0.1
+		if forComplex <= 0.0000000000001 {
+			return 0 * float64(rounds)
+		}
 		rounds++
 		complex = ComplexNonLinear110(forComplex)
 	}
@@ -147,7 +151,7 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.Do
 				input := (mat[i][j]*nonceMod*float64(vector[j]) + hashMod)
 				output := ForComplexTest(input) * float64(vector[j])
 				product[i] += output
-				fmt.Printf("[%d][%d]: %f %f %f %f %f %f\n", i, j, mat[i][j], float64(vector[j]), hashMod, nonceMod, input, output)
+				//fmt.Printf("[%d][%d]: %f %f %f %f %f %f\n", i, j, mat[i][j], float64(vector[j]), hashMod, nonceMod, input, output)
 			} else {
 				product[i] += mat[i][j] * dividerOne * float64(vector[j])
 			}
@@ -162,41 +166,54 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.Do
 	for i := 0; i < 64; i += 2 {
 		pval := uint64(product[i]) + uint64(product[i+1])
 		scaledValues[i/2] = uint8(pval & 0xFF)
-		fmt.Printf("[%d] -> %f + %f -> %d -> %d\n", i/2, product[i], product[i+1], pval, scaledValues[i/2])
+		// fmt.Printf("[%d] -> %f + %f -> %d -> %d\n", i/2, product[i], product[i+1], pval, scaledValues[i/2])
 	}
-	fmt.Printf("Final pass: [")
+	// fmt.Printf("Final pass: [")
 	for i := 0; i < 32; i++ {
 		res[i] = hashBytes[i] ^ scaledValues[i]
 		fmt.Printf("%d, ", res[i])
 	}
-	fmt.Printf("]\n")
+	// fmt.Printf("]\n")
 	writer := hashes.Blake3HashWriter()
 	writer.InfallibleWrite(res[:32])
 	return writer.Finalize()
 }
 
 func TestMatrixHoohashRev110(t *testing.T) {
-	for i := 0; i < 5; i++ {
-		fmt.Printf("------------------------------\n")
-		Nonce := uint64(i)
-		fmt.Printf("Test %d\n", int64(i))
-		prePowHash, _ := hex.DecodeString("b7c8f43d8a99aecdd37912c9ad4f2e51c8009f7ce1cdf6e3be2767972cc68a1c")
-		Timestamp := int64(1725374568455)
-		// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
-		writer := hashes.Blake3HashWriter()
-		fmt.Printf("PRE_POW_HASH: %v\n", hex.EncodeToString(prePowHash))
-		writer.InfallibleWrite(prePowHash)
-		fmt.Printf("TIME: %d\n", Timestamp)
-		serialization.WriteElement(writer, Timestamp)
-		zeroes := [32]byte{}
-		writer.InfallibleWrite(zeroes[:])
-		fmt.Printf("Nonce: %d\n", Nonce)
-		serialization.WriteElement(writer, Nonce)
-		powHash := writer.Finalize()
-		matrix := GenerateHoohashMatrixV110(externalapi.NewDomainHashFromByteArray((*[32]byte)(prePowHash)))
-		//fmt.Printf("Matrix: %v\n", matrix)
-		multiplied := matrix.HoohashMatrixMultiplicationV110Test(powHash, Nonce, t)
-		fmt.Printf("POW HASH: %v\n", multiplied)
+	file, err := os.Create("pow_hashes.txt")
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer file.Close()
+	for i := 0; i < 1800; i++ {
+		for x := 0; x < 20000; x++ {
+			fmt.Printf("------------------------------\n")
+			Nonce := uint64(x)
+			fmt.Printf("Test %d\n", int64(i))
+			prePowHash, _ := hex.DecodeString("b7c8f43d8a99aecdd37912c9ad4f2e51c8009f7ce1cdf6e3be2767972cc68a1c")
+			Timestamp := int64(172537456 + i)
+			// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
+			writer := hashes.Blake3HashWriter()
+			fmt.Printf("PRE_POW_HASH: %v\n", hex.EncodeToString(prePowHash))
+			writer.InfallibleWrite(prePowHash)
+			fmt.Printf("TIME: %d\n", Timestamp)
+			serialization.WriteElement(writer, Timestamp)
+			zeroes := [32]byte{}
+			writer.InfallibleWrite(zeroes[:])
+			fmt.Printf("Nonce: %d\n", Nonce)
+			serialization.WriteElement(writer, Nonce)
+			powHash := writer.Finalize()
+			matrix := GenerateHoohashMatrixV110(externalapi.NewDomainHashFromByteArray((*[32]byte)(prePowHash)))
+			//fmt.Printf("Matrix: %v\n", matrix)
+			multiplied := matrix.HoohashMatrixMultiplicationV110Test(powHash, Nonce, t)
+			fmt.Printf("POW HASH: %v\n", multiplied)
+			_, err := file.WriteString(fmt.Sprintf("%v\n", multiplied))
+			if err != nil {
+				fmt.Println("Error writing to file:", err)
+				return
+			}
+		}
 	}
 	fmt.Printf("------------------------------\n")
 	Nonce := uint64(7794931619413402210)
