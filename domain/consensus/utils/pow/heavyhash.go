@@ -404,6 +404,7 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.Domain
 	H := hash.Uint32Array()
 	hashMod := float64(H[0] ^ H[1] ^ H[2] ^ H[3] ^ H[4] ^ H[5] ^ H[6] ^ H[7])
 	nonceMod := float64(Nonce & 0xFF)
+	divider := 0.001
 	var vector [64]byte
 	var product [64]float64
 
@@ -423,7 +424,7 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.Domain
 				output := ForComplex(input) * float64(vector[j])
 				product[i] += output
 			} else {
-				product[i] += mat[i][j] * float64(vector[j])
+				product[i] += mat[i][j] * divider * float64(vector[j])
 			}
 		}
 	}

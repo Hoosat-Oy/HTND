@@ -130,6 +130,7 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.Do
 	H := hash.Uint32Array()
 	hashMod := float64(H[0] ^ H[1] ^ H[2] ^ H[3] ^ H[4] ^ H[5] ^ H[6] ^ H[7])
 	nonceMod := float64(Nonce & 0xFF)
+	divider := 0.001
 	var vector [64]byte
 	var product [64]float64
 
@@ -152,7 +153,7 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.Do
 				product[i] += output
 				//fmt.Printf("[%d][%d]: %f %f %f %f %f %f\n", i, j, mat[i][j], float64(vector[j]), hashMod, nonceMod, input, output)
 			} else {
-				product[i] += mat[i][j] * float64(vector[j])
+				product[i] += mat[i][j] * divider * float64(vector[j])
 			}
 		}
 	}
@@ -185,8 +186,8 @@ func TestMatrixHoohashRev110(t *testing.T) {
 		return
 	}
 	defer file.Close()
-	for i := 0; i < 180; i++ {
-		for x := 0; x < 200; x++ {
+	for i := 0; i < 1000; i++ {
+		for x := 0; x < 1000; x++ {
 			fmt.Printf("------------------------------\n")
 			Nonce := uint64(x)
 			fmt.Printf("Test %d\n", int64(i))
