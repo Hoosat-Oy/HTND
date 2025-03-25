@@ -159,8 +159,8 @@ func HighComplexNonLinear(x float64) float64 {
 	return math.Exp(x) * math.Log(x+1)
 }
 
-func HighComplexNonLinear32(x float32) float32 {
-	return float32(math.Exp(float64(x))) * math32.Log(x+1)
+func HighComplexNonLinear110(x float64) float64 {
+	return 1.0 / math.Sqrt(math.Abs(x)+1)
 }
 
 func ComplexNonLinear(x float64) float64 {
@@ -223,13 +223,13 @@ func ComplexNonLinear110(x float64) float64 {
 		}
 	} else {
 		if transformFactorTwo < 0.25 {
-			return HighComplexNonLinear(x + (1 + transformFactorTwo))
+			return HighComplexNonLinear110(x + (1 + transformFactorTwo))
 		} else if transformFactorTwo < 0.5 {
-			return HighComplexNonLinear(x - (1 + transformFactorTwo))
+			return HighComplexNonLinear110(x - (1 + transformFactorTwo))
 		} else if transformFactorTwo < 0.75 {
-			return HighComplexNonLinear(x * (1 + transformFactorTwo))
+			return HighComplexNonLinear110(x * (1 + transformFactorTwo))
 		} else {
-			return HighComplexNonLinear(x / (1 + transformFactorTwo))
+			return HighComplexNonLinear110(x / (1 + transformFactorTwo))
 		}
 	}
 }
@@ -402,9 +402,8 @@ func TransformFactor(x uint64) float32 {
 func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.DomainHash, Nonce uint64) *externalapi.DomainHash {
 	hashBytes := hash.ByteArray()
 	H := hash.Uint32Array()
-	dividerOne := 0.001
-	hashMod := float64(H[0]^H[1]^H[2]^H[3]^H[4]^H[5]^H[6]^H[7]) * dividerOne
-	nonceMod := float64(Nonce&0xFF) * dividerOne
+	hashMod := float64(H[0] ^ H[1] ^ H[2] ^ H[3] ^ H[4] ^ H[5] ^ H[6] ^ H[7])
+	nonceMod := float64(Nonce & 0xFF)
 	var vector [64]byte
 	var product [64]float64
 
@@ -424,7 +423,7 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.Domain
 				output := ForComplex(input) * float64(vector[j])
 				product[i] += output
 			} else {
-				product[i] += mat[i][j] * dividerOne * float64(vector[j])
+				product[i] += mat[i][j] * float64(vector[j])
 			}
 		}
 	}
