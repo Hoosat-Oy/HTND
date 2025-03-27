@@ -424,14 +424,12 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.Domain
 				input := (mat[i][j]*hashMod*float64(vector[j]) + nonceMod)
 				output := ForComplex(input) * float64(vector[j]) * multiplier
 				product[i] += output
-				//fmt.Printf("[%d][%d]: %f %f %f %f %f %f\n", i, j, mat[i][j], float64(vector[j]), hashMod, nonceMod, input, output)
 			} else {
 				product[i] += mat[i][j] * divider * float64(vector[j])
 			}
 			sw = TransformFactor(product[i])
 		}
 	}
-	fmt.Printf("\n")
 
 	// Generate the result bytes
 
@@ -440,14 +438,10 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.Domain
 	for i := 0; i < 64; i += 2 {
 		pval := uint64(product[i]) + uint64(product[i+1])
 		scaledValues[i/2] = uint8(pval & 0xFF)
-		// fmt.Printf("[%d] -> %f + %f -> %d -> %d\n", i/2, product[i], product[i+1], pval, scaledValues[i/2])
 	}
-	// fmt.Printf("Final pass: [")
 	for i := 0; i < 32; i++ {
 		res[i] = hashBytes[i] ^ scaledValues[i]
-		fmt.Printf("%d, ", res[i])
 	}
-	// fmt.Printf("]\n")
 	writer := hashes.Blake3HashWriter()
 	writer.InfallibleWrite(res[:32])
 	return writer.Finalize()
