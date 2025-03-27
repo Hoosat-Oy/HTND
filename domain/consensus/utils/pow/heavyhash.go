@@ -395,18 +395,21 @@ func ForComplex(forComplex float64) float64 {
 	return complex * float64(rounds)
 }
 
-func TransformFactor(x uint64) float32 {
+func TransformFactor(x float64) float64 {
 	const granularity = 1024.0 // Increase for finer granularity
-	return math32.Mod(float32(x), granularity) / granularity
+	return math.Mod(x, granularity) / granularity
 }
+
 func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.DomainHash, Nonce uint64) *externalapi.DomainHash {
 	hashBytes := hash.ByteArray()
 	H := hash.Uint32Array()
 	hashMod := float64(H[0] ^ H[1] ^ H[2] ^ H[3] ^ H[4] ^ H[5] ^ H[6] ^ H[7])
 	nonceMod := float64(Nonce & 0xFF)
-	divider := 0.001
+	divider := 0.0001
+	multiplier := float64(1234)
 	var vector [64]byte
 	var product [64]float64
+	sw := float64(0.0)
 
 	// Populate the vector with floating-point values from the hash bytes
 	for i := 0; i < 32; i++ {
@@ -417,28 +420,34 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.Domain
 	// Perform the matrix-vector multiplication with nonlinear adjustments
 	for i := 0; i < 64; i++ {
 		for j := 0; j < 64; j++ {
-			// sw := (Nonce ^ (uint64(hashBytes[i%32]) * uint64(hashBytes[j%32]))) % 100
-			sw := TransformFactor(uint64(hashBytes[i%32]) * uint64(hashBytes[j%32]))
 			if sw <= 0.02 {
-				input := (mat[i][j]*nonceMod*float64(vector[j]) + hashMod)
-				output := ForComplex(input) * float64(vector[j])
+				input := (mat[i][j]*hashMod*float64(vector[j]) + nonceMod)
+				output := ForComplex(input) * float64(vector[j]) * multiplier
 				product[i] += output
+				//fmt.Printf("[%d][%d]: %f %f %f %f %f %f\n", i, j, mat[i][j], float64(vector[j]), hashMod, nonceMod, input, output)
 			} else {
 				product[i] += mat[i][j] * divider * float64(vector[j])
 			}
+			sw = TransformFactor(product[i])
 		}
 	}
+	fmt.Printf("\n")
 
 	// Generate the result bytes
+
 	var res [32]uint8
 	var scaledValues [32]uint8
 	for i := 0; i < 64; i += 2 {
 		pval := uint64(product[i]) + uint64(product[i+1])
 		scaledValues[i/2] = uint8(pval & 0xFF)
+		// fmt.Printf("[%d] -> %f + %f -> %d -> %d\n", i/2, product[i], product[i+1], pval, scaledValues[i/2])
 	}
+	// fmt.Printf("Final pass: [")
 	for i := 0; i < 32; i++ {
 		res[i] = hashBytes[i] ^ scaledValues[i]
+		fmt.Printf("%d, ", res[i])
 	}
+	// fmt.Printf("]\n")
 	writer := hashes.Blake3HashWriter()
 	writer.InfallibleWrite(res[:32])
 	return writer.Finalize()

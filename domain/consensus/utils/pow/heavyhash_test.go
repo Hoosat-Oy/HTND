@@ -130,9 +130,11 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.Do
 	H := hash.Uint32Array()
 	hashMod := float64(H[0] ^ H[1] ^ H[2] ^ H[3] ^ H[4] ^ H[5] ^ H[6] ^ H[7])
 	nonceMod := float64(Nonce & 0xFF)
-	divider := 0.001
+	divider := 0.0001
+	multiplier := float64(1234)
 	var vector [64]byte
 	var product [64]float64
+	sw := float64(0.0)
 
 	// Populate the vector with floating-point values from the hash bytes
 	for i := 0; i < 32; i++ {
@@ -145,16 +147,15 @@ func (mat *floatMatrix) HoohashMatrixMultiplicationV110Test(hash *externalapi.Do
 	// Perform the matrix-vector multiplication with nonlinear adjustments
 	for i := 0; i < 64; i++ {
 		for j := 0; j < 64; j++ {
-			// sw := (Nonce ^ (uint64(hashBytes[i%32]) * uint64(hashBytes[j%32]))) % 100
-			sw := TransformFactor(uint64(hashBytes[i%32]) * uint64(hashBytes[j%32]))
 			if sw <= 0.02 {
-				input := (mat[i][j]*nonceMod*float64(vector[j]) + hashMod)
-				output := ForComplexTest(input) * float64(vector[j])
+				input := (mat[i][j]*hashMod*float64(vector[j]) + nonceMod)
+				output := ForComplexTest(input) * float64(vector[j]) * multiplier
 				product[i] += output
 				//fmt.Printf("[%d][%d]: %f %f %f %f %f %f\n", i, j, mat[i][j], float64(vector[j]), hashMod, nonceMod, input, output)
 			} else {
 				product[i] += mat[i][j] * divider * float64(vector[j])
 			}
+			sw = TransformFactor(product[i])
 		}
 	}
 	fmt.Printf("\n")
