@@ -6,6 +6,7 @@ import (
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/hashes"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/serialization"
 	"github.com/Hoosat-Oy/HTND/util/difficulty"
@@ -203,7 +204,7 @@ func (state *State) CheckProofOfWork(powString string) bool {
 	powNum, _ := state.CalculateProofOfWorkValue()
 	if state.blockVersion <= 3 {
 		return powNum.Cmp(&state.Target) <= 0
-	} else if state.blockVersion > 3 {
+	} else if state.blockVersion >= constants.PoWIntegrityMinVersion {
 		powHash, err := externalapi.NewDomainHashFromString(powString)
 		if err != nil {
 			return false
