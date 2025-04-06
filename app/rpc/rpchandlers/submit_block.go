@@ -16,7 +16,7 @@ import (
 )
 
 // HandleSubmitBlock handles the respectively named RPC command
-func HandleSubmitBlock(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
+func HandleSubmitBlock(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	submitBlockRequest := request.(*appmessage.SubmitBlockRequestMessage)
 	var err error
 	var powHash string
@@ -28,7 +28,14 @@ func HandleSubmitBlock(context *rpccontext.Context, _ *router.Router, request ap
 		}
 	}
 	constants.BlockVersion = version
-	if submitBlockRequest.Block.Header.Version >= 3 && constants.BlockVersion >= 3 {
+	if submitBlockRequest.Block.Header.Version != uint32(constants.BlockVersion) {
+		submitBlockRequestJSON, _ := json.MarshalIndent(submitBlockRequest.Block, "", "    ")
+		return &appmessage.SubmitBlockResponseMessage{
+			Error:        appmessage.RPCErrorf(fmt.Sprintf("Block not submitted, wrong block version! %s", string(submitBlockRequestJSON))),
+			RejectReason: appmessage.RejectReasonBlockInvalid,
+		}, nil
+	}
+	if constants.BlockVersion >= constants.PoWIntegrityMinVersion {
 		if submitBlockRequest.PowHash == "" {
 			submitBlockRequestJSON, _ := json.MarshalIndent(submitBlockRequest.Block, "", "    ")
 			return &appmessage.SubmitBlockResponseMessage{
@@ -37,14 +44,8 @@ func HandleSubmitBlock(context *rpccontext.Context, _ *router.Router, request ap
 			}, nil
 		}
 		powHash = strings.Replace(submitBlockRequest.PowHash, "0x", "", 1)
-		if err != nil {
-			submitBlockRequestJSON, _ := json.MarshalIndent(submitBlockRequest.Block, "", "    ")
-			return &appmessage.SubmitBlockResponseMessage{
-				Error:        appmessage.RPCErrorf(fmt.Sprintf("Block not submitted, proof of work is not valid data! %s", string(submitBlockRequestJSON))),
-				RejectReason: appmessage.RejectReasonBlockInvalid,
-			}, nil
-		}
 	}
+
 	isSynced := false
 	// The node is considered synced if it has peers and consensus state is nearly synced
 	if context.ProtocolManager.Context().HasPeers() {
@@ -92,10 +93,20 @@ func HandleSubmitBlock(context *rpccontext.Context, _ *router.Router, request ap
 			return nil, err
 		}
 
-		submitBlockRequestJSON, _ := json.MarshalIndent(submitBlockRequest.Block, "", "    ")
-		if submitBlockRequestJSON != nil {
-			log.Warnf("The RPC submitted block triggered a rule/protocol error (%s), printing "+
-				"the full block for debug purposes: \n%s", err, string(submitBlockRequestJSON))
+		if errors.Is(err, ruleerrors.ErrInvalidPoW) {
+			submitBlockRequestJSON, _ := json.MarshalIndent(submitBlockRequest.Block, "", "    ")
+			if submitBlockRequestJSON != nil {
+				log.Warnf("The RPC submitted block triggered a invalid PoW error (%s), consider banning.", powHash)
+				// Consider implementing banning for RPC, though works network wide on P2P.
+				// If node receives submission with wrong PoW hash and submits them forward the node will get banned.
+				// So pool that accepts invalid PoW has submissions will get banned from the network.
+			}
+		} else {
+			submitBlockRequestJSON, _ := json.MarshalIndent(submitBlockRequest.Block, "", "    ")
+			if submitBlockRequestJSON != nil {
+				log.Warnf("The RPC submitted block triggered a rule/protocol error (%s), printing "+
+					"the full block for debug purposes: \n%s", err, string(submitBlockRequestJSON))
+			}
 		}
 
 		return &appmessage.SubmitBlockResponseMessage{
