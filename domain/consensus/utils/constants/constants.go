@@ -7,7 +7,8 @@ var (
 	// 1 Pyrinhash
 	// 2 HoohashV1
 	// 3 HoohashV1.0.1
-	// 4 HoohashV1.0.1 + Pow hash validation
+	// 4 HoohashV1.0.1 + Pow hash validation network wide
+	// 5 HoohashV1.1.0 + Pow hash validation network wide
 	BlockVersion           uint16 = 1
 	PoWIntegrityMinVersion uint16 = 4
 )
