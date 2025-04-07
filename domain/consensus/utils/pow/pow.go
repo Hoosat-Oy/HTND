@@ -38,7 +38,7 @@ type State struct {
 	Nonce        uint64
 	Target       big.Int
 	prePowHash   externalapi.DomainHash
-	blockVersion uint16
+	BlockVersion	BlockVersion uint16
 }
 
 // NewState creates a new state with pre-computed values to speed up mining
@@ -59,7 +59,7 @@ func NewState(header externalapi.MutableBlockHeader) *State {
 			mat:          *GenerateMatrix(prePowHash),
 			Timestamp:    timestamp,
 			Nonce:        nonce,
-			blockVersion: header.Version(),
+			BlockVersion: header.Version(),
 		}
 	} else if header.Version() == 2 {
 		return &State{
@@ -68,7 +68,7 @@ func NewState(header externalapi.MutableBlockHeader) *State {
 			mat:          *GenerateHoohashMatrix(prePowHash),
 			Timestamp:    timestamp,
 			Nonce:        nonce,
-			blockVersion: header.Version(),
+			BlockVersion: header.Version(),
 		}
 	} else if header.Version() == 3 || header.Version() == 4 {
 		return &State{
@@ -77,7 +77,7 @@ func NewState(header externalapi.MutableBlockHeader) *State {
 			mat:          *GenerateMatrix(prePowHash),
 			Timestamp:    timestamp,
 			Nonce:        nonce,
-			blockVersion: header.Version(),
+			BlockVersion: header.Version(),
 		}
 	} else if header.Version() >= 5 {
 		return &State{
@@ -86,7 +86,7 @@ func NewState(header externalapi.MutableBlockHeader) *State {
 			floatMat:     *GenerateHoohashMatrixV110(prePowHash),
 			Timestamp:    timestamp,
 			Nonce:        nonce,
-			blockVersion: header.Version(),
+			BlockVersion: header.Version(),
 		}
 	} else {
 		return &State{
@@ -95,20 +95,20 @@ func NewState(header externalapi.MutableBlockHeader) *State {
 			mat:          *GenerateMatrix(prePowHash),
 			Timestamp:    timestamp,
 			Nonce:        nonce,
-			blockVersion: header.Version(),
+			BlockVersion: header.Version(),
 		}
 	}
 
 }
 
 func (state *State) CalculateProofOfWorkValue() (*big.Int, *externalapi.DomainHash) {
-	if state.blockVersion == 1 {
+	if state.BlockVersion == 1 {
 		return state.CalculateProofOfWorkValuePyrinhash()
-	} else if state.blockVersion == 2 {
+	} else if state.BlockVersion == 2 {
 		return state.CalculateProofOfWorkValueHoohashV1()
-	} else if state.blockVersion == 3 || state.blockVersion == 4 {
+	} else if state.BlockVersion == 3 || state.BlockVersion == 4 {
 		return state.CalculateProofOfWorkValueHoohashV101()
-	} else if state.blockVersion >= 5 {
+	} else if state.BlockVersion >= 5 {
 		return state.CalculateProofOfWorkValueHoohashV110()
 	} else {
 		return state.CalculateProofOfWorkValuePyrinhash() // default to the oldest version.
@@ -202,9 +202,9 @@ func (state *State) IncrementNonce() {
 func (state *State) CheckProofOfWork(powString string) bool {
 	// The block pow must be less than the claimed target
 	powNum, _ := state.CalculateProofOfWorkValue()
-	if state.blockVersion <= 3 {
+	if state.BlockVersion <= 3 {
 		return powNum.Cmp(&state.Target) <= 0
-	} else if state.blockVersion >= constants.PoWIntegrityMinVersion {
+	} else if state.BlockVersion >= constants.PoWIntegrityMinVersion {
 		powHash, err := externalapi.NewDomainHashFromString(powString)
 		if err != nil {
 			return false
