@@ -37,7 +37,7 @@ type State struct {
 	Timestamp    int64
 	Nonce        uint64
 	Target       big.Int
-	prePowHash   externalapi.DomainHash
+	PrevHeader   externalapi.DomainHash
 	BlockVersion uint16
 }
 
@@ -49,14 +49,14 @@ func NewState(header externalapi.MutableBlockHeader) *State {
 	timestamp, nonce := header.TimeInMilliseconds(), header.Nonce()
 	header.SetTimeInMilliseconds(0)
 	header.SetNonce(0)
-	prePowHash := consensushashing.HeaderHash(header)
+	prevHeader := consensushashing.HeaderHash(header)
 	header.SetTimeInMilliseconds(timestamp)
 	header.SetNonce(nonce)
 	if header.Version() == 1 {
 		return &State{
 			Target:       *target,
-			prePowHash:   *prePowHash,
-			mat:          *GenerateMatrix(prePowHash),
+			PrevHeader:   *prevHeader,
+			mat:          *GenerateMatrix(prevHeader),
 			Timestamp:    timestamp,
 			Nonce:        nonce,
 			BlockVersion: header.Version(),
@@ -64,8 +64,8 @@ func NewState(header externalapi.MutableBlockHeader) *State {
 	} else if header.Version() == 2 {
 		return &State{
 			Target:       *target,
-			prePowHash:   *prePowHash,
-			mat:          *GenerateHoohashMatrix(prePowHash),
+			PrevHeader:   *prevHeader,
+			mat:          *GenerateHoohashMatrix(prevHeader),
 			Timestamp:    timestamp,
 			Nonce:        nonce,
 			BlockVersion: header.Version(),
@@ -73,8 +73,8 @@ func NewState(header externalapi.MutableBlockHeader) *State {
 	} else if header.Version() == 3 || header.Version() == 4 {
 		return &State{
 			Target:       *target,
-			prePowHash:   *prePowHash,
-			mat:          *GenerateMatrix(prePowHash),
+			PrevHeader:   *prevHeader,
+			mat:          *GenerateMatrix(prevHeader),
 			Timestamp:    timestamp,
 			Nonce:        nonce,
 			BlockVersion: header.Version(),
@@ -82,8 +82,8 @@ func NewState(header externalapi.MutableBlockHeader) *State {
 	} else if header.Version() >= 5 {
 		return &State{
 			Target:       *target,
-			prePowHash:   *prePowHash,
-			floatMat:     *GenerateHoohashMatrixV110(prePowHash),
+			PrevHeader:   *prevHeader,
+			floatMat:     *GenerateHoohashMatrixV110(prevHeader),
 			Timestamp:    timestamp,
 			Nonce:        nonce,
 			BlockVersion: header.Version(),
@@ -91,8 +91,8 @@ func NewState(header externalapi.MutableBlockHeader) *State {
 	} else {
 		return &State{
 			Target:       *target,
-			prePowHash:   *prePowHash,
-			mat:          *GenerateMatrix(prePowHash),
+			PrevHeader:   *prevHeader,
+			mat:          *GenerateMatrix(prevHeader),
 			Timestamp:    timestamp,
 			Nonce:        nonce,
 			BlockVersion: header.Version(),
@@ -118,7 +118,7 @@ func (state *State) CalculateProofOfWorkValue() (*big.Int, *externalapi.DomainHa
 func (state *State) CalculateProofOfWorkValueHoohashV1() (*big.Int, *externalapi.DomainHash) {
 	// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
 	writer := hashes.Blake3HashWriter()
-	writer.InfallibleWrite(state.prePowHash.ByteSlice())
+	writer.InfallibleWrite(state.PrevHeader.ByteSlice())
 	err := serialization.WriteElement(writer, state.Timestamp)
 	if err != nil {
 		panic(errors.Wrap(err, "this should never happen. Hash digest should never return an error"))
@@ -137,7 +137,7 @@ func (state *State) CalculateProofOfWorkValueHoohashV1() (*big.Int, *externalapi
 func (state *State) CalculateProofOfWorkValueHoohashV101() (*big.Int, *externalapi.DomainHash) {
 	// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
 	writer := hashes.Blake3HashWriter()
-	writer.InfallibleWrite(state.prePowHash.ByteSlice())
+	writer.InfallibleWrite(state.PrevHeader.ByteSlice())
 	err := serialization.WriteElement(writer, state.Timestamp)
 	if err != nil {
 		panic(errors.Wrap(err, "this should never happen. Hash digest should never return an error"))
@@ -156,7 +156,7 @@ func (state *State) CalculateProofOfWorkValueHoohashV101() (*big.Int, *externala
 func (state *State) CalculateProofOfWorkValueHoohashV110() (*big.Int, *externalapi.DomainHash) {
 	// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
 	writer := hashes.Blake3HashWriter()
-	writer.InfallibleWrite(state.prePowHash.ByteSlice())
+	writer.InfallibleWrite(state.PrevHeader.ByteSlice())
 	err := serialization.WriteElement(writer, state.Timestamp)
 	if err != nil {
 		panic(errors.Wrap(err, "this should never happen. Hash digest should never return an error"))
@@ -176,7 +176,7 @@ func (state *State) CalculateProofOfWorkValueHoohashV110() (*big.Int, *externala
 func (state *State) CalculateProofOfWorkValuePyrinhash() (*big.Int, *externalapi.DomainHash) {
 	// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
 	writer := hashes.PoWHashWriter() // Blake 3
-	writer.InfallibleWrite(state.prePowHash.ByteSlice())
+	writer.InfallibleWrite(state.PrevHeader.ByteSlice())
 	err := serialization.WriteElement(writer, state.Timestamp)
 	if err != nil {
 		panic(errors.Wrap(err, "this should never happen. Hash digest should never return an error"))
