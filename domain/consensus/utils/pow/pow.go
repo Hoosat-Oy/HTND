@@ -38,7 +38,7 @@ type State struct {
 	Nonce        uint64
 	Target       big.Int
 	prePowHash   externalapi.DomainHash
-	BlockVersion	BlockVersion uint16
+	BlockVersion uint16
 }
 
 // NewState creates a new state with pre-computed values to speed up mining
