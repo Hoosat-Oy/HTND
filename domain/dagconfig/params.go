@@ -201,7 +201,7 @@ func (p *Params) NormalizeRPCServerAddress(addr string) (string, error) {
 
 // FinalityDepth returns the finality duration represented in blocks
 func (p *Params) FinalityDepth() uint64 {
-	return uint64(p.FinalityDuration / p.TargetTimePerBlock)
+	return uint64(p.FinalityDuration * p.TargetTimePerBlock)
 }
 
 // PruningDepth returns the pruning duration represented in blocks
