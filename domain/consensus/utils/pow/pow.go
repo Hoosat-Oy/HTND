@@ -202,7 +202,7 @@ func (state *State) IncrementNonce() {
 func (state *State) CheckProofOfWork(powString string) bool {
 	// The block pow must be less than the claimed target
 	powNum, _ := state.CalculateProofOfWorkValue()
-	if state.BlockVersion <= 3 {
+	if state.BlockVersion < constants.PoWIntegrityMinVersion {
 		return powNum.Cmp(&state.Target) <= 0
 	} else if state.BlockVersion >= constants.PoWIntegrityMinVersion {
 		powHash, err := externalapi.NewDomainHashFromString(powString)
