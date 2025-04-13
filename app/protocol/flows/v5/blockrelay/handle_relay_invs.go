@@ -188,7 +188,7 @@ func (flow *handleRelayInvsFlow) start() error {
 			if !inv.Rerequested {
 				inv.Rerequested = true
 				flow.invsQueue = append(flow.invsQueue, inv)
-				log.Debugf("Rerequesting block %s because it is missing PoW hash", inv.Hash)
+				log.Infof("Rerequesting block %s because it is missing PoW hash", inv.Hash)
 			}
 			continue
 		}
