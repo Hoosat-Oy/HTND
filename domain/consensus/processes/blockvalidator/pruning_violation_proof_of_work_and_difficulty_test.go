@@ -118,7 +118,7 @@ func solveBlockWithWrongPOW(block *externalapi.DomainBlock) *externalapi.DomainB
 	state := pow.NewState(header)
 	for i := uint64(0); i < math.MaxUint64; i++ {
 		state.Nonce = i
-		if !state.CheckProofOfWork("SKIP_POW") {
+		if !state.CheckProofOfWork("", true) {
 			header.SetNonce(state.Nonce)
 			block.Header = header.ToImmutable()
 			return block

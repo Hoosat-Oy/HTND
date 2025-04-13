@@ -49,7 +49,7 @@ func (bp *blockProcessor) validateBlock(stagingArea *model.StagingArea, block *e
 		if block.Header.Version() >= constants.PoWIntegrityMinVersion {
 			err = bp.blockValidator.ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea, blockHash, isBlockWithTrustedData, block.PoWHash, trusted, powSkip)
 		} else {
-			err = bp.blockValidator.ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea, blockHash, isBlockWithTrustedData, "SKIP_POWHASH", trusted, powSkip)
+			err = bp.blockValidator.ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea, blockHash, isBlockWithTrustedData, "", trusted, powSkip)
 		}
 		if err != nil {
 			return err

@@ -199,21 +199,23 @@ func (state *State) IncrementNonce() {
 
 // CheckProofOfWork check's if the block has a valid PoW according to the provided target
 // it does not check if the difficulty itself is valid or less than the maximum for the appropriate network
-func (state *State) CheckProofOfWork(powString string) bool {
-	// The block pow must be less than the claimed target
+func (state *State) CheckProofOfWork(powString string, powSkip bool) bool {
 	powNum, _ := state.CalculateProofOfWorkValue()
-	if state.BlockVersion < constants.PoWIntegrityMinVersion {
+	if powSkip == true {
 		return powNum.Cmp(&state.Target) <= 0
-	} else if state.BlockVersion >= constants.PoWIntegrityMinVersion {
-		powHash, err := externalapi.NewDomainHashFromString(powString)
-		if err != nil {
-			return false
-		}
-		if !powHash.Equal(new(externalapi.DomainHash)) { // Check that PowHash is not empty default.
-			submittedPowNum := toBig(powHash)
-			if submittedPowNum.Cmp(powNum) == 0 {
-				// The block hash must be less or equal than the claimed target, powHash was valid.
-				return powNum.Cmp(&state.Target) <= 0
+	} else {
+		if state.BlockVersion < constants.PoWIntegrityMinVersion {
+			return powNum.Cmp(&state.Target) <= 0
+		} else if state.BlockVersion >= constants.PoWIntegrityMinVersion {
+			powHash, err := externalapi.NewDomainHashFromString(powString)
+			if err != nil {
+				return false
+			}
+			if !powHash.Equal(new(externalapi.DomainHash)) {
+				submittedPowNum := toBig(powHash)
+				if submittedPowNum.Cmp(powNum) == 0 {
+					return powNum.Cmp(&state.Target) <= 0
+				}
 			}
 		}
 	}
@@ -222,8 +224,8 @@ func (state *State) CheckProofOfWork(powString string) bool {
 
 // CheckProofOfWorkByBits check's if the block has a valid PoW according to its Bits field
 // it does not check if the difficulty itself is valid or less than the maximum for the appropriate network
-func CheckProofOfWorkByBits(header externalapi.MutableBlockHeader, powHash string) bool {
-	return NewState(header).CheckProofOfWork(powHash)
+func CheckProofOfWorkByBits(header externalapi.MutableBlockHeader, powHash string, powSkip bool) bool {
+	return NewState(header).CheckProofOfWork(powHash, powSkip)
 }
 
 // ToBig converts a externalapi.DomainHash into a big.Int treated as a little endian string.

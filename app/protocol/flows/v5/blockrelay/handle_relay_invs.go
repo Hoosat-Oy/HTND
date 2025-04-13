@@ -239,13 +239,8 @@ func (flow *handleRelayInvsFlow) start() error {
 		if err != nil {
 			return err
 		}
-		if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
-			log.Infof(fmt.Sprintf("Ignoring invalid empty PoW version %d block, banning: %s", block.Header.Version(), flow.netConnection.NetAddress().String()))
-			flow.banConnection()
-			continue
-		}
 		// We need the PoW hash for processBlock from P2P.
-		missingParents, err := flow.processBlock(block, false)
+		missingParents, err := flow.processBlock(block, inv.IsOrphanRoot)
 		if err != nil {
 			if errors.Is(err, ruleerrors.ErrPrunedBlock) {
 				log.Infof("Ignoring pruned block %s", inv.Hash)
@@ -256,7 +251,7 @@ func (flow *handleRelayInvsFlow) start() error {
 				continue
 			}
 			if errors.Is(err, ruleerrors.ErrInvalidPoW) {
-				log.Infof(fmt.Sprintf("Ignoring invalid PoW %s, banning: %s", block.PoWHash, flow.netConnection.NetAddress().String()))
+				log.Infof(fmt.Sprintf("Ignoring invalid PoW on version %d block, consider banning: %s", block.Header.Version(), flow.netConnection.NetAddress().String()))
 				flow.banConnection()
 				continue
 			}
