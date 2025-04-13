@@ -183,7 +183,9 @@ func (flow *handleRelayInvsFlow) start() error {
 			log.Debugf("Aborting requesting block %s because it already exists", inv.Hash)
 			continue
 		}
-
+		if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
+			continue
+		}
 		if !flow.IsIBDRunning() {
 			daaScore := block.Header.DAAScore()
 			var version uint16 = 1

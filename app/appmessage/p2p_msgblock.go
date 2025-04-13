@@ -68,10 +68,9 @@ func (msg *MsgBlock) ConvertToPartial(subnetworkID *externalapi.DomainSubnetwork
 // NewMsgBlock returns a new hoosat block message that conforms to the
 // Message interface. See MsgBlock for details.
 func NewMsgBlock(blockHeader *MsgBlockHeader) *MsgBlock {
-	skipPoWHash, _ := externalapi.NewDomainHashFromString("SKIP_POW")
 	return &MsgBlock{
 		Header:       *blockHeader,
 		Transactions: make([]*MsgTx, 0, defaultTransactionAlloc),
-		PoWHash:      skipPoWHash.String(),
+		PoWHash:      "",
 	}
 }
