@@ -240,7 +240,7 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 		if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
-			log.Infof(fmt.Sprintf("Ignoring invalid empty PoW, banning: %s", flow.netConnection.NetAddress().String()))
+			log.Infof(fmt.Sprintf("Ignoring invalid empty PoW version %d block, banning: %s", block.Header.Version(), flow.netConnection.NetAddress().String()))
 			flow.banConnection()
 			continue
 		}
