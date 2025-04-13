@@ -118,7 +118,7 @@ func solveBlockWithWrongPOW(block *externalapi.DomainBlock) *externalapi.DomainB
 	state := pow.NewState(header)
 	for i := uint64(0); i < math.MaxUint64; i++ {
 		state.Nonce = i
-		if !state.CheckProofOfWork("", true) {
+		if !state.CheckProofOfWork(block, true) {
 			header.SetNonce(state.Nonce)
 			block.Header = header.ToImmutable()
 			return block
@@ -333,7 +333,7 @@ func TestValidateDifficulty(t *testing.T) {
 		tc.BlockHeaderStore().Stage(stagingArea, blockHash, block.Header)
 		wrongTestDifficulty := mocDifficulty.testDifficulty + uint32(5)
 		mocDifficulty.testDifficulty = wrongTestDifficulty
-		err = tc.BlockValidator().ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea, blockHash, false, block.PoWHash, false, true)
+		err = tc.BlockValidator().ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea, block, blockHash, false, false, true)
 		if err == nil || !errors.Is(err, ruleerrors.ErrUnexpectedDifficulty) {
 			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrUnexpectedDifficulty, err)
 		}

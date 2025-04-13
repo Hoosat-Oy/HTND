@@ -45,7 +45,7 @@ func (bp *blockProcessor) validateBlock(stagingArea *model.StagingArea, block *e
 	}
 
 	if !hasValidatedHeader {
-		err = bp.blockValidator.ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea, blockHash, isBlockWithTrustedData, block.PoWHash, trusted, powSkip)
+		err = bp.blockValidator.ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea, block, blockHash, isBlockWithTrustedData, trusted, powSkip)
 		if err != nil {
 			return err
 		}

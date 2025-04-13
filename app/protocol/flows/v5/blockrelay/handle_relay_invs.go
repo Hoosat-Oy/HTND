@@ -81,7 +81,7 @@ func HandleRelayInvs(context RelayInvsContext, connectionManager *connmanager.Co
 
 const (
 	maxOffenses      = 5
-	banThresholdSecs = 600
+	banThresholdSecs = 300
 )
 
 var offenseTracker = make(map[string][]time.Time)
@@ -410,7 +410,7 @@ func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock, po
 		}
 		// A duplicate block should not appear to the user as a warning and is already reported in the calling function
 		if !errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-			log.Warnf("Rejected block %s from %s: %s", blockHash, flow.peer, err)
+			log.Warnf("Rejected block %s from %s: %s", blockHash, flow.netConnection.Address(), err)
 		}
 		return nil, protocolerrors.Wrapf(true, err, "got invalid block %s from relay", blockHash)
 	}

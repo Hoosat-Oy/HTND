@@ -199,7 +199,7 @@ func (state *State) IncrementNonce() {
 
 // CheckProofOfWork check's if the block has a valid PoW according to the provided target
 // it does not check if the difficulty itself is valid or less than the maximum for the appropriate network
-func (state *State) CheckProofOfWork(powString string, powSkip bool) bool {
+func (state *State) CheckProofOfWork(block *externalapi.DomainBlock, powSkip bool) bool {
 	powNum, _ := state.CalculateProofOfWorkValue()
 	if powSkip == true {
 		return powNum.Cmp(&state.Target) <= 0
@@ -207,7 +207,7 @@ func (state *State) CheckProofOfWork(powString string, powSkip bool) bool {
 		if state.BlockVersion < constants.PoWIntegrityMinVersion {
 			return powNum.Cmp(&state.Target) <= 0
 		} else if state.BlockVersion >= constants.PoWIntegrityMinVersion {
-			powHash, err := externalapi.NewDomainHashFromString(powString)
+			powHash, err := externalapi.NewDomainHashFromString(block.PoWHash)
 			if err != nil {
 				return false
 			}
@@ -224,8 +224,8 @@ func (state *State) CheckProofOfWork(powString string, powSkip bool) bool {
 
 // CheckProofOfWorkByBits check's if the block has a valid PoW according to its Bits field
 // it does not check if the difficulty itself is valid or less than the maximum for the appropriate network
-func CheckProofOfWorkByBits(header externalapi.MutableBlockHeader, powHash string, powSkip bool) bool {
-	return NewState(header).CheckProofOfWork(powHash, powSkip)
+func CheckProofOfWorkByBits(header externalapi.MutableBlockHeader, block *externalapi.DomainBlock, powSkip bool) bool {
+	return NewState(header).CheckProofOfWork(block, powSkip)
 }
 
 // ToBig converts a externalapi.DomainHash into a big.Int treated as a little endian string.

@@ -14,7 +14,7 @@ import (
 )
 
 func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea *model.StagingArea,
-	blockHash *externalapi.DomainHash, isBlockWithTrustedData bool, powHash string, trusted bool, powSkip bool) error {
+	block *externalapi.DomainBlock, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool, trusted bool, powSkip bool) error {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidatePruningPointViolationAndProofOfWorkAndDifficulty")
 	defer onEnd()
@@ -52,7 +52,7 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 	}
 
 	if !blockHash.Equal(v.genesisHash) {
-		err = v.checkProofOfWork(header, powHash, trusted, powSkip)
+		err = v.checkProofOfWork(header, block, trusted, powSkip)
 		if err != nil {
 			return err
 		}
@@ -150,7 +150,7 @@ func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea,
 // The flags modify the behavior of this function as follows:
 //   - BFNoPoWCheck: The check to ensure the block hash is less than the target
 //     difficulty is not performed.
-func (v *blockValidator) checkProofOfWork(header externalapi.BlockHeader, powHash string, trusted bool, powSkip bool) error {
+func (v *blockValidator) checkProofOfWork(header externalapi.BlockHeader, block *externalapi.DomainBlock, trusted bool, powSkip bool) error {
 	// The target difficulty must be larger than zero.
 	state := pow.NewState(header.ToMutable())
 	target := &state.Target
@@ -171,9 +171,9 @@ func (v *blockValidator) checkProofOfWork(header externalapi.BlockHeader, powHas
 		if trusted {
 			return nil
 		}
-		valid := state.CheckProofOfWork(powHash, powSkip)
+		valid := state.CheckProofOfWork(block, powSkip)
 		if !valid {
-			return errors.Wrap(ruleerrors.ErrInvalidPoW, fmt.Sprintf("block has invalid PoW, PoW Hash: %s, Block Version: %d, powSkip: %t, trusted: %t", powHash, header.Version(), powSkip, trusted))
+			return errors.Wrap(ruleerrors.ErrInvalidPoW, fmt.Sprintf("block has invalid PoW, PoW Hash: %s, Block Version: %d, powSkip: %t, trusted: %t", block.PoWHash, header.Version(), powSkip, trusted))
 		}
 	}
 	return nil
