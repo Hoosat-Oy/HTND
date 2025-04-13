@@ -173,7 +173,7 @@ func (v *blockValidator) checkProofOfWork(header externalapi.BlockHeader, powHas
 		}
 		valid := state.CheckProofOfWork(powHash, powSkip)
 		if !valid {
-			return errors.Wrap(ruleerrors.ErrInvalidPoW, fmt.Sprintf("block has invalid proof of work %s", powHash))
+			return errors.Wrap(ruleerrors.ErrInvalidPoW, fmt.Sprintf("block has invalid PoW, PoW Hash: %s, Block Version: %d, powSkip: %t, trusted: %t", powHash, header.Version(), powSkip, trusted))
 		}
 	}
 	return nil
