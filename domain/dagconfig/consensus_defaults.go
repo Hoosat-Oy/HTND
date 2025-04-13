@@ -44,7 +44,7 @@ const (
 	defaultGHOSTDAGK = 18
 	// defaultMergeSetSizeLimit is a bound on the size of the past of a block and the size of the past
 	// of its selected parent. Any block which violates this bound is invalid.
-	// Should be at least an order of magnitude smaller than defaultFinalityDuration/defaultTargetTimePerBlock.
+	// Should be at least an order of magnitude smaller than defaultFinalityDuration * defaultTargetTimePerBlock.
 	// (Higher values make pruning attacks easier by a constant, lower values make merging after a split or a spike
 	// in block take longer)
 	defaultMergeSetSizeLimit                       = defaultGHOSTDAGK * 10
