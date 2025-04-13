@@ -48,6 +48,7 @@ type RelayInvsContext interface {
 type invRelayBlock struct {
 	Hash         *externalapi.DomainHash
 	IsOrphanRoot bool
+	Rerequested  bool
 }
 
 type handleRelayInvsFlow struct {
@@ -184,6 +185,11 @@ func (flow *handleRelayInvsFlow) start() error {
 			continue
 		}
 		if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
+			if !inv.Rerequested {
+				inv.Rerequested = true
+				flow.invsQueue = append(flow.invsQueue, inv)
+				log.Debugf("Rerequesting block %s because it is missing PoW hash", inv.Hash)
+			}
 			continue
 		}
 		if !flow.IsIBDRunning() {
@@ -242,7 +248,7 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 		// We need the PoW hash for processBlock from P2P.
-		missingParents, err := flow.processBlock(block, inv.IsOrphanRoot)
+		missingParents, err := flow.processBlock(block, false)
 		if err != nil {
 			if errors.Is(err, ruleerrors.ErrPrunedBlock) {
 				log.Infof("Ignoring pruned block %s", inv.Hash)
@@ -345,7 +351,7 @@ func (flow *handleRelayInvsFlow) readInv() (invRelayBlock, error) {
 		return invRelayBlock{}, protocolerrors.Errorf(true, "unexpected %s message in the block relay handleRelayInvsFlow while "+
 			"expecting an inv message", msg.Command())
 	}
-	return invRelayBlock{Hash: msgInv.Hash, IsOrphanRoot: false}, nil
+	return invRelayBlock{Hash: msgInv.Hash, IsOrphanRoot: false, Rerequested: false}, nil
 }
 
 func (flow *handleRelayInvsFlow) requestBlock(requestHash *externalapi.DomainHash) (*externalapi.DomainBlock, bool, error) {
@@ -389,7 +395,7 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (msgBlock *appmessage.MsgBlock, 
 
 		switch message := message.(type) {
 		case *appmessage.MsgInvRelayBlock:
-			flow.invsQueue = append(flow.invsQueue, invRelayBlock{Hash: message.Hash, IsOrphanRoot: false})
+			flow.invsQueue = append(flow.invsQueue, invRelayBlock{Hash: message.Hash, IsOrphanRoot: false, Rerequested: false})
 		case *appmessage.MsgBlock:
 			return message, nil
 		default:
@@ -555,7 +561,7 @@ func (flow *handleRelayInvsFlow) AddOrphanRootsToQueue(orphan *externalapi.Domai
 			continue
 		}
 		log.Infof("Adding missing ancestor %s to the invs queue", root)
-		invMessages = append(invMessages, invRelayBlock{Hash: root, IsOrphanRoot: true})
+		invMessages = append(invMessages, invRelayBlock{Hash: root, IsOrphanRoot: true, Rerequested: false})
 	}
 
 	flow.invsQueue = append(invMessages, flow.invsQueue...)
