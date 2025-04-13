@@ -186,9 +186,10 @@ func (flow *handleRelayInvsFlow) start() error {
 		}
 		if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
 			if !inv.Rerequested {
-				inv.Rerequested = true
-				flow.invsQueue = append(flow.invsQueue, inv)
-				log.Infof("Rerequesting block %s because it is missing PoW hash", inv.Hash)
+				invMessages := make([]invRelayBlock, 0, 1)
+				invMessages = append(invMessages, invRelayBlock{Hash: inv.Hash, IsOrphanRoot: false, Rerequested: true})
+				flow.invsQueue = append(invMessages, flow.invsQueue...)
+				log.Infof("Rerequesting block %s because it is missing %s PoW hash", inv.Hash, block.PoWHash)
 			}
 			continue
 		}
