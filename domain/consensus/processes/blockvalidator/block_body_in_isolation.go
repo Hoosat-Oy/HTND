@@ -15,16 +15,18 @@ import (
 
 // ValidateBodyInIsolation validates block bodies in isolation from the current
 // consensus state
-func (v *blockValidator) ValidateBodyInIsolation(stagingArea *model.StagingArea, block *externalapi.DomainBlock) error {
+func (v *blockValidator) ValidateBodyInIsolation(stagingArea *model.StagingArea, block *externalapi.DomainBlock, isBlockWithTrustedData bool) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateBodyInContext")
 	defer onEnd()
 
-	err := v.checkPoWHashExists(block)
-	if err != nil {
-		return err
+	if !isBlockWithTrustedData {
+		err := v.checkPoWHashExists(block)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = v.checkNoPrefilledInputs(block)
+	err := v.checkNoPrefilledInputs(block)
 	if err != nil {
 		return err
 	}
@@ -250,7 +252,7 @@ func (v *blockValidator) checkNoPrefilledInputs(block *externalapi.DomainBlock) 
 
 func (v *blockValidator) checkPoWHashExists(block *externalapi.DomainBlock) error {
 	if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
-		return errors.Errorf("Block is missing PoW hash")
+		return errors.Wrapf(ruleerrors.ErrInvalidPoW, "Block is missing PoW hash")
 	}
 	return nil
 }
