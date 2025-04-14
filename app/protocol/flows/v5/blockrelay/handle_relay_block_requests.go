@@ -44,9 +44,8 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 			if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
 				powHashFound := false
 				for i := 0; i < 5; i++ {
-					time.Sleep(1 * time.Second)
+					time.Sleep(30 * time.Millisecond)
 					block, found, err = context.Domain().Consensus().GetBlock(hash)
-					log.Infof("GetBlock called again for relayed block: Hash %s, Pow hash %s", hash, block.PoWHash)
 					if err != nil {
 						return errors.Wrapf(err, "unable to fetch requested block hash %s", hash)
 					}

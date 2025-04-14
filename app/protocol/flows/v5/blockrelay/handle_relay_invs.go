@@ -184,7 +184,7 @@ func (flow *handleRelayInvsFlow) start() error {
 			continue
 		}
 		if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
-			continue
+			flow.banConnection()
 		}
 		if !flow.IsIBDRunning() {
 			daaScore := block.Header.DAAScore()
