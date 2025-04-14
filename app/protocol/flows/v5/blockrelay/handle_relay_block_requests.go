@@ -1,6 +1,8 @@
 package blockrelay
 
 import (
+	"time"
+
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
 	peerpkg "github.com/Hoosat-Oy/HTND/app/protocol/peer"
 	"github.com/Hoosat-Oy/HTND/app/protocol/protocolerrors"
@@ -30,6 +32,7 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 		log.Debugf("Got request for relay blocks with hashes %s", getRelayBlocksMessage.Hashes)
 		for _, hash := range getRelayBlocksMessage.Hashes {
 			// Fetch the block from the database.
+
 			block, found, err := context.Domain().Consensus().GetBlock(hash)
 			if err != nil {
 				return errors.Wrapf(err, "unable to fetch requested block hash %s", hash)
@@ -37,11 +40,32 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 			if !found {
 				return protocolerrors.Errorf(false, "Relay block %s not found", hash)
 			}
+
 			if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
-				state := pow.NewState(block.Header.ToMutable())
-				_, powHash := state.CalculateProofOfWorkValue()
-				block.PoWHash = powHash.String()
+				powHashFound := false
+				for i := 0; i < 5; i++ {
+					time.Sleep(30 * time.Millisecond)
+					block, found, err = context.Domain().Consensus().GetBlock(hash)
+					if err != nil {
+						return errors.Wrapf(err, "unable to fetch requested block hash %s", hash)
+					}
+					if !found {
+						return protocolerrors.Errorf(false, "Relay block %s not found", hash)
+					}
+					if block.PoWHash != "" {
+						log.Infof("Found PoW Hash for relayed block: Hash %s, Pow hash %s, Version %d >= %d, Peer %s", hash, block.PoWHash)
+						powHashFound = true
+						break
+					}
+				}
+				if !powHashFound {
+					state := pow.NewState(block.Header.ToMutable())
+					_, powHash := state.CalculateProofOfWorkValue()
+					block.PoWHash = powHash.String()
+					log.Infof("Recalculated PoW Hash for relayed block: Hash %s, Pow hash %s, Version %d >= %d, Peer %s", hash, block.PoWHash)
+				}
 			}
+
 			err = outgoingRoute.Enqueue(appmessage.DomainBlockToMsgBlock(block))
 			if err != nil {
 				return err
