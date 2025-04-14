@@ -10,7 +10,6 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
-	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
 	"github.com/Hoosat-Oy/HTND/util/staging"
 	"github.com/pkg/errors"
@@ -364,20 +363,14 @@ func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.Do
 
 	stagingArea := model.NewStagingArea()
 
-	for i := 0; i < 10; i++ {
-		block, err := s.blockStore.Block(s.databaseContext, stagingArea, blockHash)
-		if err != nil {
-			if errors.Is(err, database.ErrNotFound) {
-				return nil, false, nil
-			}
-			return nil, false, err
+	block, err := s.blockStore.Block(s.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		if errors.Is(err, database.ErrNotFound) {
+			return nil, false, nil
 		}
-		if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
-			continue
-		}
-		return block, true, nil
+		return nil, false, err
 	}
-	return nil, false, nil
+	return block, true, nil
 }
 
 func (s *consensus) GetBlockEvenIfHeaderOnly(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
