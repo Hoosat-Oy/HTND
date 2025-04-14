@@ -141,11 +141,7 @@ func (f *FlowContext) unorphanBlock(orphanHash externalapi.DomainHash) (bool, er
 		return false, errors.Errorf("attempted to unorphan a non-orphan block %s", orphanHash)
 	}
 	delete(f.orphans, orphanHash)
-	var powSkip = true
-	if orphanBlock.Header.Version() >= constants.PoWIntegrityMinVersion {
-		powSkip = false
-	}
-	err := f.domain.Consensus().ValidateAndInsertBlock(orphanBlock, true, powSkip)
+	err := f.domain.Consensus().ValidateAndInsertBlock(orphanBlock, true, false)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			log.Warnf("Validation failed for orphan block %s: %s", orphanHash, err)
@@ -155,9 +151,6 @@ func (f *FlowContext) unorphanBlock(orphanHash externalapi.DomainHash) (bool, er
 	}
 
 	log.Infof("Unorphaned block %s", orphanHash)
-	if !powSkip {
-		log.Infof("Unorphaned pow hash %s", orphanBlock.PoWHash)
-	}
 	return true, nil
 }
 
