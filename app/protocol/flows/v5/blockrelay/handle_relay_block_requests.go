@@ -53,7 +53,7 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 						return protocolerrors.Errorf(false, "Relay block %s not found", hash)
 					}
 					if block.PoWHash != "" {
-						log.Infof("Found PoW Hash for relayed block: Hash %s, Pow hash %s, Version %d >= %d, Peer %s", hash, block.PoWHash)
+						log.Infof("Found PoW Hash for relayed block: Hash %s, Pow hash %s", hash, block.PoWHash)
 						powHashFound = true
 						break
 					}
@@ -62,7 +62,7 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 					state := pow.NewState(block.Header.ToMutable())
 					_, powHash := state.CalculateProofOfWorkValue()
 					block.PoWHash = powHash.String()
-					log.Infof("Recalculated PoW Hash for relayed block: Hash %s, Pow hash %s, Version %d >= %d, Peer %s", hash, block.PoWHash)
+					log.Infof("Recalculated PoW Hash for relayed block: Hash %s, Pow hash %s", hash, block.PoWHash)
 				}
 			}
 
