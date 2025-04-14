@@ -68,8 +68,7 @@ func (bp *blockProcessor) validateBlock(stagingArea *model.StagingArea, block *e
 			// not the block as a whole, so we shouldn't mark it as invalid.
 			if !errors.As(err, &ruleerrors.ErrMissingParents{}) &&
 				!errors.Is(err, ruleerrors.ErrBadMerkleRoot) &&
-				!errors.Is(err, ruleerrors.ErrPrunedBlock) &&
-				!errors.Is(err, ruleerrors.ErrInvalidPoW) {
+				!errors.Is(err, ruleerrors.ErrPrunedBlock) {
 				// Use a new stagingArea so we save only the block status
 				stagingArea := model.NewStagingArea()
 				hash := consensushashing.BlockHash(block)
