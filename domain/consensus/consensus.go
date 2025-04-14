@@ -364,17 +364,20 @@ func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.Do
 
 	stagingArea := model.NewStagingArea()
 
-	block, err := s.blockStore.Block(s.databaseContext, stagingArea, blockHash)
-	if err != nil {
-		if errors.Is(err, database.ErrNotFound) {
-			return nil, false, nil
+	for i := 0; i < 10; i++ {
+		block, err := s.blockStore.Block(s.databaseContext, stagingArea, blockHash)
+		if err != nil {
+			if errors.Is(err, database.ErrNotFound) {
+				return nil, false, nil
+			}
+			return nil, false, err
 		}
-		return nil, false, err
+		if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
+			continue
+		}
+		return block, true, nil
 	}
-	if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
-		return nil, false, nil
-	}
-	return block, true, nil
+
 }
 
 func (s *consensus) GetBlockEvenIfHeaderOnly(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
