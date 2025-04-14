@@ -200,8 +200,11 @@ func (state *State) IncrementNonce() {
 // CheckProofOfWork check's if the block has a valid PoW according to the provided target
 // it does not check if the difficulty itself is valid or less than the maximum for the appropriate network
 func (state *State) CheckProofOfWork(block *externalapi.DomainBlock, powSkip bool) bool {
-	powNum, _ := state.CalculateProofOfWorkValue()
-	if powSkip == true {
+	powNum, powHash := state.CalculateProofOfWorkValue()
+	if powSkip {
+		if block.PoWHash == "" && state.BlockVersion >= constants.PoWIntegrityMinVersion {
+			block.PoWHash = powHash.String()
+		}
 		return powNum.Cmp(&state.Target) <= 0
 	} else {
 		if state.BlockVersion < constants.PoWIntegrityMinVersion {
