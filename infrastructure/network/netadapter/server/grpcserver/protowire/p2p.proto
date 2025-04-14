@@ -60,7 +60,7 @@ message TransactionOutput{
 message BlockMessage{
   BlockHeader header = 1;
   repeated TransactionMessage transactions = 2;
-  string powHash = 3;
+  optional string powHash = 3;
 }
 
 message BlockHeader{

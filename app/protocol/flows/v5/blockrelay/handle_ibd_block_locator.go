@@ -40,13 +40,16 @@ func HandleIBDBlockLocator(context HandleIBDBlockLocatorContext, incomingRoute *
 
 		foundHighestHashInTheSelectedParentChainOfTargetHash := false
 		for _, blockLocatorHash := range ibdBlockLocatorMessage.BlockLocatorHashes {
-			blockInfo, err := context.Domain().Consensus().GetBlockInfo(blockLocatorHash)
+			block, found, err := context.Domain().Consensus().GetBlock(blockLocatorHash)
 			if err != nil {
 				return err
 			}
 
-			// The IBD block locator is checking only existing blocks with bodies.
-			if !blockInfo.HasBody() {
+			if !found {
+				continue
+			}
+
+			if block.PoWHash == "" {
 				continue
 			}
 
