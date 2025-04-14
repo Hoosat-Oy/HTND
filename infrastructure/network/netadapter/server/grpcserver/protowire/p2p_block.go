@@ -34,6 +34,8 @@ func (x *BlockMessage) toAppMessage() (*appmessage.MsgBlock, error) {
 		}
 		transactions[i] = msgTx.(*appmessage.MsgTx)
 	}
+
+	log.Debugf("toAppMessage: msgBlock.PoWHash = %s\n", x.GetPowHash())
 	return &appmessage.MsgBlock{
 		Header:       *header,
 		Transactions: transactions,
@@ -54,6 +56,7 @@ func (x *BlockMessage) fromAppMessage(msgBlock *appmessage.MsgBlock) error {
 		protoTx.fromAppMessage(tx)
 		protoTransactions[i] = protoTx
 	}
+	log.Debugf("fromAppMessage: msgBlock.PoWHash = %s\n", msgBlock.PoWHash)
 	*x = BlockMessage{
 		Header:       protoHeader,
 		Transactions: protoTransactions,
