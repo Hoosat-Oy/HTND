@@ -6,6 +6,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/app/protocol/protocolerrors"
 	"github.com/Hoosat-Oy/HTND/domain"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/pow"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 )
@@ -36,7 +37,11 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 			if !found {
 				return protocolerrors.Errorf(false, "Relay block %s not found", hash)
 			}
-
+			if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
+				state := pow.NewState(block.Header.ToMutable())
+				_, powHash := state.CalculateProofOfWorkValue()
+				block.PoWHash = powHash.String()
+			}
 			err = outgoingRoute.Enqueue(appmessage.DomainBlockToMsgBlock(block))
 			if err != nil {
 				return err
