@@ -122,10 +122,7 @@ func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
 	if err != nil {
 		return err
 	}
-	if block.PoWHash != "" {
-		return f.Broadcast(appmessage.NewMsgInvBlock(consensushashing.BlockHash(block)))
-	}
-	return nil
+	return f.Broadcast(appmessage.NewMsgInvBlock(consensushashing.BlockHash(block)))
 }
 
 // IsIBDRunning returns true if IBD is currently marked as running

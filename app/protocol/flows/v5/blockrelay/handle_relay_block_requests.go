@@ -36,6 +36,7 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 			if !found {
 				return protocolerrors.Errorf(false, "Relay block %s not found", hash)
 			}
+
 			err = outgoingRoute.Enqueue(appmessage.DomainBlockToMsgBlock(block))
 			if err != nil {
 				return err

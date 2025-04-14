@@ -10,6 +10,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
 	"github.com/Hoosat-Oy/HTND/util/staging"
 	"github.com/pkg/errors"
@@ -369,6 +370,9 @@ func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.Do
 			return nil, false, nil
 		}
 		return nil, false, err
+	}
+	if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
+		return nil, false, nil
 	}
 	return block, true, nil
 }
