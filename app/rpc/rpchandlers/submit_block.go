@@ -19,7 +19,7 @@ import (
 func HandleSubmitBlock(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	submitBlockRequest := request.(*appmessage.SubmitBlockRequestMessage)
 	var err error
-	var powHash string
+	powHash := strings.Replace(submitBlockRequest.PowHash, "0x", "", 1)
 	daaScore := submitBlockRequest.Block.Header.DAAScore
 	var version uint16 = 1
 	for _, powScore := range context.Config.ActiveNetParams.POWScores {
@@ -36,14 +36,13 @@ func HandleSubmitBlock(context *rpccontext.Context, router *router.Router, reque
 		}, nil
 	}
 	if constants.BlockVersion >= constants.PoWIntegrityMinVersion {
-		if submitBlockRequest.PowHash == "" {
+		if powHash == "" {
 			submitBlockRequestJSON, _ := json.MarshalIndent(submitBlockRequest.Block, "", "    ")
 			return &appmessage.SubmitBlockResponseMessage{
 				Error:        appmessage.RPCErrorf(fmt.Sprintf("Block not submitted, proof of work missing! %s", string(submitBlockRequestJSON))),
 				RejectReason: appmessage.RejectReasonBlockInvalid,
 			}, nil
 		}
-		powHash = strings.Replace(submitBlockRequest.PowHash, "0x", "", 1)
 	}
 
 	isSynced := false
@@ -63,6 +62,12 @@ func HandleSubmitBlock(context *rpccontext.Context, router *router.Router, reque
 	}
 
 	domainBlock, err := appmessage.RPCBlockToDomainBlock(submitBlockRequest.Block, powHash)
+	if domainBlock.PoWHash == "" {
+		return &appmessage.SubmitBlockResponseMessage{
+			Error:        appmessage.RPCErrorf("Could not parse PoW hash: %s", err),
+			RejectReason: appmessage.RejectReasonBlockInvalid,
+		}, nil
+	}
 	if err != nil {
 		return &appmessage.SubmitBlockResponseMessage{
 			Error:        appmessage.RPCErrorf("Could not parse block: %s", err),

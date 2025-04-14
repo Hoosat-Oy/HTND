@@ -518,7 +518,7 @@ func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlo
 		log.Debugf("Block header %s is already in the DAG. Skipping...", blockHash)
 		return nil
 	}
-	err = consensus.ValidateAndInsertBlock(block, false, true)
+	err = consensus.ValidateAndInsertBlock(block, false, false)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
 			return errors.Wrapf(err, "failed to process header %s during IBD", blockHash)
