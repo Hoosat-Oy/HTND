@@ -324,7 +324,7 @@ func (bp *blockProcessor) validatePostProofOfWork(stagingArea *model.StagingArea
 
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
 	if !isHeaderOnlyBlock {
-		err := bp.blockValidator.ValidateBodyInIsolation(stagingArea, blockHash)
+		err := bp.blockValidator.ValidateBodyInIsolation(stagingArea, block)
 		if err != nil {
 			return err
 		}

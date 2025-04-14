@@ -15,16 +15,11 @@ import (
 
 // ValidateBodyInIsolation validates block bodies in isolation from the current
 // consensus state
-func (v *blockValidator) ValidateBodyInIsolation(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
+func (v *blockValidator) ValidateBodyInIsolation(stagingArea *model.StagingArea, block *externalapi.DomainBlock) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateBodyInContext")
 	defer onEnd()
 
-	block, err := v.blockStore.Block(v.databaseContext, stagingArea, blockHash)
-	if err != nil {
-		return err
-	}
-
-	err = v.checkPoWHashExists(block)
+	err := v.checkPoWHashExists(block)
 	if err != nil {
 		return err
 	}
