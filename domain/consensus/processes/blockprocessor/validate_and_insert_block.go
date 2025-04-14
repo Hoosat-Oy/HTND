@@ -324,13 +324,11 @@ func (bp *blockProcessor) validatePostProofOfWork(stagingArea *model.StagingArea
 
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
 	if !isHeaderOnlyBlock {
-		// blockjson, _ := json.MarshalIndent(block, "", "  ")
-		// fmt.Printf("Block: %s", blockjson)
-		bp.blockStore.Stage(stagingArea, blockHash, block)
 		err := bp.blockValidator.ValidateBodyInIsolation(stagingArea, blockHash)
 		if err != nil {
 			return err
 		}
+		bp.blockStore.Stage(stagingArea, blockHash, block)
 	}
 
 	hasValidatedHeader, err := bp.hasValidatedHeader(stagingArea, blockHash)

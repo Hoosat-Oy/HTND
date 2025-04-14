@@ -5,6 +5,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/merkle"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/subnetworks"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/transactionhelper"
@@ -19,6 +20,11 @@ func (v *blockValidator) ValidateBodyInIsolation(stagingArea *model.StagingArea,
 	defer onEnd()
 
 	block, err := v.blockStore.Block(v.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		return err
+	}
+
+	err = v.checkPoWHashExists(block)
 	if err != nil {
 		return err
 	}
@@ -244,5 +250,12 @@ func (v *blockValidator) checkNoPrefilledInputs(block *externalapi.DomainBlock) 
 		}
 	}
 
+	return nil
+}
+
+func (v *blockValidator) checkPoWHashExists(block *externalapi.DomainBlock) error {
+	if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
+		return errors.Errorf("Block is missing PoW hash")
+	}
 	return nil
 }
