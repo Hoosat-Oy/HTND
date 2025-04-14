@@ -128,7 +128,7 @@ func CheckBlockSanity(t *testing.T, tc testapi.TestConsensus, _ *consensus.Confi
 
 	tc.BlockStore().Stage(stagingArea, blockHash, &exampleValidBlock)
 
-	err := tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
+	err := tc.BlockValidator().ValidateBodyInIsolation(stagingArea, &exampleValidBlock)
 	if err != nil {
 		t.Fatalf("Failed validating block in isolation: %v", err)
 	}
@@ -136,7 +136,7 @@ func CheckBlockSanity(t *testing.T, tc testapi.TestConsensus, _ *consensus.Confi
 	// Test with block with wrong transactions sorting order
 	blockHash = consensushashing.BlockHash(&blockWithWrongTxOrder)
 	tc.BlockStore().Stage(stagingArea, blockHash, &blockWithWrongTxOrder)
-	err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
+	err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, &exampleValidBlock)
 	if !errors.Is(err, ruleerrors.ErrTransactionsNotSorted) {
 		t.Errorf("CheckBlockSanity: Expected ErrTransactionsNotSorted error, instead got %v", err)
 	}
@@ -145,7 +145,7 @@ func CheckBlockSanity(t *testing.T, tc testapi.TestConsensus, _ *consensus.Confi
 	// We no longer require blocks to have ordered parents
 	blockHash = consensushashing.BlockHash(&unOrderedParentsBlock)
 	tc.BlockStore().Stage(stagingArea, blockHash, &unOrderedParentsBlock)
-	err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
+	err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, &exampleValidBlock)
 	if err != nil {
 		t.Errorf("CheckBlockSanity: Expected block to be be body in isolation valid, got error instead: %v", err)
 	}
@@ -1047,7 +1047,7 @@ func BlockMass(t *testing.T, tc testapi.TestConsensus, consensusConfig *consensu
 	stagingArea := model.NewStagingArea()
 	tc.BlockStore().Stage(stagingArea, blockHash, block)
 
-	err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
+	err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, &exampleValidBlock)
 	if err == nil || !errors.Is(err, ruleerrors.ErrBlockMassTooHigh) {
 		t.Fatalf("ValidateBodyInIsolationTest: TestBlockMass:"+
 			" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrBlockMassTooHigh, err)
@@ -1096,7 +1096,7 @@ func CheckBlockDuplicateTransactions(t *testing.T, tc testapi.TestConsensus, con
 	stagingArea := model.NewStagingArea()
 	tc.BlockStore().Stage(stagingArea, blockHash, block)
 
-	err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
+	err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, &exampleValidBlock)
 	if err == nil || !errors.Is(err, ruleerrors.ErrDuplicateTx) {
 		t.Fatalf("ValidateBodyInIsolationTest: TestCheckBlockDuplicateTransactions:"+
 			" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrDuplicateTx, err)
@@ -1143,7 +1143,7 @@ func CheckBlockContainsOnlyOneCoinbase(t *testing.T, tc testapi.TestConsensus, c
 	stagingArea := model.NewStagingArea()
 	tc.BlockStore().Stage(stagingArea, blockHash, block)
 
-	err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
+	err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, &exampleValidBlock)
 	if err == nil || !errors.Is(err, ruleerrors.ErrMultipleCoinbases) {
 		t.Fatalf("ValidateBodyInIsolationTest: TestCheckBlockContainsOnlyOneCoinbase:"+
 			" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrMultipleCoinbases, err)
@@ -1190,7 +1190,7 @@ func CheckBlockDoubleSpends(t *testing.T, tc testapi.TestConsensus, consensusCon
 	stagingArea := model.NewStagingArea()
 	tc.BlockStore().Stage(stagingArea, blockHash, block)
 
-	err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
+	err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, &exampleValidBlock)
 	if err == nil || !errors.Is(err, ruleerrors.ErrDoubleSpendInSameBlock) {
 		t.Fatalf("ValidateBodyInIsolationTest: TestCheckBlockDoubleSpends:"+
 			" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrDoubleSpendInSameBlock, err)
@@ -1254,7 +1254,7 @@ func CheckFirstBlockTransactionIsCoinbase(t *testing.T, tc testapi.TestConsensus
 	stagingArea := model.NewStagingArea()
 	tc.BlockStore().Stage(stagingArea, blockHash, block)
 
-	err := tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
+	err := tc.BlockValidator().ValidateBodyInIsolation(stagingArea, &exampleValidBlock)
 	if err == nil || !errors.Is(err, ruleerrors.ErrFirstTxNotCoinbase) {
 		t.Fatalf("ValidateBodyInIsolationTest: TestCheckFirstBlockTransactionIsCoinbase:"+
 			" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrFirstTxNotCoinbase, err)
