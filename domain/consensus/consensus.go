@@ -377,7 +377,7 @@ func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.Do
 		}
 		return block, true, nil
 	}
-
+	return nil, false, nil
 }
 
 func (s *consensus) GetBlockEvenIfHeaderOnly(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
