@@ -5,6 +5,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/app/protocol/peer"
 	"github.com/Hoosat-Oy/HTND/app/protocol/protocolerrors"
 	"github.com/Hoosat-Oy/HTND/domain"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
 )
 
@@ -49,7 +50,7 @@ func HandleIBDBlockLocator(context HandleIBDBlockLocatorContext, incomingRoute *
 				continue
 			}
 
-			if block.PoWHash == "" {
+			if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
 				continue
 			}
 

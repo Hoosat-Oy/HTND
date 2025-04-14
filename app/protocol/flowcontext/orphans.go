@@ -185,16 +185,16 @@ func (f *FlowContext) GetOrphanRoots(orphan *externalapi.DomainHash) ([]*externa
 
 		block, ok := f.orphans[*current]
 		if !ok {
-			blockInfo, err := f.domain.Consensus().GetBlockInfo(current)
+			block, found, err := f.domain.Consensus().GetBlock(current)
 			if err != nil {
 				return nil, false, err
 			}
 
-			if !blockInfo.Exists || blockInfo.BlockStatus == externalapi.StatusHeaderOnly {
+			if !found || !(block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion) {
 				roots = append(roots, current)
 			} else {
 				log.Debugf("Block %s was skipped when checking for orphan roots: "+
-					"exists: %t, status: %s", current, blockInfo.Exists, blockInfo.BlockStatus)
+					"exists: %t, PoW Hash: %s", current, found, block.PoWHash)
 			}
 			continue
 		}
