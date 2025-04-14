@@ -51,6 +51,14 @@ func (bp *blockProcessor) validateBlock(stagingArea *model.StagingArea, block *e
 		}
 	}
 
+	// Pow validation was success, lets stage the block or add the .
+	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
+	if !isHeaderOnlyBlock {
+		bp.blockStore.Stage(stagingArea, blockHash, block)
+	} else {
+		log.Infof("Did not stage block because header only")
+	}
+
 	// If in-context validations fail, discard all changes and store the
 	// block with StatusInvalid.
 	err = bp.validatePostProofOfWork(stagingArea, block, isBlockWithTrustedData)

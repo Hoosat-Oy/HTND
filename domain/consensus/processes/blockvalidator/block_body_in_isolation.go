@@ -5,7 +5,6 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
-	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/merkle"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/subnetworks"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/transactionhelper"
@@ -15,11 +14,16 @@ import (
 
 // ValidateBodyInIsolation validates block bodies in isolation from the current
 // consensus state
-func (v *blockValidator) ValidateBodyInIsolation(stagingArea *model.StagingArea, block *externalapi.DomainBlock) error {
+func (v *blockValidator) ValidateBodyInIsolation(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateBodyInContext")
 	defer onEnd()
 
-	err := v.checkNoPrefilledInputs(block)
+	block, err := v.blockStore.Block(v.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		return err
+	}
+
+	err = v.checkNoPrefilledInputs(block)
 	if err != nil {
 		return err
 	}
@@ -240,12 +244,5 @@ func (v *blockValidator) checkNoPrefilledInputs(block *externalapi.DomainBlock) 
 		}
 	}
 
-	return nil
-}
-
-func (v *blockValidator) checkPoWHashExists(block *externalapi.DomainBlock) error {
-	if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
-		return errors.Wrapf(ruleerrors.ErrInvalidPoW, "Block is missing PoW hash")
-	}
 	return nil
 }

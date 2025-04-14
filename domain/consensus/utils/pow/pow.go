@@ -200,25 +200,22 @@ func (state *State) IncrementNonce() {
 // CheckProofOfWork check's if the block has a valid PoW according to the provided target
 // it does not check if the difficulty itself is valid or less than the maximum for the appropriate network
 func (state *State) CheckProofOfWork(block *externalapi.DomainBlock, powSkip bool) bool {
-	powNum, powHash := state.CalculateProofOfWorkValue()
-	if powSkip {
-		if block.PoWHash == "" && state.BlockVersion >= constants.PoWIntegrityMinVersion {
-			block.PoWHash = powHash.String()
-		}
+	powNum, _ := state.CalculateProofOfWorkValue()
+	if state.BlockVersion < constants.PoWIntegrityMinVersion {
 		return powNum.Cmp(&state.Target) <= 0
-	} else {
-		if state.BlockVersion < constants.PoWIntegrityMinVersion {
-			return powNum.Cmp(&state.Target) <= 0
-		} else if state.BlockVersion >= constants.PoWIntegrityMinVersion {
-			powHash, err := externalapi.NewDomainHashFromString(block.PoWHash)
-			if err != nil {
-				return false
-			}
-			if !powHash.Equal(new(externalapi.DomainHash)) {
-				submittedPowNum := toBig(powHash)
-				if submittedPowNum.Cmp(powNum) == 0 {
-					return powNum.Cmp(&state.Target) <= 0
-				}
+	}
+	if powSkip {
+		return powNum.Cmp(&state.Target) <= 0
+	}
+	if state.BlockVersion >= constants.PoWIntegrityMinVersion {
+		powHash, err := externalapi.NewDomainHashFromString(block.PoWHash)
+		if err != nil {
+			return false
+		}
+		if !powHash.Equal(new(externalapi.DomainHash)) {
+			submittedPowNum := toBig(powHash)
+			if submittedPowNum.Cmp(powNum) == 0 {
+				return powNum.Cmp(&state.Target) <= 0
 			}
 		}
 	}
