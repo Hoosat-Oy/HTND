@@ -201,12 +201,17 @@ func (p *Params) NormalizeRPCServerAddress(addr string) (string, error) {
 
 // FinalityDepth returns the finality duration represented in blocks
 func (p *Params) FinalityDepth() uint64 {
-	return uint64(p.FinalityDuration * p.TargetTimePerBlock)
+	depth := uint64(p.FinalityDuration.Seconds() * p.TargetTimePerBlock.Seconds())
+	log.Infof("Finality Depth: %d", depth)
+	return depth
 }
 
 // PruningDepth returns the pruning duration represented in blocks
 func (p *Params) PruningDepth() uint64 {
-	return 2*p.FinalityDepth() + 4*p.MergeSetSizeLimit*uint64(p.K) + 2*uint64(p.K) + 2
+	depth := 2*p.FinalityDepth() + 4*p.MergeSetSizeLimit*uint64(p.K) + 2*uint64(p.K) + 2
+	log.Infof("Pruning depth: %d", depth)
+	return depth
+	// 2*1800 + 4*180*18 + 2*18 + 2
 }
 
 // MainnetParams defines the network parameters for the main Hoosat network.
@@ -310,7 +315,7 @@ var TestnetParams = Params{
 	PreDeflationaryPhaseBaseSubsidy: defaultPreDeflationaryPhaseBaseSubsidy,
 	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
 	TargetTimePerBlock:              defaultTargetTimePerBlock,
-	FinalityDuration:                30 * time.Minute, // test for testnet
+	FinalityDuration:                1800 * time.Second, // test for testnet
 	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 
