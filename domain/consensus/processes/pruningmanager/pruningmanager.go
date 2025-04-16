@@ -168,19 +168,19 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 	}
 
 	if !newPruningPoint.Equal(currentPruningPoint) {
-		currentPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningPoint, false)
-		if err != nil {
-			return err
-		}
+		// currentPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningPoint, false)
+		// if err != nil {
+		// 	return err
+		// }
 
-		newPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, newPruningPoint, false)
-		if err != nil {
-			return err
-		}
+		// newPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, newPruningPoint, false)
+		// if err != nil {
+		// 	return err
+		// }
 
-		if pm.finalityScore(newPruningPointGHOSTDAGData.BlueScore()) > pm.finalityScore(currentPruningPointGHOSTDAGData.BlueScore())+1 {
-			return errors.Errorf("cannot advance pruning point by more than one finality interval at once")
-		}
+		// if pm.finalityScore(newPruningPointGHOSTDAGData.BlueScore()) > pm.finalityScore(currentPruningPointGHOSTDAGData.BlueScore())+1 {
+		// 	return errors.Errorf("cannot advance pruning point by more than one finality interval at once")
+		// }
 
 		log.Debugf("Moving pruning point from %s to %s", currentPruningPoint, newPruningPoint)
 		err = pm.savePruningPoint(stagingArea, newPruningPoint)
