@@ -175,7 +175,7 @@ func ComplexNonLinear(x float64) float64 {
 		} else {
 			return MediumComplexNonLinear(x / (1 + transformFactor))
 		}
-	} else if x < 100 {
+	} else if x < 10 {
 		if transformFactor < 0.25 {
 			return IntermediateComplexNonLinear(x + (1 + transformFactor))
 		} else if transformFactor < 0.5 {
