@@ -98,12 +98,13 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		return err
 	}
 
-	if !isBlockWithTrustedData {
-		err = v.validateHeaderPruningPoint(stagingArea, blockHash)
-		if err != nil {
-			return err
-		}
-	}
+	// HF5 TODO: some way to skip to update the pruning depth.
+	// if !isBlockWithTrustedData {
+	// 	err = v.validateHeaderPruningPoint(stagingArea, blockHash)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	return nil
 }
