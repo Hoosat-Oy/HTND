@@ -87,36 +87,35 @@ const (
 var offenseTracker = make(map[string][]time.Time)
 
 func (flow *handleRelayInvsFlow) banConnection() {
-	return
-	// address := flow.netConnection.Address()
-	// now := time.Now()
+	address := flow.netConnection.Address()
+	now := time.Now()
 
-	// // Track offenses
-	// offenseTimes := offenseTracker[address]
-	// offenseTimes = append(offenseTimes, now)
+	// Track offenses
+	offenseTimes := offenseTracker[address]
+	offenseTimes = append(offenseTimes, now)
 
-	// // Remove old offenses outside the threshold window
-	// var recentOffenses []time.Time
-	// for _, t := range offenseTimes {
-	// 	if now.Sub(t).Seconds() <= banThresholdSecs {
-	// 		recentOffenses = append(recentOffenses, t)
-	// 	}
-	// }
-	// offenseTracker[address] = recentOffenses
+	// Remove old offenses outside the threshold window
+	var recentOffenses []time.Time
+	for _, t := range offenseTimes {
+		if now.Sub(t).Seconds() <= banThresholdSecs {
+			recentOffenses = append(recentOffenses, t)
+		}
+	}
+	offenseTracker[address] = recentOffenses
 
-	// if len(recentOffenses) >= maxOffenses {
-	// 	log.Infof("Banning connection: %s due to exceeding offense threshold", address)
-	// 	flow.connectionManager.Ban(flow.netConnection)
-	// 	isBanned, _ := flow.connectionManager.IsBanned(flow.netConnection)
-	// 	if isBanned {
-	// 		log.Infof("Peer %s is banned. Disconnecting...", flow.netConnection.NetAddress().IP)
-	// 		flow.netConnection.Disconnect()
-	// 		delete(offenseTracker, address) // Clean up after ban
-	// 		return
-	// 	}
-	// } else {
-	// 	log.Infof("Peer %s offense recorded (%d/%d within threshold window)", address, len(recentOffenses), maxOffenses)
-	// }
+	if len(recentOffenses) >= maxOffenses {
+		log.Infof("Banning connection: %s due to exceeding offense threshold", address)
+		flow.connectionManager.Ban(flow.netConnection)
+		isBanned, _ := flow.connectionManager.IsBanned(flow.netConnection)
+		if isBanned {
+			log.Infof("Peer %s is banned. Disconnecting...", flow.netConnection.NetAddress().IP)
+			flow.netConnection.Disconnect()
+			delete(offenseTracker, address) // Clean up after ban
+			return
+		}
+	} else {
+		log.Infof("Peer %s offense recorded (%d/%d within threshold window)", address, len(recentOffenses), maxOffenses)
+	}
 }
 
 func (flow *handleRelayInvsFlow) start() error {
@@ -184,7 +183,7 @@ func (flow *handleRelayInvsFlow) start() error {
 			log.Debugf("Aborting requesting block %s because it already exists", inv.Hash)
 			continue
 		}
-		if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
+		if block.PoWHash == "" && block.Header.Version() >= constants.BanMinVersion {
 			flow.banConnection()
 		}
 		if !flow.IsIBDRunning() {
@@ -199,7 +198,9 @@ func (flow *handleRelayInvsFlow) start() error {
 			if block.Header.Version() != constants.BlockVersion {
 				log.Infof("Cannot process %s, Wrong block version %d, it should be %d", consensushashing.BlockHash(block), block.Header.Version(), constants.BlockVersion)
 				log.Infof("Unprocessable block relayed by %s", flow.netConnection.NetAddress().String())
-				flow.banConnection()
+				if block.Header.Version() >= constants.BanMinVersion {
+					flow.banConnection()
+				}
 				continue
 			}
 		}
@@ -255,7 +256,9 @@ func (flow *handleRelayInvsFlow) start() error {
 			}
 			if errors.Is(err, ruleerrors.ErrInvalidPoW) {
 				log.Infof(fmt.Sprintf("Ignoring invalid PoW on version %d block, consider banning: %s", block.Header.Version(), flow.netConnection.NetAddress().String()))
-				flow.banConnection()
+				if block.Header.Version() >= constants.BanMinVersion {
+					flow.banConnection()
+				}
 				continue
 			}
 			return err
