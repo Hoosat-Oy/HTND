@@ -87,35 +87,36 @@ const (
 var offenseTracker = make(map[string][]time.Time)
 
 func (flow *handleRelayInvsFlow) banConnection() {
-	address := flow.netConnection.Address()
-	now := time.Now()
+	return
+	// address := flow.netConnection.Address()
+	// now := time.Now()
 
-	// Track offenses
-	offenseTimes := offenseTracker[address]
-	offenseTimes = append(offenseTimes, now)
+	// // Track offenses
+	// offenseTimes := offenseTracker[address]
+	// offenseTimes = append(offenseTimes, now)
 
-	// Remove old offenses outside the threshold window
-	var recentOffenses []time.Time
-	for _, t := range offenseTimes {
-		if now.Sub(t).Seconds() <= banThresholdSecs {
-			recentOffenses = append(recentOffenses, t)
-		}
-	}
-	offenseTracker[address] = recentOffenses
+	// // Remove old offenses outside the threshold window
+	// var recentOffenses []time.Time
+	// for _, t := range offenseTimes {
+	// 	if now.Sub(t).Seconds() <= banThresholdSecs {
+	// 		recentOffenses = append(recentOffenses, t)
+	// 	}
+	// }
+	// offenseTracker[address] = recentOffenses
 
-	if len(recentOffenses) >= maxOffenses {
-		log.Infof("Banning connection: %s due to exceeding offense threshold", address)
-		flow.connectionManager.Ban(flow.netConnection)
-		isBanned, _ := flow.connectionManager.IsBanned(flow.netConnection)
-		if isBanned {
-			log.Infof("Peer %s is banned. Disconnecting...", flow.netConnection.NetAddress().IP)
-			flow.netConnection.Disconnect()
-			delete(offenseTracker, address) // Clean up after ban
-			return
-		}
-	} else {
-		log.Infof("Peer %s offense recorded (%d/%d within threshold window)", address, len(recentOffenses), maxOffenses)
-	}
+	// if len(recentOffenses) >= maxOffenses {
+	// 	log.Infof("Banning connection: %s due to exceeding offense threshold", address)
+	// 	flow.connectionManager.Ban(flow.netConnection)
+	// 	isBanned, _ := flow.connectionManager.IsBanned(flow.netConnection)
+	// 	if isBanned {
+	// 		log.Infof("Peer %s is banned. Disconnecting...", flow.netConnection.NetAddress().IP)
+	// 		flow.netConnection.Disconnect()
+	// 		delete(offenseTracker, address) // Clean up after ban
+	// 		return
+	// 	}
+	// } else {
+	// 	log.Infof("Peer %s offense recorded (%d/%d within threshold window)", address, len(recentOffenses), maxOffenses)
+	// }
 }
 
 func (flow *handleRelayInvsFlow) start() error {
