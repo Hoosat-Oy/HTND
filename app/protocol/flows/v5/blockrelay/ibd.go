@@ -65,20 +65,23 @@ func (flow *handleIBDFlow) start() error {
 	}
 }
 
+func (flow *handleIBDFlow) updateBlockVersionFromDAAScore(daaScore uint64) {
+	var blockVersion uint16 = 1
+	for _, powScore := range flow.IBDContext.Config().ActiveNetParams.POWScores {
+		if daaScore >= powScore {
+			blockVersion += 1
+		}
+	}
+	constants.BlockVersion = blockVersion
+}
+
 func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) error {
 	wasIBDNotRunning := flow.TrySetIBDRunning(flow.peer)
 	if !wasIBDNotRunning {
 		log.Debugf("IBD is already running")
 		return nil
 	}
-	var blockVersion uint16 = 1
-	for _, powScore := range flow.IBDContext.Config().ActiveNetParams.POWScores {
-		if block.Header.DAAScore() >= powScore {
-			blockVersion += 1
-		}
-	}
-	constants.BlockVersion = blockVersion
-
+	flow.updateBlockVersionFromDAAScore(block.Header.DAAScore())
 	isFinishedSuccessfully := false
 	var err error
 	defer func() {

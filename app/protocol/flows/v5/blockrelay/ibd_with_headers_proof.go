@@ -15,6 +15,7 @@ import (
 
 func (flow *handleIBDFlow) ibdWithHeadersProof(
 	syncerHeaderSelectedTipHash, relayBlockHash *externalapi.DomainHash, highBlockDAAScore uint64) error {
+	flow.updateBlockVersionFromDAAScore(highBlockDAAScore)
 	err := flow.Domain().InitStagingConsensusWithoutGenesis()
 	if err != nil {
 		return err
@@ -107,7 +108,7 @@ func (flow *handleIBDFlow) checkIfHighHashHasMoreBlueWorkThanSelectedTipAndPruni
 	if err != nil {
 		return false, err
 	}
-
+	flow.updateBlockVersionFromDAAScore(uint64(relayBlock.Header.Version()))
 	if relayBlock.Header.BlueScore() < virtualSelectedTipInfo.BlueScore+flow.Config().NetParams().PruningDepth() {
 		return false, nil
 	}

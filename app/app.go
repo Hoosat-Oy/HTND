@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/infrastructure/config"
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/ldb"
@@ -57,6 +58,11 @@ func StartApp() error {
 
 	app := &htndApp{cfg: cfg}
 
+	powScoresLen := len(app.cfg.ActiveNetParams.POWScores)
+	if powScoresLen > 0 {
+		constants.BlockVersion = uint16(powScoresLen) + 1
+		log.Infof("Expected initial block version: %d", powScoresLen)
+	}
 	// Call serviceMain on Windows to handle running as a service. When
 	// the return isService flag is true, exit now since we ran as a
 	// service. Otherwise, just fall through to normal operation.
