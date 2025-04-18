@@ -71,6 +71,13 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 		log.Debugf("IBD is already running")
 		return nil
 	}
+	var blockVersion uint16 = 1
+	for _, powScore := range flow.IBDContext.Config().ActiveNetParams.POWScores {
+		if block.Header.DAAScore() >= powScore {
+			blockVersion += 1
+		}
+	}
+	constants.BlockVersion = blockVersion
 
 	isFinishedSuccessfully := false
 	var err error
