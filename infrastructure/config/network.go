@@ -183,7 +183,7 @@ func (networkFlags *NetworkFlags) overrideDAGParams() error {
 	}
 
 	if config.FinalityDuration != nil {
-		networkFlags.ActiveNetParams.FinalityDuration = time.Duration(*config.FinalityDuration) * time.Millisecond
+		networkFlags.ActiveNetParams.FinalityDuration = []time.Duration{time.Duration(*config.FinalityDuration) * time.Millisecond}
 	}
 
 	if config.TimestampDeviationTolerance != nil {

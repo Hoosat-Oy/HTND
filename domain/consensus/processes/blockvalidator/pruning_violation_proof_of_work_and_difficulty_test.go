@@ -230,7 +230,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 func TestCheckPruningPointViolation(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		// This is done to reduce the pruning depth to 6 blocks
-		consensusConfig.FinalityDuration = 2 * consensusConfig.TargetTimePerBlock
+		consensusConfig.FinalityDuration = []time.Duration{2 * consensusConfig.TargetTimePerBlock}
 		consensusConfig.K = 0
 
 		factory := consensus.NewFactory()

@@ -42,7 +42,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 
 		// This is done to reduce the pruning depth to 6 blocks
 		finalityDepth := 5
-		consensusConfig.FinalityDuration = time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock
+		consensusConfig.FinalityDuration = []time.Duration{time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock}
 		consensusConfig.K = 0
 		consensusConfig.PruningProofM = 1
 
@@ -457,7 +457,7 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		// This is done to reduce the pruning depth to 8 blocks
 		finalityDepth := 4
-		consensusConfig.FinalityDuration = time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock
+		consensusConfig.FinalityDuration = []time.Duration{time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock}
 		consensusConfig.K = 0
 
 		consensusConfig.BlockCoinbaseMaturity = 0
@@ -619,7 +619,7 @@ func BenchmarkGetPruningPointUTXOs(b *testing.B) {
 
 	// This is done to reduce the pruning depth to 200 blocks
 	finalityDepth := 100
-	consensusConfig.FinalityDuration = time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock
+	consensusConfig.FinalityDuration = []time.Duration{time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock}
 	consensusConfig.K = 0
 
 	consensusConfig.SkipProofOfWork = true

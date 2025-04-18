@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
@@ -19,7 +20,7 @@ import (
 func TestFinality(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		// Set finalityInterval to 20 blocks, so that test runs quickly
-		consensusConfig.FinalityDuration = 20 * consensusConfig.TargetTimePerBlock
+		consensusConfig.FinalityDuration = []time.Duration{20 * consensusConfig.TargetTimePerBlock}
 
 		factory := consensus.NewFactory()
 		consensus, teardown, err := factory.NewTestConsensus(consensusConfig, "TestFinality")
@@ -185,7 +186,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		// Set finalityInterval to 50 blocks, so that test runs quickly
 		consensusConfig.K = 5
 		consensusConfig.MergeDepth = 7
-		consensusConfig.FinalityDuration = 20 * consensusConfig.TargetTimePerBlock
+		consensusConfig.FinalityDuration = []time.Duration{20 * consensusConfig.TargetTimePerBlock}
 
 		if uint64(consensusConfig.K) >= consensusConfig.FinalityDepth() {
 			t.Fatal("K must be smaller than finality duration for this test to run")
@@ -492,7 +493,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 func TestFinalityResolveVirtual(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		// Set finalityInterval to 20 blocks, so that test runs quickly
-		consensusConfig.FinalityDuration = 20 * consensusConfig.TargetTimePerBlock
+		consensusConfig.FinalityDuration = []time.Duration{20 * consensusConfig.TargetTimePerBlock}
 
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestFinalityResolveVirtual")

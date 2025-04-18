@@ -69,7 +69,7 @@ func TestPruning(t *testing.T) {
 				t.Fatalf("TestPruning: failed decoding json: %v", err)
 			}
 
-			consensusConfig.FinalityDuration = time.Duration(test.FinalityDepth) * consensusConfig.TargetTimePerBlock
+			consensusConfig.FinalityDuration = []time.Duration{time.Duration(test.FinalityDepth) * consensusConfig.TargetTimePerBlock}
 			consensusConfig.MergeSetSizeLimit = test.MergeSetSizeLimit
 			consensusConfig.DifficultyAdjustmentWindowSize = 400
 

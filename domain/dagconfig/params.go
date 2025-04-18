@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
 	"github.com/Hoosat-Oy/HTND/util/network"
@@ -101,7 +102,7 @@ type Params struct {
 	TargetTimePerBlock time.Duration
 
 	// FinalityDuration is the duration of the finality window.
-	FinalityDuration time.Duration
+	FinalityDuration []time.Duration
 
 	// TimestampDeviationTolerance is the maximum offset a block timestamp
 	// is allowed to be in the future before it gets delayed
@@ -201,7 +202,16 @@ func (p *Params) NormalizeRPCServerAddress(addr string) (string, error) {
 
 // FinalityDepth returns the finality duration represented in blocks
 func (p *Params) FinalityDepth() uint64 {
-	depth := uint64(p.FinalityDuration.Seconds() * p.TargetTimePerBlock.Seconds())
+	/*
+		Block version index must be -1 because blockVersions start at 1 and index from 0.
+		blockVersion = index
+		1 = 0
+		2 = 1
+		3 = 2
+		4 = 3
+		5 = 4
+	*/
+	depth := uint64(p.FinalityDuration[constants.BlockVersion-1].Seconds() * p.TargetTimePerBlock.Seconds())
 	// log.Infof("Finality Depth: %d", depth)
 	return depth
 }
@@ -241,9 +251,10 @@ var MainnetParams = Params{
 	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
 	DeflationaryPhaseCurveFactor:    defaultDeflationaryPhaseCurveFactor,
 	TargetTimePerBlock:              defaultTargetTimePerBlock,
-	FinalityDuration:                defaultFinalityDuration,
+	FinalityDuration:                []time.Duration{defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, 1800 * time.Second},
 	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
+	POWScores:                       []uint64{17500000, 21821800, 29335426},
 
 	// Consensus rule change deployments.
 	//
@@ -286,7 +297,6 @@ var MainnetParams = Params{
 	// This means that any block that has a level lower or equal to genesis will be level 0.
 	MaxBlockLevel: 225,
 	MergeDepth:    defaultMergeDepth,
-	POWScores:     []uint64{17500000, 21821800, 29335426},
 }
 
 // TestnetParams defines the network parameters for the test Hoosat network.
@@ -315,9 +325,10 @@ var TestnetParams = Params{
 	PreDeflationaryPhaseBaseSubsidy: defaultPreDeflationaryPhaseBaseSubsidy,
 	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
 	TargetTimePerBlock:              defaultTargetTimePerBlock,
-	FinalityDuration:                1800 * time.Second, // test for testnet
+	FinalityDuration:                []time.Duration{defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, 1800 * time.Second},
 	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
+	POWScores:                       []uint64{5, 15, 25, 30},
 
 	// Consensus rule change deployments.
 	//
@@ -357,7 +368,6 @@ var TestnetParams = Params{
 
 	MaxBlockLevel: 250,
 	MergeDepth:    defaultMergeDepth,
-	POWScores:     []uint64{5, 15, 25, 30},
 }
 
 // SimnetParams defines the network parameters for the simulation test Hoosat
@@ -384,9 +394,10 @@ var SimnetParams = Params{
 	PreDeflationaryPhaseBaseSubsidy: defaultPreDeflationaryPhaseBaseSubsidy,
 	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
 	TargetTimePerBlock:              time.Millisecond,
-	FinalityDuration:                time.Minute,
+	FinalityDuration:                []time.Duration{defaultFinalityDuration},
 	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
+	POWScores:                       []uint64{5},
 
 	// Consensus rule change deployments.
 	//
@@ -424,7 +435,6 @@ var SimnetParams = Params{
 
 	MaxBlockLevel: 250,
 	MergeDepth:    defaultMergeDepth,
-	POWScores:     []uint64{5},
 }
 
 // DevnetParams defines the network parameters for the development Hoosat network.
@@ -445,9 +455,10 @@ var DevnetParams = Params{
 	PreDeflationaryPhaseBaseSubsidy: defaultPreDeflationaryPhaseBaseSubsidy,
 	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
 	TargetTimePerBlock:              defaultTargetTimePerBlock,
-	FinalityDuration:                defaultFinalityDuration,
+	FinalityDuration:                []time.Duration{defaultFinalityDuration},
 	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
+	POWScores:                       []uint64{5},
 
 	// Consensus rule change deployments.
 	//
@@ -487,7 +498,6 @@ var DevnetParams = Params{
 
 	MaxBlockLevel: 250,
 	MergeDepth:    defaultMergeDepth,
-	POWScores:     []uint64{5},
 }
 
 // ErrDuplicateNet describes an error where the parameters for a Hoosat

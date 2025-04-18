@@ -2,6 +2,7 @@ package blockvalidator_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 
@@ -17,7 +18,7 @@ import (
 func TestCheckBlockIsNotPruned(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		// This is done to reduce the pruning depth to 6 blocks
-		consensusConfig.FinalityDuration = 2 * consensusConfig.TargetTimePerBlock
+		consensusConfig.FinalityDuration = []time.Duration{2 * consensusConfig.TargetTimePerBlock}
 		consensusConfig.K = 0
 
 		// When pruning, blocks in the DAA window of the pruning point and its
@@ -83,7 +84,7 @@ func TestCheckBlockIsNotPruned(t *testing.T) {
 func TestCheckParentBlockBodiesExist(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		// This is done to reduce the pruning depth to 6 blocks
-		consensusConfig.FinalityDuration = 2 * consensusConfig.TargetTimePerBlock
+		consensusConfig.FinalityDuration = []time.Duration{2 * consensusConfig.TargetTimePerBlock}
 		consensusConfig.K = 0
 
 		factory := consensus.NewFactory()
