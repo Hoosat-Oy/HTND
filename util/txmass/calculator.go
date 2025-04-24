@@ -2,7 +2,6 @@ package txmass
 
 import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
-	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/transactionhelper"
 )
 
@@ -85,7 +84,7 @@ func transactionEstimatedSerializedSize(tx *externalapi.DomainTransaction) uint6
 	size := uint64(0)
 	size += 2 // Txn Version
 	size += 8 // number of inputs (uint64)
-	if constants.BlockVersion >= 5 {
+	if tx.Version >= 5 {
 		inputCount := len(tx.Inputs)
 		scalingFactorInput := calculateInputScalingFactor(inputCount)
 		for _, input := range tx.Inputs {
@@ -98,7 +97,7 @@ func transactionEstimatedSerializedSize(tx *externalapi.DomainTransaction) uint6
 	}
 
 	size += 8 // number of outputs (uint64)
-	if constants.BlockVersion >= 5 {
+	if tx.Version >= 5 {
 		outputCount := len(tx.Outputs)
 		scalingFactorOutput := calculateOutputScalingFactor(outputCount)
 		for _, output := range tx.Outputs {
