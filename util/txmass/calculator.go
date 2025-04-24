@@ -2,6 +2,7 @@ package txmass
 
 import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/transactionhelper"
 )
 
@@ -59,6 +60,20 @@ func (c *Calculator) CalculateTransactionMass(transaction *externalapi.DomainTra
 	return massForSize + massForScriptPubKey + massForSigOps
 }
 
+func calculateInputScalingFactor(inputCount int) float64 {
+	if inputCount <= 1 {
+		return 1.0
+	}
+	return 1.0 / (1.0 + float64(inputCount-1)*0.1)
+}
+
+func calculateOutputScalingFactor(outputCount int) float64 {
+	if outputCount <= 2 {
+		return 1.0
+	}
+	return 1.0 / (1.0 + float64(outputCount-1)*0.1)
+}
+
 // transactionEstimatedSerializedSize is the estimated size of a transaction in some
 // serialization. This has to be deterministic, but not necessarily accurate, since
 // it's only used as the size component in the transaction and block mass limit
@@ -70,13 +85,29 @@ func transactionEstimatedSerializedSize(tx *externalapi.DomainTransaction) uint6
 	size := uint64(0)
 	size += 2 // Txn Version
 	size += 8 // number of inputs (uint64)
-	for _, input := range tx.Inputs {
-		size += transactionInputEstimatedSerializedSize(input)
+	if constants.BlockVersion >= 5 {
+		inputCount := len(tx.Inputs)
+		scalingFactorInput := calculateInputScalingFactor(inputCount)
+		for _, input := range tx.Inputs {
+			size += uint64(float64(transactionInputEstimatedSerializedSize(input)) * scalingFactorInput)
+		}
+	} else {
+		for _, input := range tx.Inputs {
+			size += transactionInputEstimatedSerializedSize(input)
+		}
 	}
 
 	size += 8 // number of outputs (uint64)
-	for _, output := range tx.Outputs {
-		size += TransactionOutputEstimatedSerializedSize(output)
+	if constants.BlockVersion >= 5 {
+		outputCount := len(tx.Outputs)
+		scalingFactorOutput := calculateOutputScalingFactor(outputCount)
+		for _, output := range tx.Outputs {
+			size += uint64(float64(TransactionOutputEstimatedSerializedSize(output)) * scalingFactorOutput)
+		}
+	} else {
+		for _, output := range tx.Outputs {
+			size += TransactionOutputEstimatedSerializedSize(output)
+		}
 	}
 
 	size += 8 // lock time (uint64)
