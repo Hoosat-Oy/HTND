@@ -61,7 +61,7 @@ func StartApp() error {
 	powScoresLen := len(app.cfg.ActiveNetParams.POWScores)
 	if powScoresLen > 0 {
 		constants.BlockVersion = uint16(powScoresLen) + 1
-		log.Infof("Expected initial block version: %d", powScoresLen)
+		log.Infof("Expected initial block version: %d", constants.BlockVersion)
 	}
 	// Call serviceMain on Windows to handle running as a service. When
 	// the return isService flag is true, exit now since we ran as a
