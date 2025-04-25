@@ -132,7 +132,7 @@ func (networkFlags *NetworkFlags) overrideDAGParams() error {
 	}
 
 	if config.MaxBlockMass != nil {
-		networkFlags.ActiveNetParams.MaxBlockMass = *config.MaxBlockMass
+		networkFlags.ActiveNetParams.MaxBlockMass = []uint64{*config.MaxBlockMass}
 	}
 
 	if config.MaxCoinbasePayloadLength != nil {

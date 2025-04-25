@@ -104,6 +104,8 @@ type Params struct {
 	// FinalityDuration is the duration of the finality window.
 	FinalityDuration []time.Duration
 
+	PruningModifiers []time.Duration
+
 	// TimestampDeviationTolerance is the maximum offset a block timestamp
 	// is allowed to be in the future before it gets delayed
 	TimestampDeviationTolerance int
@@ -154,7 +156,7 @@ type Params struct {
 	MaxCoinbasePayloadLength uint64
 
 	// MaxBlockMass is the maximum mass a block is allowed
-	MaxBlockMass uint64
+	MaxBlockMass []uint64
 
 	// MaxBlockParents is the maximum number of blocks a block is allowed to point to
 	MaxBlockParents externalapi.KType
@@ -200,17 +202,17 @@ func (p *Params) NormalizeRPCServerAddress(addr string) (string, error) {
 	return network.NormalizeAddress(addr, p.RPCPort)
 }
 
+/*
+	Block version index must be -1 because blockVersions start at 1 and index from 0.
+	blockVersion = index
+	1 = 0
+	2 = 1
+	3 = 2
+	4 = 3
+	5 = 4
+*/
 // FinalityDepth returns the finality duration represented in blocks
 func (p *Params) FinalityDepth() uint64 {
-	/*
-		Block version index must be -1 because blockVersions start at 1 and index from 0.
-		blockVersion = index
-		1 = 0
-		2 = 1
-		3 = 2
-		4 = 3
-		5 = 4
-	*/
 	depth := uint64(p.FinalityDuration[constants.BlockVersion-1].Seconds() * p.TargetTimePerBlock.Seconds())
 	// log.Infof("Finality Depth: %d", depth)
 	return depth
@@ -218,7 +220,7 @@ func (p *Params) FinalityDepth() uint64 {
 
 // PruningDepth returns the pruning duration represented in blocks
 func (p *Params) PruningDepth() uint64 {
-	depth := 2*p.FinalityDepth() + 4*p.MergeSetSizeLimit*uint64(p.K) + 2*uint64(p.K) + 2
+	depth := 2*p.FinalityDepth()*uint64(p.PruningModifiers[constants.BlockVersion-1].Seconds()) + 4*p.MergeSetSizeLimit*uint64(p.K) + 2*uint64(p.K) + 2
 	// log.Infof("Pruning depth: %d", depth)
 	return depth
 	// 2*1800 + 4*180*18 + 2*18 + 2
@@ -255,6 +257,8 @@ var MainnetParams = Params{
 	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 	POWScores:                       []uint64{17500000, 21821800, 29335426},
+	PruningModifiers:                []time.Duration{0, 0, 0, 0, 48},
+	MaxBlockMass:                    []uint64{defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, 10_000_000},
 
 	// Consensus rule change deployments.
 	//
@@ -282,7 +286,6 @@ var MainnetParams = Params{
 	DisableDifficultyAdjustment: false,
 
 	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
-	MaxBlockMass:                            defaultMaxBlockMass,
 	MaxBlockParents:                         defaultMaxBlockParents,
 	MassPerTxByte:                           defaultMassPerTxByte,
 	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
@@ -329,6 +332,8 @@ var TestnetParams = Params{
 	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 	POWScores:                       []uint64{5, 15, 25, 30},
+	PruningModifiers:                []time.Duration{0, 0, 0, 0, 48},
+	MaxBlockMass:                    []uint64{defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, 10_000_000},
 
 	// Consensus rule change deployments.
 	//
@@ -356,7 +361,6 @@ var TestnetParams = Params{
 	DisableDifficultyAdjustment: false,
 
 	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
-	MaxBlockMass:                            defaultMaxBlockMass,
 	MaxBlockParents:                         defaultMaxBlockParents,
 	MassPerTxByte:                           defaultMassPerTxByte,
 	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
@@ -398,6 +402,8 @@ var SimnetParams = Params{
 	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 	POWScores:                       []uint64{5},
+	PruningModifiers:                []time.Duration{0},
+	MaxBlockMass:                    []uint64{defaultMaxBlockMass},
 
 	// Consensus rule change deployments.
 	//
@@ -423,7 +429,6 @@ var SimnetParams = Params{
 	DisableDifficultyAdjustment: true,
 
 	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
-	MaxBlockMass:                            defaultMaxBlockMass,
 	MaxBlockParents:                         defaultMaxBlockParents,
 	MassPerTxByte:                           defaultMassPerTxByte,
 	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
@@ -459,6 +464,8 @@ var DevnetParams = Params{
 	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 	POWScores:                       []uint64{5},
+	PruningModifiers:                []time.Duration{0},
+	MaxBlockMass:                    []uint64{defaultMaxBlockMass},
 
 	// Consensus rule change deployments.
 	//
@@ -486,7 +493,6 @@ var DevnetParams = Params{
 	DisableDifficultyAdjustment: false,
 
 	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
-	MaxBlockMass:                            defaultMaxBlockMass,
 	MaxBlockParents:                         defaultMaxBlockParents,
 	MassPerTxByte:                           defaultMassPerTxByte,
 	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,

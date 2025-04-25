@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensusreference"
 	"github.com/Hoosat-Oy/HTND/domain/dagconfig"
 	"github.com/Hoosat-Oy/HTND/domain/miningmanager/blocktemplatebuilder"
@@ -22,7 +23,7 @@ func (f *factory) NewMiningManager(consensusReference consensusreference.Consens
 	mempoolConfig *mempoolpkg.Config) MiningManager {
 
 	mempool := mempoolpkg.New(mempoolConfig, consensusReference)
-	blockTemplateBuilder := blocktemplatebuilder.New(consensusReference, mempool, params.MaxBlockMass, params.CoinbasePayloadScriptPublicKeyMaxLength)
+	blockTemplateBuilder := blocktemplatebuilder.New(consensusReference, mempool, params.MaxBlockMass[constants.BlockVersion-1], params.CoinbasePayloadScriptPublicKeyMaxLength)
 
 	return &miningManager{
 		consensusReference:   consensusReference,

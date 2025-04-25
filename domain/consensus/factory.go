@@ -12,6 +12,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/blockparentbuilder"
 	parentssanager "github.com/Hoosat-Oy/HTND/domain/consensus/processes/parentsmanager"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/pruningproofmanager"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/util/staging"
 	"github.com/pkg/errors"
 
@@ -344,7 +345,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.SkipProofOfWork,
 		genesisHash,
 		config.EnableNonNativeSubnetworks,
-		config.MaxBlockMass,
+		config.MaxBlockMass[constants.BlockVersion-1],
 		config.MergeSetSizeLimit,
 		config.MaxBlockParents,
 		config.TimestampDeviationTolerance,

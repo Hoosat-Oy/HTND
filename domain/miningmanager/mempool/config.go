@@ -66,7 +66,7 @@ func DefaultConfig(dagParams *dagconfig.Params) *Config {
 		MaximumOrphanTransactionMass:          defaultMaximumOrphanTransactionMass,
 		MaximumOrphanTransactionCount:         defaultMaximumOrphanTransactionCount,
 		AcceptNonStandard:                     dagParams.RelayNonStdTxs,
-		MaximumMassPerBlock:                   dagParams.MaxBlockMass,
+		MaximumMassPerBlock:                   dagParams.MaxBlockMass[constants.BlockVersion-1],
 		MinimumRelayTransactionFee:            defaultMinimumRelayTransactionFee,
 		MinimumStandardTransactionVersion:     defaultMinimumStandardTransactionVersion,
 		MaximumStandardTransactionVersion:     defaultMaximumStandardTransactionVersion,
