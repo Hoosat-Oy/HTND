@@ -39,15 +39,17 @@ func spamSend(conf *spamConfig) error {
 	}
 
 	if len(keysFile.ExtendedPublicKeys) > len(keysFile.EncryptedMnemonics) {
-		return errors.New("cannot use 'send' command for multisig wallet without all of the keys")
+		return errors.Errorf("Cannot use 'send' command for multisig wallet without all of the keys")
 	}
 
-	// Connect to daemon
 	daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)
 	if err != nil {
 		return err
 	}
 	defer tearDown()
+
+	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
+	defer cancel()
 
 	var sendAmountSompi uint64
 	if !conf.IsSendAll {
@@ -57,90 +59,76 @@ func spamSend(conf *spamConfig) error {
 		}
 	}
 
-	// Prompt for password if missing
-	if conf.Password == "" {
-		conf.Password = keys.GetPassword("Password:")
-	}
-
-	mnemonics, err := keysFile.DecryptMnemonics(conf.Password)
-	if err != nil {
-		if strings.Contains(err.Error(), "message authentication failed") {
-			fmt.Fprintln(os.Stderr, "Password decryption failed. This can happen if the wrong keys file is used.")
-		}
-		return err
-	}
-
 	// Start spam loop
 	for range ticker.C {
 		go func() {
-			failure := false
-			for attempt := 1; attempt <= maxRetries; attempt++ {
-				ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
-				defer cancel()
-
-				// Create unsigned transactions
-				req := &pb.CreateUnsignedTransactionsRequest{
-					From:                     conf.FromAddresses,
-					Address:                  conf.ToAddress,
-					Amount:                   sendAmountSompi,
-					IsSendAll:                conf.IsSendAll,
-					UseExistingChangeAddress: conf.UseExistingChangeAddress,
-				}
-
-				unsignedResp, err := daemonClient.CreateUnsignedTransactions(ctx, req)
+		retry:
+			for attempt := 0; attempt <= maxRetries; attempt++ {
+				createUnsignedTransactionsResponse, err :=
+					daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
+						From:                     conf.FromAddresses,
+						Address:                  conf.ToAddress,
+						Amount:                   sendAmountSompi,
+						IsSendAll:                conf.IsSendAll,
+						UseExistingChangeAddress: conf.UseExistingChangeAddress,
+					})
 				if err != nil {
-					continue
+					continue retry
 				}
 
-				signedTxs := make([][]byte, len(unsignedResp.UnsignedTransactions))
-				for i, tx := range unsignedResp.UnsignedTransactions {
-					signedTx, err := libhtnwallet.Sign(conf.NetParams(), mnemonics, tx, keysFile.ECDSA)
+				if len(conf.Password) == 0 {
+					conf.Password = keys.GetPassword("Password:")
+				}
+				mnemonics, err := keysFile.DecryptMnemonics(conf.Password)
+				if err != nil {
+					if strings.Contains(err.Error(), "message authentication failed") {
+						fmt.Fprintf(os.Stderr, "Password decryption failed. Sometimes this is a result of not "+
+							"specifying the same keys file used by the wallet daemon process.\n")
+					}
+					continue retry
+				}
+
+				signedTransactions := make([][]byte, len(createUnsignedTransactionsResponse.UnsignedTransactions))
+				for i, unsignedTransaction := range createUnsignedTransactionsResponse.UnsignedTransactions {
+					signedTransaction, err := libhtnwallet.Sign(conf.NetParams(), mnemonics, unsignedTransaction, keysFile.ECDSA)
 					if err != nil {
-						failure = true
-						break
+						continue retry
 					}
-					signedTxs[i] = signedTx
+					signedTransactions[i] = signedTransaction
 				}
 
-				// Broadcast transactions in chunks
-				if !failure {
-					chunkSize := 100
-					for offset := 0; offset < len(signedTxs); offset += chunkSize {
-						end := offset + chunkSize
-						if end > len(signedTxs) {
-							end = len(signedTxs)
-						}
-						chunk := signedTxs[offset:end]
+				// Since we waited for user input when getting the password, which could take unbound amount of time -
+				// create a new context for broadcast, to reset the timeout.
+				broadcastCtx, broadcastCancel := context.WithTimeout(context.Background(), daemonTimeout)
+				defer broadcastCancel()
 
-						broadcastCtx, broadcastCancel := context.WithTimeout(context.Background(), daemonTimeout)
-						resp, err := daemonClient.Broadcast(broadcastCtx, &pb.BroadcastRequest{Transactions: chunk})
-						broadcastCancel()
-						if err != nil {
-							failure = true
-							break
-						}
+				const chunkSize = 100 // To avoid sending a message bigger than the gRPC max message size, we split it to chunks
+				for offset := 0; offset < len(signedTransactions); offset += chunkSize {
+					end := len(signedTransactions)
+					if offset+chunkSize <= len(signedTransactions) {
+						end = offset + chunkSize
+					}
 
-						fmt.Printf("Broadcasted %d transaction(s) (%0.2f%% complete)\n", len(chunk), 100*float64(end)/float64(len(signedTxs)))
-						for _, txID := range resp.TxIDs {
-							fmt.Printf("\t%s\n", txID)
-						}
+					chunk := signedTransactions[offset:end]
+					response, err := daemonClient.Broadcast(broadcastCtx, &pb.BroadcastRequest{Transactions: chunk})
+					if err != nil {
+						continue retry
+					}
+
+					fmt.Printf("Broadcasted %d transaction(s) (broadcasted %.2f%% of the transactions so far)\n", len(chunk), 100*float64(end)/float64(len(signedTransactions)))
+					fmt.Println("Broadcasted Transaction ID(s): ")
+					for _, txID := range response.TxIDs {
+						fmt.Printf("\t%s\n", txID)
 					}
 				}
-				if !failure {
-					if conf.Verbose {
-						fmt.Println("Serialized Transactions:")
-						for _, tx := range signedTxs {
-							fmt.Printf("\t%x\n", tx)
-						}
-					}
-				} else {
-					if attempt < maxRetries {
-						time.Sleep(retryDelay)
-						continue
-					} else {
-						break
+
+				if conf.Verbose {
+					fmt.Println("Serialized Transaction(s) (can be parsed via the `parse` command or resent via `broadcast`): ")
+					for _, signedTx := range signedTransactions {
+						fmt.Printf("\t%x\n\n", signedTx)
 					}
 				}
+				break
 			}
 		}()
 	}

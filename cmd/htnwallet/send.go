@@ -44,8 +44,8 @@ func send(conf *sendConfig) error {
 			return err
 		}
 	}
-	var failed bool = false
-	for attempt := 1; attempt <= maxRetries; attempt++ {
+retry:
+	for attempt := 0; attempt <= maxRetries; attempt++ {
 		createUnsignedTransactionsResponse, err :=
 			daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
 				From:                     conf.FromAddresses,
@@ -67,14 +67,14 @@ func send(conf *sendConfig) error {
 				fmt.Fprintf(os.Stderr, "Password decryption failed. Sometimes this is a result of not "+
 					"specifying the same keys file used by the wallet daemon process.\n")
 			}
-			return err
+			continue retry
 		}
 
 		signedTransactions := make([][]byte, len(createUnsignedTransactionsResponse.UnsignedTransactions))
 		for i, unsignedTransaction := range createUnsignedTransactionsResponse.UnsignedTransactions {
 			signedTransaction, err := libhtnwallet.Sign(conf.NetParams(), mnemonics, unsignedTransaction, keysFile.ECDSA)
 			if err != nil {
-				return err
+				continue retry
 			}
 			signedTransactions[i] = signedTransaction
 		}
@@ -95,12 +95,8 @@ func send(conf *sendConfig) error {
 			chunk := signedTransactions[offset:end]
 			response, err := daemonClient.Broadcast(broadcastCtx, &pb.BroadcastRequest{Transactions: chunk})
 			if err != nil {
-				if attempt < maxRetries {
-					failed = true
-					broadcastCancel()
-					break
-				}
-				return fmt.Errorf("failed to broadcast transactions after %d attempts: %w", maxRetries, err)
+				fmt.Printf("Failed to broadcast transactions after %d attempts: %w", maxRetries, err)
+				continue retry
 			}
 
 			fmt.Printf("Broadcasted %d transaction(s) (broadcasted %.2f%% of the transactions so far)\n", len(chunk), 100*float64(end)/float64(len(signedTransactions)))
@@ -108,11 +104,6 @@ func send(conf *sendConfig) error {
 			for _, txID := range response.TxIDs {
 				fmt.Printf("\t%s\n", txID)
 			}
-		}
-		if !failed {
-			time.Sleep(retryDelay)
-			fmt.Printf("Failed to broadcast transaction, testing again for %d time.\n", attempt)
-			continue
 		}
 
 		if conf.Verbose {
