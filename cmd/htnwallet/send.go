@@ -44,61 +44,61 @@ func send(conf *sendConfig) error {
 			return err
 		}
 	}
-
-	createUnsignedTransactionsResponse, err :=
-		daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
-			From:                     conf.FromAddresses,
-			Address:                  conf.ToAddress,
-			Amount:                   sendAmountSompi,
-			IsSendAll:                conf.IsSendAll,
-			UseExistingChangeAddress: conf.UseExistingChangeAddress,
-		})
-	if err != nil {
-		return err
-	}
-
-	if len(conf.Password) == 0 {
-		conf.Password = keys.GetPassword("Password:")
-	}
-	mnemonics, err := keysFile.DecryptMnemonics(conf.Password)
-	if err != nil {
-		if strings.Contains(err.Error(), "message authentication failed") {
-			fmt.Fprintf(os.Stderr, "Password decryption failed. Sometimes this is a result of not "+
-				"specifying the same keys file used by the wallet daemon process.\n")
-		}
-		return err
-	}
-
-	signedTransactions := make([][]byte, len(createUnsignedTransactionsResponse.UnsignedTransactions))
-	for i, unsignedTransaction := range createUnsignedTransactionsResponse.UnsignedTransactions {
-		signedTransaction, err := libhtnwallet.Sign(conf.NetParams(), mnemonics, unsignedTransaction, keysFile.ECDSA)
+	var failed bool = false
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		createUnsignedTransactionsResponse, err :=
+			daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
+				From:                     conf.FromAddresses,
+				Address:                  conf.ToAddress,
+				Amount:                   sendAmountSompi,
+				IsSendAll:                conf.IsSendAll,
+				UseExistingChangeAddress: conf.UseExistingChangeAddress,
+			})
 		if err != nil {
 			return err
 		}
-		signedTransactions[i] = signedTransaction
-	}
 
-	fmt.Printf("Broadcasting %d transaction(s)\n", len(signedTransactions))
-	// Since we waited for user input when getting the password, which could take unbound amount of time -
-	// create a new context for broadcast, to reset the timeout.
-	broadcastCtx, broadcastCancel := context.WithTimeout(context.Background(), daemonTimeout)
-	defer broadcastCancel()
-
-	const chunkSize = 100 // To avoid sending a message bigger than the gRPC max message size, we split it to chunks
-	for offset := 0; offset < len(signedTransactions); offset += chunkSize {
-		end := len(signedTransactions)
-		if offset+chunkSize <= len(signedTransactions) {
-			end = offset + chunkSize
+		if len(conf.Password) == 0 {
+			conf.Password = keys.GetPassword("Password:")
+		}
+		mnemonics, err := keysFile.DecryptMnemonics(conf.Password)
+		if err != nil {
+			if strings.Contains(err.Error(), "message authentication failed") {
+				fmt.Fprintf(os.Stderr, "Password decryption failed. Sometimes this is a result of not "+
+					"specifying the same keys file used by the wallet daemon process.\n")
+			}
+			return err
 		}
 
-		chunk := signedTransactions[offset:end]
-		for attempt := 1; attempt <= maxRetries; attempt++ {
+		signedTransactions := make([][]byte, len(createUnsignedTransactionsResponse.UnsignedTransactions))
+		for i, unsignedTransaction := range createUnsignedTransactionsResponse.UnsignedTransactions {
+			signedTransaction, err := libhtnwallet.Sign(conf.NetParams(), mnemonics, unsignedTransaction, keysFile.ECDSA)
+			if err != nil {
+				return err
+			}
+			signedTransactions[i] = signedTransaction
+		}
+
+		fmt.Printf("Broadcasting %d transaction(s)\n", len(signedTransactions))
+		// Since we waited for user input when getting the password, which could take unbound amount of time -
+		// create a new context for broadcast, to reset the timeout.
+		broadcastCtx, broadcastCancel := context.WithTimeout(context.Background(), daemonTimeout)
+		defer broadcastCancel()
+
+		const chunkSize = 100 // To avoid sending a message bigger than the gRPC max message size, we split it to chunks
+		for offset := 0; offset < len(signedTransactions); offset += chunkSize {
+			end := len(signedTransactions)
+			if offset+chunkSize <= len(signedTransactions) {
+				end = offset + chunkSize
+			}
+
+			chunk := signedTransactions[offset:end]
 			response, err := daemonClient.Broadcast(broadcastCtx, &pb.BroadcastRequest{Transactions: chunk})
 			if err != nil {
 				if attempt < maxRetries {
-					fmt.Printf("Broadcast attempt %d failed. Retrying in %s...\n", attempt, retryDelay)
-					time.Sleep(retryDelay)
-					continue
+					failed = true
+					broadcastCancel()
+					break
 				}
 				return fmt.Errorf("failed to broadcast transactions after %d attempts: %w", maxRetries, err)
 			}
@@ -108,15 +108,19 @@ func send(conf *sendConfig) error {
 			for _, txID := range response.TxIDs {
 				fmt.Printf("\t%s\n", txID)
 			}
-			break
 		}
-	}
+		if !failed {
+			time.Sleep(retryDelay)
+			continue
+		}
 
-	if conf.Verbose {
-		fmt.Println("Serialized Transaction(s) (can be parsed via the `parse` command or resent via `broadcast`): ")
-		for _, signedTx := range signedTransactions {
-			fmt.Printf("\t%x\n\n", signedTx)
+		if conf.Verbose {
+			fmt.Println("Serialized Transaction(s) (can be parsed via the `parse` command or resent via `broadcast`): ")
+			for _, signedTx := range signedTransactions {
+				fmt.Printf("\t%x\n\n", signedTx)
+			}
 		}
+		break
 	}
 
 	return nil
