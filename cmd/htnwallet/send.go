@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const maxRetries = 3
+const maxRetries = 10
 const retryDelay = 2 * time.Second
 
 func send(conf *sendConfig) error {
@@ -111,6 +111,7 @@ func send(conf *sendConfig) error {
 		}
 		if !failed {
 			time.Sleep(retryDelay)
+			fmt.Printf("Failed to broadcast transaction, testing again for %d time.\n", attempt)
 			continue
 		}
 

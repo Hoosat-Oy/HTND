@@ -12,6 +12,8 @@ func main() {
 		err = create(config.(*createConfig))
 	case balanceSubCmd:
 		err = balance(config.(*balanceConfig))
+	case spamSubCmd:
+		err = spamSend(config.(*spamConfig))
 	case sendSubCmd:
 		err = send(config.(*sendConfig))
 	case createUnsignedTransactionSubCmd:
