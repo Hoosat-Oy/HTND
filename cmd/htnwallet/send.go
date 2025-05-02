@@ -55,7 +55,8 @@ retry:
 				UseExistingChangeAddress: conf.UseExistingChangeAddress,
 			})
 		if err != nil {
-			return err
+			time.Sleep(retryDelay)
+			continue retry
 		}
 
 		if len(conf.Password) == 0 {
@@ -67,6 +68,7 @@ retry:
 				fmt.Fprintf(os.Stderr, "Password decryption failed. Sometimes this is a result of not "+
 					"specifying the same keys file used by the wallet daemon process.\n")
 			}
+			time.Sleep(retryDelay)
 			continue retry
 		}
 
@@ -74,6 +76,7 @@ retry:
 		for i, unsignedTransaction := range createUnsignedTransactionsResponse.UnsignedTransactions {
 			signedTransaction, err := libhtnwallet.Sign(conf.NetParams(), mnemonics, unsignedTransaction, keysFile.ECDSA)
 			if err != nil {
+				time.Sleep(retryDelay)
 				continue retry
 			}
 			signedTransactions[i] = signedTransaction
@@ -96,6 +99,7 @@ retry:
 			response, err := daemonClient.Broadcast(broadcastCtx, &pb.BroadcastRequest{Transactions: chunk})
 			if err != nil {
 				fmt.Printf("Failed to broadcast transactions after %d attempts: %w", maxRetries, err)
+				time.Sleep(retryDelay)
 				continue retry
 			}
 

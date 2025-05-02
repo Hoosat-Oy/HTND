@@ -73,6 +73,7 @@ func spamSend(conf *spamConfig) error {
 						UseExistingChangeAddress: conf.UseExistingChangeAddress,
 					})
 				if err != nil {
+					time.Sleep(retryDelay)
 					continue retry
 				}
 
@@ -85,6 +86,7 @@ func spamSend(conf *spamConfig) error {
 						fmt.Fprintf(os.Stderr, "Password decryption failed. Sometimes this is a result of not "+
 							"specifying the same keys file used by the wallet daemon process.\n")
 					}
+					time.Sleep(retryDelay)
 					continue retry
 				}
 
@@ -92,6 +94,7 @@ func spamSend(conf *spamConfig) error {
 				for i, unsignedTransaction := range createUnsignedTransactionsResponse.UnsignedTransactions {
 					signedTransaction, err := libhtnwallet.Sign(conf.NetParams(), mnemonics, unsignedTransaction, keysFile.ECDSA)
 					if err != nil {
+						time.Sleep(retryDelay)
 						continue retry
 					}
 					signedTransactions[i] = signedTransaction
@@ -112,6 +115,7 @@ func spamSend(conf *spamConfig) error {
 					chunk := signedTransactions[offset:end]
 					response, err := daemonClient.Broadcast(broadcastCtx, &pb.BroadcastRequest{Transactions: chunk})
 					if err != nil {
+						time.Sleep(retryDelay)
 						continue retry
 					}
 
