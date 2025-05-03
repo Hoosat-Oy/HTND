@@ -120,7 +120,8 @@ func HandleSubmitBlock(context *rpccontext.Context, router *router.Router, reque
 		}, nil
 	}
 
-	log.Infof("Accepted block %s via submitBlock", consensushashing.BlockHash(domainBlock))
+	txslen := len(submitBlockRequest.Block.Transactions)
+	log.Infof("Accepted block %s via submitBlock with %d tx", consensushashing.BlockHash(domainBlock), txslen)
 	log.Infof("Accepted PoW hash %s", domainBlock.PoWHash)
 
 	response := appmessage.NewSubmitBlockResponseMessage()
