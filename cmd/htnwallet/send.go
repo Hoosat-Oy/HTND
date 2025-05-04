@@ -98,7 +98,7 @@ retry:
 			chunk := signedTransactions[offset:end]
 			response, err := daemonClient.Broadcast(broadcastCtx, &pb.BroadcastRequest{Transactions: chunk})
 			if err != nil {
-				fmt.Printf("Failed to broadcast transactions after %d attempts: %w", maxRetries, err)
+				fmt.Printf("Failed to broadcast transactions after %d attempts: %s", maxRetries, err)
 				time.Sleep(retryDelay)
 				continue retry
 			}
