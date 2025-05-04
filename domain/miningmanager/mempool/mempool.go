@@ -151,7 +151,7 @@ func (mp *mempool) BlockCandidateTransactions() []*externalapi.DomainTransaction
 	var spamTx *externalapi.DomainTransaction
 	var spamTxNewestUTXODaaScore uint64
 	for _, tx := range readyTxs {
-		if len(tx.Outputs) > len(tx.Inputs) {
+		if len(tx.Outputs) > 2 {
 			hasCoinbaseInput := false
 			for _, input := range tx.Inputs {
 				if input.UTXOEntry.IsCoinbase() {
