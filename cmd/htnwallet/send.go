@@ -55,10 +55,11 @@ retry:
 				UseExistingChangeAddress: conf.UseExistingChangeAddress,
 			})
 		if err != nil {
-			fmt.Printf("Failed to create unsigned transactions after %d attempts: %s\n", attempt, err)
 			if strings.Contains(err.Error(), "Insufficient funds for send") {
+				fmt.Printf("Waiting for spendable UTXO.\n")
 				attempt = attempt - 1
 			} else {
+				fmt.Printf("Failed to create unsigned transactions after %d attempts: %s\n", attempt, err)
 				time.Sleep(retryDelay)
 			}
 			continue retry
