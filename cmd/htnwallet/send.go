@@ -55,7 +55,7 @@ retry:
 				UseExistingChangeAddress: conf.UseExistingChangeAddress,
 			})
 		if err != nil {
-			fmt.Printf("Failed to create unsigned transactions after %d attempts: %s\n", maxRetries, err)
+			fmt.Printf("Failed to create unsigned transactions after %d attempts: %s\n", attempt, err)
 			if strings.Contains(err.Error(), "Insufficient funds for send") {
 				attempt = attempt - 1
 			}
@@ -79,7 +79,7 @@ retry:
 		for i, unsignedTransaction := range createUnsignedTransactionsResponse.UnsignedTransactions {
 			signedTransaction, err := libhtnwallet.Sign(conf.NetParams(), mnemonics, unsignedTransaction, keysFile.ECDSA)
 			if err != nil {
-				fmt.Printf("Failed to sign unsigned transactions after %d attempts: %s\n", maxRetries, err)
+				fmt.Printf("Failed to sign unsigned transactions after %d attempts: %s\n", attempt, err)
 				time.Sleep(retryDelay)
 				continue retry
 			}
@@ -103,7 +103,7 @@ retry:
 			response, err := daemonClient.Broadcast(broadcastCtx, &pb.BroadcastRequest{Transactions: chunk})
 			if err != nil {
 				broadcastCancel()
-				fmt.Printf("Failed to broadcast transactions after %d attempts: %s\n", maxRetries, err)
+				fmt.Printf("Failed to broadcast transactions after %d attempts: %s\n", attempt, err)
 				time.Sleep(retryDelay)
 				continue retry
 			}
