@@ -58,8 +58,9 @@ retry:
 			fmt.Printf("Failed to create unsigned transactions after %d attempts: %s\n", attempt, err)
 			if strings.Contains(err.Error(), "Insufficient funds for send") {
 				attempt = attempt - 1
+			} else {
+				time.Sleep(retryDelay)
 			}
-			time.Sleep(retryDelay)
 			continue retry
 		}
 
