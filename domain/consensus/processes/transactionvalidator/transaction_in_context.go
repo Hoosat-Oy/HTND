@@ -139,10 +139,10 @@ func (v *transactionValidator) checkTransactionInputAmounts(tx *externalapi.Doma
 	totalSompiIn = 0
 
 	var missingOutpoints []*externalapi.DomainOutpoint
-	for _, input := range tx.Inputs {
-		utxoEntry := input.UTXOEntry
+	for i := 0; i < len(tx.Inputs); i++ {
+		utxoEntry := tx.Inputs[i].UTXOEntry
 		if utxoEntry == nil {
-			missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
+			missingOutpoints = append(missingOutpoints, &tx.Inputs[i].PreviousOutpoint)
 			continue
 		}
 
