@@ -74,7 +74,7 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 		usedP += candidateTx.p
 	}
 
-	selectedTxs := make([]*candidateTx, 0)
+	selectedTxs := make([]*candidateTx, 0, len(candidateTxs))
 	for len(candidateTxs)-usedCount > 0 {
 		// Rebalance the candidates if it's required
 		if usedP >= rebalanceThreshold*totalP {
@@ -123,15 +123,15 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 					"subnetwork %s. Removing all remaining txs from this "+
 					"subnetwork.",
 					consensushashing.TransactionID(tx), subnetworkID)
-				for _, candidateTx := range candidateTxs {
+				for i := 0; i < len(candidateTxs); i++ {
 					// candidateTxs are ordered by subnetwork, so we can safely assume
 					// that transactions after subnetworkID will not be relevant.
-					if subnetworks.Less(subnetworkID, candidateTx.SubnetworkID) {
+					if subnetworks.Less(subnetworkID, candidateTxs[i].SubnetworkID) {
 						break
 					}
 
-					if candidateTx.SubnetworkID == subnetworkID {
-						markCandidateTxForDeletion(candidateTx)
+					if candidateTxs[i].SubnetworkID == subnetworkID {
+						markCandidateTxForDeletion(candidateTxs[i])
 					}
 				}
 				continue
@@ -155,10 +155,11 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 	sort.Slice(selectedTxs, func(i, j int) bool {
 		return subnetworks.Less(selectedTxs[i].SubnetworkID, selectedTxs[j].SubnetworkID)
 	})
-	for _, selectedTx := range selectedTxs {
-		txsForBlockTemplate.selectedTxs = append(txsForBlockTemplate.selectedTxs, selectedTx.DomainTransaction)
-		txsForBlockTemplate.txMasses = append(txsForBlockTemplate.txMasses, selectedTx.Mass)
-		txsForBlockTemplate.txFees = append(txsForBlockTemplate.txFees, selectedTx.Fee)
+
+	for i := 0; i < len(selectedTxs); i++ {
+		txsForBlockTemplate.selectedTxs = append(txsForBlockTemplate.selectedTxs, selectedTxs[i].DomainTransaction)
+		txsForBlockTemplate.txMasses = append(txsForBlockTemplate.txMasses, selectedTxs[i].Mass)
+		txsForBlockTemplate.txFees = append(txsForBlockTemplate.txFees, selectedTxs[i].Fee)
 	}
 	return txsForBlockTemplate
 }
