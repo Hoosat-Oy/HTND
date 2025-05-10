@@ -150,44 +150,46 @@ func (mp *mempool) BlockCandidateTransactions() []*externalapi.DomainTransaction
 	var candidateTxs []*externalapi.DomainTransaction
 	var spamTx *externalapi.DomainTransaction
 	var spamTxNewestUTXODaaScore uint64
-	for _, tx := range readyTxs {
-		if len(tx.Outputs) > 2 {
+	for i := 0; i < len(readyTxs); i++ {
+		if len(readyTxs[i].Outputs) <= 2 {
+			candidateTxs = append(candidateTxs, readyTxs[i])
+			continue
+		} else {
 			hasCoinbaseInput := false
-			for _, input := range tx.Inputs {
-				if input.UTXOEntry.IsCoinbase() {
+			for x := 0; x < len(readyTxs[i].Inputs); x++ {
+				if readyTxs[i].Inputs[x].UTXOEntry.IsCoinbase() {
 					hasCoinbaseInput = true
 					break
 				}
 			}
 
-			numExtraOuts := len(tx.Outputs) - len(tx.Inputs)
-			if !hasCoinbaseInput && numExtraOuts > 2 && tx.Fee < uint64(numExtraOuts)*constants.SompiPerHoosat {
-				log.Debugf("Filtered spam tx %s", consensushashing.TransactionID(tx))
+			numExtraOuts := len(readyTxs[i].Outputs) - len(readyTxs[i].Inputs)
+			if !hasCoinbaseInput && numExtraOuts > 2 && readyTxs[i].Fee < uint64(numExtraOuts)*constants.SompiPerHoosat {
+				log.Debugf("Filtered spam tx %s", consensushashing.TransactionID(readyTxs[i]))
 				continue
 			}
 
-			if hasCoinbaseInput || tx.Fee > uint64(numExtraOuts)*constants.SompiPerHoosat {
-				candidateTxs = append(candidateTxs, tx)
+			if hasCoinbaseInput || readyTxs[i].Fee > uint64(numExtraOuts)*constants.SompiPerHoosat {
+				candidateTxs = append(candidateTxs, readyTxs[i])
 			} else {
-				txNewestUTXODaaScore := tx.Inputs[0].UTXOEntry.BlockDAAScore()
-				for _, input := range tx.Inputs {
-					if input.UTXOEntry.BlockDAAScore() > txNewestUTXODaaScore {
-						txNewestUTXODaaScore = input.UTXOEntry.BlockDAAScore()
+				txNewestUTXODaaScore := readyTxs[i].Inputs[0].UTXOEntry.BlockDAAScore()
+
+				for x := 0; x < len(readyTxs[i].Inputs); x++ {
+					if readyTxs[i].Inputs[x].UTXOEntry.BlockDAAScore() > txNewestUTXODaaScore {
+						txNewestUTXODaaScore = readyTxs[i].Inputs[x].UTXOEntry.BlockDAAScore()
 					}
 				}
 
 				if spamTx != nil {
 					if txNewestUTXODaaScore < spamTxNewestUTXODaaScore {
-						spamTx = tx
+						spamTx = readyTxs[i]
 						spamTxNewestUTXODaaScore = txNewestUTXODaaScore
 					}
 				} else {
-					spamTx = tx
+					spamTx = readyTxs[i]
 					spamTxNewestUTXODaaScore = txNewestUTXODaaScore
 				}
 			}
-		} else {
-			candidateTxs = append(candidateTxs, tx)
 		}
 	}
 
