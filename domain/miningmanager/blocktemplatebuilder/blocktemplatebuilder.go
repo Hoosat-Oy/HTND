@@ -2,7 +2,6 @@ package blocktemplatebuilder
 
 import (
 	"math"
-	"sort"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/coinbasemanager"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/merkle"
@@ -132,11 +131,6 @@ func (btb *blockTemplateBuilder) BuildBlockTemplate(
 			gasLimit:          gasLimit,
 		})
 	}
-
-	// Sort the candidate txs by subnetworkID.
-	sort.Slice(candidateTxs, func(i, j int) bool {
-		return subnetworks.Less(candidateTxs[i].SubnetworkID, candidateTxs[j].SubnetworkID)
-	})
 
 	log.Debugf("Considering %d transactions for inclusion to new block",
 		len(candidateTxs))
