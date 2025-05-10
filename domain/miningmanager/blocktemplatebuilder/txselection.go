@@ -170,22 +170,22 @@ func rebalanceCandidates(oldCandidateTxs []*candidateTx, isFirstRun bool) (
 	totalP = 0.0
 
 	candidateTxs = make([]*candidateTx, 0, len(oldCandidateTxs))
-	for _, candidateTx := range oldCandidateTxs {
-		if candidateTx.isMarkedForDeletion {
+	for i := 0; i < len(oldCandidateTxs); i++ {
+		if oldCandidateTxs[i].isMarkedForDeletion {
 			continue
 		}
 
-		candidateTxs = append(candidateTxs, candidateTx)
+		candidateTxs = append(candidateTxs, oldCandidateTxs[i])
 	}
 
-	for _, candidateTx := range candidateTxs {
+	for i := 0; i < len(candidateTxs); i++ {
 		if isFirstRun {
-			candidateTx.p = math.Pow(candidateTx.txValue, alpha)
+			candidateTxs[i].p = math.Pow(candidateTxs[i].txValue, alpha)
 		}
-		candidateTx.start = totalP
-		candidateTx.end = totalP + candidateTx.p
+		candidateTxs[i].start = totalP
+		candidateTxs[i].end = totalP + candidateTxs[i].p
 
-		totalP += candidateTx.p
+		totalP += candidateTxs[i].p
 	}
 	return
 }
