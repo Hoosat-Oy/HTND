@@ -229,12 +229,12 @@ func (v *transactionValidator) validateTransactionScripts(tx *externalapi.Domain
 	var missingOutpoints []*externalapi.DomainOutpoint
 	sighashReusedValues := &consensushashing.SighashReusedValues{}
 
-	for i, input := range tx.Inputs {
+	for i := 0; i < len(tx.Inputs); i++ {
 		// Create a new script engine for the script pair.
-		sigScript := input.SignatureScript
-		utxoEntry := input.UTXOEntry
+		sigScript := tx.Inputs[i].SignatureScript
+		utxoEntry := tx.Inputs[i].UTXOEntry
 		if utxoEntry == nil {
-			missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
+			missingOutpoints = append(missingOutpoints, &tx.Inputs[i].PreviousOutpoint)
 			continue
 		}
 
@@ -246,7 +246,7 @@ func (v *transactionValidator) validateTransactionScripts(tx *externalapi.Domain
 				"%s (input script bytes %x, prev "+
 				"output script bytes %x)",
 				i,
-				input.PreviousOutpoint, err, sigScript, scriptPubKey)
+				tx.Inputs[i].PreviousOutpoint, err, sigScript, scriptPubKey)
 		}
 
 		// Execute the script pair.
@@ -256,7 +256,7 @@ func (v *transactionValidator) validateTransactionScripts(tx *externalapi.Domain
 				"%s (input script bytes %x, prev output "+
 				"script bytes %x)",
 				i,
-				input.PreviousOutpoint, err, sigScript, scriptPubKey)
+				tx.Inputs[i].PreviousOutpoint, err, sigScript, scriptPubKey)
 		}
 	}
 	if len(missingOutpoints) > 0 {
