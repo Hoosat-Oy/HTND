@@ -121,15 +121,14 @@ func (btb *blockTemplateBuilder) BuildBlockTemplate(
 
 	mempoolTransactions := btb.mempool.BlockCandidateTransactions()
 	candidateTxs := make([]*candidateTx, 0, len(mempoolTransactions))
-	for _, tx := range mempoolTransactions {
-		// Calculate the tx value
+	for i := 0; i < len(mempoolTransactions); i++ {
 		gasLimit := uint64(0)
-		if !subnetworks.IsBuiltInOrNative(tx.SubnetworkID) {
+		if !subnetworks.IsBuiltInOrNative(mempoolTransactions[i].SubnetworkID) {
 			panic("We currently don't support non native subnetworks")
 		}
 		candidateTxs = append(candidateTxs, &candidateTx{
-			DomainTransaction: tx,
-			txValue:           btb.calcTxValue(tx),
+			DomainTransaction: mempoolTransactions[i],
+			txValue:           btb.calcTxValue(mempoolTransactions[i]),
 			gasLimit:          gasLimit,
 		})
 	}
