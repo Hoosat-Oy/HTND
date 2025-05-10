@@ -18,24 +18,24 @@ import (
 // manually added transactions when not in IBD.
 func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock) error {
 
-	hash := consensushashing.BlockHash(block)
-	log.Tracef("OnNewBlock start for block %s", hash)
-	defer log.Tracef("OnNewBlock end for block %s", hash)
+	// hash := consensushashing.BlockHash(block)
+	// log.Tracef("OnNewBlock start for block %s", hash)
+	// defer log.Tracef("OnNewBlock end for block %s", hash)
 
 	unorphanedBlocks, err := f.UnorphanBlocks(block)
 	if err != nil {
 		return err
 	}
 
-	log.Debugf("OnNewBlock: block %s unorphaned %d blocks", hash, len(unorphanedBlocks))
+	// log.Debugf("OnNewBlock: block %s unorphaned %d blocks", hash, len(unorphanedBlocks))
 
 	newBlocks := []*externalapi.DomainBlock{block}
 	newBlocks = append(newBlocks, unorphanedBlocks...)
 
 	allAcceptedTransactions := make([]*externalapi.DomainTransaction, 0)
-	for _, newBlock := range newBlocks {
-		log.Debugf("OnNewBlock: passing block %s transactions to mining manager", hash)
-		acceptedTransactions, err := f.Domain().MiningManager().HandleNewBlockTransactions(newBlock.Transactions)
+	for i := 0; i < len(newBlocks); i++ {
+		// log.Debugf("OnNewBlock: passing block %s transactions to mining manager", hash)
+		acceptedTransactions, err := f.Domain().MiningManager().HandleNewBlockTransactions(newBlocks[i].Transactions)
 		if err != nil {
 			return err
 		}
@@ -84,14 +84,18 @@ func (f *FlowContext) broadcastTransactionsAfterBlockAdded(
 		f.lastRebroadcastTime = time.Now()
 	}
 
-	txIDsToBroadcast := make([]*externalapi.DomainTransactionID, len(transactionsAcceptedToMempool)+len(txIDsToRebroadcast))
-	for i, tx := range transactionsAcceptedToMempool {
-		txIDsToBroadcast[i] = consensushashing.TransactionID(tx)
+	totalLen := len(transactionsAcceptedToMempool) + len(txIDsToRebroadcast)
+	txIDsToBroadcast := make([]*externalapi.DomainTransactionID, totalLen)
+
+	for i := 0; i < len(transactionsAcceptedToMempool); i++ {
+		txIDsToBroadcast[i] = consensushashing.TransactionID(transactionsAcceptedToMempool[i])
 	}
+
 	offset := len(transactionsAcceptedToMempool)
-	for i, txID := range txIDsToRebroadcast {
-		txIDsToBroadcast[offset+i] = txID
+	for i := 0; i < len(txIDsToRebroadcast); i++ {
+		txIDsToBroadcast[offset+i] = txIDsToRebroadcast[i]
 	}
+
 	return f.EnqueueTransactionIDsForPropagation(txIDsToBroadcast)
 }
 
