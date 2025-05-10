@@ -130,16 +130,15 @@ func (bb *blockBuilder) buildBlock(stagingArea *model.StagingArea, coinbaseData 
 func (bb *blockBuilder) validateTransactions(stagingArea *model.StagingArea,
 	transactions []*externalapi.DomainTransaction) error {
 
-	invalidTransactions := make([]ruleerrors.InvalidTransaction, 0)
-	for _, transaction := range transactions {
-		err := bb.validateTransaction(stagingArea, transaction)
+	invalidTransactions := make([]ruleerrors.InvalidTransaction, 0, 20)
+	for i := 0; i < len(transactions); i++ {
+		err := bb.validateTransaction(stagingArea, transactions[i])
 		if err != nil {
 			ruleError := ruleerrors.RuleError{}
 			if !errors.As(err, &ruleError) {
 				return err
 			}
-			invalidTransactions = append(invalidTransactions,
-				ruleerrors.InvalidTransaction{Transaction: transaction, Error: &ruleError})
+			invalidTransactions = append(invalidTransactions, ruleerrors.InvalidTransaction{Transaction: transactions[i], Error: &ruleError})
 		}
 	}
 
@@ -154,14 +153,14 @@ func (bb *blockBuilder) validateTransaction(
 	stagingArea *model.StagingArea, transaction *externalapi.DomainTransaction) error {
 
 	originalEntries := make([]externalapi.UTXOEntry, len(transaction.Inputs))
-	for i, input := range transaction.Inputs {
-		originalEntries[i] = input.UTXOEntry
-		input.UTXOEntry = nil
+	for i := 0; i < len(transaction.Inputs); i++ {
+		originalEntries[i] = transaction.Inputs[i].UTXOEntry
+		transaction.Inputs[i].UTXOEntry = nil
 	}
 
 	defer func() {
-		for i, input := range transaction.Inputs {
-			input.UTXOEntry = originalEntries[i]
+		for i := 0; i < len(transaction.Inputs); i++ {
+			transaction.Inputs[i].UTXOEntry = originalEntries[i]
 		}
 	}()
 

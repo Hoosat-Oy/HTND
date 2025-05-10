@@ -24,52 +24,52 @@ func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualO
 	defer log.Tracef("populateTransactionWithUTXOEntriesFromVirtualOrDiff end for transaction %s", transactionID)
 
 	var missingOutpoints []*externalapi.DomainOutpoint
-	for _, transactionInput := range transaction.Inputs {
+	for i := 0; i < len(transaction.Inputs); i++ {
 		// skip all inputs that have a pre-filled utxo entry
-		if transactionInput.UTXOEntry != nil {
+		if transaction.Inputs[i].UTXOEntry != nil {
 			log.Tracef("Skipping outpoint %s:%d because it is already populated",
-				transactionInput.PreviousOutpoint.TransactionID, transactionInput.PreviousOutpoint.Index)
+				transaction.Inputs[i].PreviousOutpoint.TransactionID, transaction.Inputs[i].PreviousOutpoint.Index)
 			continue
 		}
 
 		// check if utxoDiff says anything about the input's outpoint
 		if utxoDiff != nil {
-			if utxoEntry, ok := utxoDiff.ToAdd().Get(&transactionInput.PreviousOutpoint); ok {
+			if utxoEntry, ok := utxoDiff.ToAdd().Get(&transaction.Inputs[i].PreviousOutpoint); ok {
 				log.Tracef("Populating outpoint %s:%d from the given utxoDiff",
-					transactionInput.PreviousOutpoint.TransactionID, transactionInput.PreviousOutpoint.Index)
-				transactionInput.UTXOEntry = utxoEntry
+					transaction.Inputs[i].PreviousOutpoint.TransactionID, transaction.Inputs[i].PreviousOutpoint.Index)
+				transaction.Inputs[i].UTXOEntry = utxoEntry
 				continue
 			}
 
-			if utxoDiff.ToRemove().Contains(&transactionInput.PreviousOutpoint) {
+			if utxoDiff.ToRemove().Contains(&transaction.Inputs[i].PreviousOutpoint) {
 				log.Tracef("Outpoint %s:%d is missing in the given utxoDiff",
-					transactionInput.PreviousOutpoint.TransactionID, transactionInput.PreviousOutpoint.Index)
-				missingOutpoints = append(missingOutpoints, &transactionInput.PreviousOutpoint)
+					transaction.Inputs[i].PreviousOutpoint.TransactionID, transaction.Inputs[i].PreviousOutpoint.Index)
+				missingOutpoints = append(missingOutpoints, &transaction.Inputs[i].PreviousOutpoint)
 				continue
 			}
 		}
 
 		// Check for the input's outpoint in virtual's UTXO set.
 		hasUTXOEntry, err := csm.consensusStateStore.HasUTXOByOutpoint(
-			csm.databaseContext, stagingArea, &transactionInput.PreviousOutpoint)
+			csm.databaseContext, stagingArea, &transaction.Inputs[i].PreviousOutpoint)
 		if err != nil {
 			return err
 		}
 		if !hasUTXOEntry {
 			log.Tracef("Outpoint %s:%d is missing in the database",
-				transactionInput.PreviousOutpoint.TransactionID, transactionInput.PreviousOutpoint.Index)
-			missingOutpoints = append(missingOutpoints, &transactionInput.PreviousOutpoint)
+				transaction.Inputs[i].PreviousOutpoint.TransactionID, transaction.Inputs[i].PreviousOutpoint.Index)
+			missingOutpoints = append(missingOutpoints, &transaction.Inputs[i].PreviousOutpoint)
 			continue
 		}
 
 		log.Tracef("Populating outpoint %s:%d from the database",
-			transactionInput.PreviousOutpoint.TransactionID, transactionInput.PreviousOutpoint.Index)
+			transaction.Inputs[i].PreviousOutpoint.TransactionID, transaction.Inputs[i].PreviousOutpoint.Index)
 		utxoEntry, err := csm.consensusStateStore.UTXOByOutpoint(
-			csm.databaseContext, stagingArea, &transactionInput.PreviousOutpoint)
+			csm.databaseContext, stagingArea, &transaction.Inputs[i].PreviousOutpoint)
 		if err != nil {
 			return err
 		}
-		transactionInput.UTXOEntry = utxoEntry
+		transaction.Inputs[i].UTXOEntry = utxoEntry
 	}
 
 	if len(missingOutpoints) > 0 {

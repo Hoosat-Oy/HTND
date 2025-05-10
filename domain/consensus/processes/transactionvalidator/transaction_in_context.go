@@ -112,17 +112,17 @@ func (v *transactionValidator) checkTransactionCoinbaseMaturity(stagingArea *mod
 	}
 
 	var missingOutpoints []*externalapi.DomainOutpoint
-	for _, input := range tx.Inputs {
-		utxoEntry := input.UTXOEntry
+	for i := 0; i < len(tx.Inputs); i++ {
+		utxoEntry := tx.Inputs[i].UTXOEntry
 		if utxoEntry == nil {
-			missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
+			missingOutpoints = append(missingOutpoints, &tx.Inputs[i].PreviousOutpoint)
 		} else if utxoEntry.IsCoinbase() {
 			originDAAScore := utxoEntry.BlockDAAScore()
 			if originDAAScore+v.blockCoinbaseMaturity > povDAAScore {
 				return errors.Wrapf(ruleerrors.ErrImmatureSpend, "tried to spend coinbase "+
 					"transaction output %s from DAA score %d "+
 					"to DAA score %d before required maturity "+
-					"of %d", input.PreviousOutpoint,
+					"of %d", tx.Inputs[i].PreviousOutpoint,
 					originDAAScore, povDAAScore,
 					v.blockCoinbaseMaturity)
 			}
@@ -187,8 +187,8 @@ func (v *transactionValidator) checkTransactionOutputAmounts(tx *externalapi.Dom
 	// Calculate the total output amount for this transaction. It is safe
 	// to ignore overflow and out of range errors here because those error
 	// conditions would have already been caught by checkTransactionAmountRanges.
-	for _, output := range tx.Outputs {
-		totalSompiOut += output.Value
+	for i := 0; i < len(tx.Outputs); i++ {
+		totalSompiOut += tx.Outputs[i].Value
 	}
 
 	// Ensure the transaction does not spend more than its inputs.
@@ -280,10 +280,10 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(stagi
 	}
 
 	var missingOutpoints []*externalapi.DomainOutpoint
-	for _, input := range tx.Inputs {
-		utxoEntry := input.UTXOEntry
+	for i := 0; i < len(tx.Inputs); i++ {
+		utxoEntry := tx.Inputs[i].UTXOEntry
 		if utxoEntry == nil {
-			missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
+			missingOutpoints = append(missingOutpoints, &tx.Inputs[i].PreviousOutpoint)
 			continue
 		}
 
@@ -292,7 +292,7 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(stagi
 		// Given a sequence number, we apply the relative time lock
 		// mask in order to obtain the time lock delta required before
 		// this input can be spent.
-		sequenceNum := input.Sequence
+		sequenceNum := tx.Inputs[i].Sequence
 		relativeLock := int64(sequenceNum & constants.SequenceLockTimeMask)
 
 		// Relative time locks are disabled for this input, so we can
@@ -342,19 +342,19 @@ func (v *transactionValidator) sequenceLockActive(sequenceLock *sequenceLock, bl
 }
 
 func (v *transactionValidator) validateTransactionSigOpCounts(tx *externalapi.DomainTransaction) error {
-	for i, input := range tx.Inputs {
-		utxoEntry := input.UTXOEntry
+	for i := 0; i < len(tx.Inputs); i++ {
+		utxoEntry := tx.Inputs[i].UTXOEntry
 
 		// Count the precise number of signature operations in the
 		// referenced public key script.
-		sigScript := input.SignatureScript
+		sigScript := tx.Inputs[i].SignatureScript
 		isP2SH := txscript.IsPayToScriptHash(utxoEntry.ScriptPublicKey())
 		sigOpCount := txscript.GetPreciseSigOpCount(sigScript, utxoEntry.ScriptPublicKey(), isP2SH)
 
-		if sigOpCount != int(input.SigOpCount) {
+		if sigOpCount != int(tx.Inputs[i].SigOpCount) {
 			return errors.Wrapf(ruleerrors.ErrWrongSigOpCount,
 				"input %d specifies SigOpCount %d while actual SigOpCount is %d",
-				i, input.SigOpCount, sigOpCount)
+				i, tx.Inputs[i].SigOpCount, sigOpCount)
 		}
 	}
 	return nil
