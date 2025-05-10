@@ -38,8 +38,8 @@ func (v *transactionValidator) IsFinalizedTransaction(tx *externalapi.DomainTran
 	// At this point, the transaction's lock time hasn't occurred yet, but
 	// the transaction might still be finalized if the sequence number
 	// for all transaction inputs is maxed out.
-	for _, input := range tx.Inputs {
-		if input.Sequence != math.MaxUint64 {
+	for i := 0; i < len(tx.Inputs); i++ {
+		if tx.Inputs[i].Sequence != math.MaxUint64 {
 			return false
 		}
 	}
