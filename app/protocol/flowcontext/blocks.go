@@ -29,10 +29,11 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock) error {
 
 	// log.Debugf("OnNewBlock: block %s unorphaned %d blocks", hash, len(unorphanedBlocks))
 
-	newBlocks := []*externalapi.DomainBlock{block}
+	newBlocks := make([]*externalapi.DomainBlock, 0, len(unorphanedBlocks)+1)
+	newBlocks = append(newBlocks, block)
 	newBlocks = append(newBlocks, unorphanedBlocks...)
 
-	allAcceptedTransactions := make([]*externalapi.DomainTransaction, 0)
+	allAcceptedTransactions := make([]*externalapi.DomainTransaction, 0, len(newBlocks))
 	for i := 0; i < len(newBlocks); i++ {
 		// log.Debugf("OnNewBlock: passing block %s transactions to mining manager", hash)
 		acceptedTransactions, err := f.Domain().MiningManager().HandleNewBlockTransactions(newBlocks[i].Transactions)
