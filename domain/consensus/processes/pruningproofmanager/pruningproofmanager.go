@@ -859,9 +859,6 @@ func (ppm *pruningProofManager) ApplyPruningPointProof(pruningPointProof *extern
 	for blockLevel, headers := range pruningPointProof.Headers {
 		log.Infof("Applying level %d from the pruning point proof", blockLevel)
 		for i, header := range headers {
-			if i%1000 == 0 {
-				log.Infof("Applying level %d from the pruning point proof - applied %d headers out of %d", blockLevel, i, len(headers))
-			}
 			stagingArea := model.NewStagingArea()
 
 			blockHash := consensushashing.HeaderHash(header)
