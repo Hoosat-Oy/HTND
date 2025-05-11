@@ -45,8 +45,8 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 			}
 
 			msgPruningPointHeaders := make([]*appmessage.MsgBlockHeader, len(pruningPointHeaders))
-			for i, header := range pruningPointHeaders {
-				msgPruningPointHeaders[i] = appmessage.DomainBlockHeaderToBlockHeader(header)
+			for i := 0; i < len(pruningPointHeaders); i++ {
+				msgPruningPointHeaders[i] = appmessage.DomainBlockHeaderToBlockHeader(pruningPointHeaders[i])
 			}
 
 			err = outgoingRoute.Enqueue(appmessage.NewMsgPruningPoints(msgPruningPointHeaders))
@@ -67,50 +67,50 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 			ghostdagData := make([]*externalapi.BlockGHOSTDAGDataHashPair, 0)
 			ghostdagDataHashToIndex := make(map[externalapi.DomainHash]int)
 			trustedDataGHOSTDAGDataIndexes := make(map[externalapi.DomainHash][]uint64)
-			for _, blockHash := range pointAndItsAnticone {
-				blockDAAWindowHashes, err := context.Domain().Consensus().BlockDAAWindowHashes(blockHash)
+			for i := 0; i < len(pointAndItsAnticone); i++ {
+				blockDAAWindowHashes, err := context.Domain().Consensus().BlockDAAWindowHashes(pointAndItsAnticone[i])
 				if err != nil {
 					return err
 				}
 
-				trustedDataDAABlockIndexes[*blockHash] = make([]uint64, 0, windowSize)
-				for i, daaBlockHash := range blockDAAWindowHashes {
-					index, exists := daaWindowHashesToIndex[*daaBlockHash]
+				trustedDataDAABlockIndexes[*pointAndItsAnticone[i]] = make([]uint64, 0, windowSize)
+				for x := 0; x < len(blockDAAWindowHashes); x++ {
+					index, exists := daaWindowHashesToIndex[*blockDAAWindowHashes[x]]
 					if !exists {
-						trustedDataDataDAAHeader, err := context.Domain().Consensus().TrustedDataDataDAAHeader(blockHash, daaBlockHash, uint64(i))
+						trustedDataDataDAAHeader, err := context.Domain().Consensus().TrustedDataDataDAAHeader(pointAndItsAnticone[i], blockDAAWindowHashes[x], uint64(i))
 						if err != nil {
 							return err
 						}
 						daaWindowBlocks = append(daaWindowBlocks, trustedDataDataDAAHeader)
 						index = len(daaWindowBlocks) - 1
-						daaWindowHashesToIndex[*daaBlockHash] = index
+						daaWindowHashesToIndex[*blockDAAWindowHashes[x]] = index
 					}
 
-					trustedDataDAABlockIndexes[*blockHash] = append(trustedDataDAABlockIndexes[*blockHash], uint64(index))
+					trustedDataDAABlockIndexes[*pointAndItsAnticone[i]] = append(trustedDataDAABlockIndexes[*pointAndItsAnticone[i]], uint64(index))
 				}
 
-				ghostdagDataBlockHashes, err := context.Domain().Consensus().TrustedBlockAssociatedGHOSTDAGDataBlockHashes(blockHash)
+				ghostdagDataBlockHashes, err := context.Domain().Consensus().TrustedBlockAssociatedGHOSTDAGDataBlockHashes(pointAndItsAnticone[i])
 				if err != nil {
 					return err
 				}
 
-				trustedDataGHOSTDAGDataIndexes[*blockHash] = make([]uint64, 0, context.Config().NetParams().K)
-				for _, ghostdagDataBlockHash := range ghostdagDataBlockHashes {
-					index, exists := ghostdagDataHashToIndex[*ghostdagDataBlockHash]
+				trustedDataGHOSTDAGDataIndexes[*pointAndItsAnticone[i]] = make([]uint64, 0, context.Config().NetParams().K)
+				for y := 0; y < len(ghostdagDataBlockHashes); y++ {
+					index, exists := ghostdagDataHashToIndex[*ghostdagDataBlockHashes[y]]
 					if !exists {
-						data, err := context.Domain().Consensus().TrustedGHOSTDAGData(ghostdagDataBlockHash)
+						data, err := context.Domain().Consensus().TrustedGHOSTDAGData(ghostdagDataBlockHashes[y])
 						if err != nil {
 							return err
 						}
 						ghostdagData = append(ghostdagData, &externalapi.BlockGHOSTDAGDataHashPair{
-							Hash:         ghostdagDataBlockHash,
+							Hash:         ghostdagDataBlockHashes[y],
 							GHOSTDAGData: data,
 						})
 						index = len(ghostdagData) - 1
-						ghostdagDataHashToIndex[*ghostdagDataBlockHash] = index
+						ghostdagDataHashToIndex[*ghostdagDataBlockHashes[y]] = index
 					}
 
-					trustedDataGHOSTDAGDataIndexes[*blockHash] = append(trustedDataGHOSTDAGDataIndexes[*blockHash], uint64(index))
+					trustedDataGHOSTDAGDataIndexes[*pointAndItsAnticone[i]] = append(trustedDataGHOSTDAGDataIndexes[*pointAndItsAnticone[i]], uint64(index))
 				}
 			}
 
@@ -118,18 +118,17 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 			if err != nil {
 				return err
 			}
-
-			for i, blockHash := range pointAndItsAnticone {
-				block, found, err := context.Domain().Consensus().GetBlock(blockHash)
+			for i := 0; i < len(pointAndItsAnticone); i++ {
+				block, found, err := context.Domain().Consensus().GetBlock(pointAndItsAnticone[i])
 				if err != nil {
 					return err
 				}
 
 				if !found {
-					return protocolerrors.Errorf(false, "pruning point anticone block %s not found", blockHash)
+					return protocolerrors.Errorf(false, "pruning point anticone block %s not found", pointAndItsAnticone[i])
 				}
 
-				err = outgoingRoute.Enqueue(appmessage.DomainBlockWithTrustedDataToBlockWithTrustedDataV4(block, trustedDataDAABlockIndexes[*blockHash], trustedDataGHOSTDAGDataIndexes[*blockHash]))
+				err = outgoingRoute.Enqueue(appmessage.DomainBlockWithTrustedDataToBlockWithTrustedDataV4(block, trustedDataDAABlockIndexes[*pointAndItsAnticone[i]], trustedDataGHOSTDAGDataIndexes[*pointAndItsAnticone[i]]))
 				if err != nil {
 					return err
 				}

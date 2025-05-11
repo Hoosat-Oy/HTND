@@ -354,8 +354,8 @@ func (flow *handleIBDFlow) validateAndInsertPruningPoints(proofPruningPoint *ext
 	}
 
 	headers := make([]externalapi.BlockHeader, len(pruningPoints.Headers))
-	for i, header := range pruningPoints.Headers {
-		headers[i] = appmessage.BlockHeaderToDomainBlockHeader(header)
+	for i := 0; i < len(pruningPoints.Headers); i++ {
+		headers[i] = appmessage.BlockHeaderToDomainBlockHeader(pruningPoints.Headers[i])
 	}
 
 	arePruningPointsViolatingFinality, err := flow.Domain().Consensus().ArePruningPointsViolatingFinality(headers)

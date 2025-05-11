@@ -1,9 +1,12 @@
 package blockrelay
 
 import (
+	"sync"
+
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
 	"github.com/Hoosat-Oy/HTND/app/protocol/protocolerrors"
 	"github.com/Hoosat-Oy/HTND/domain"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 )
@@ -25,26 +28,46 @@ func HandleIBDBlockRequests(context HandleIBDBlockRequestsContext, incomingRoute
 		}
 		msgRequestIBDBlocks := message.(*appmessage.MsgRequestIBDBlocks)
 		log.Debugf("Got request for %d ibd blocks", len(msgRequestIBDBlocks.Hashes))
-		for i, hash := range msgRequestIBDBlocks.Hashes {
-			// Fetch the block from the database.
-			block, found, err := context.Domain().Consensus().GetBlock(hash)
-			if err != nil {
-				return errors.Wrapf(err, "unable to fetch requested block hash %s", hash)
-			}
 
-			if !found {
-				return protocolerrors.Errorf(false, "IBD block %s not found", hash)
-			}
+		var wg sync.WaitGroup
+		errChan := make(chan error, len(msgRequestIBDBlocks.Hashes))
+		for i := 0; i < len(msgRequestIBDBlocks.Hashes); i++ {
+			hash := msgRequestIBDBlocks.Hashes[i]
+			wg.Add(1)
+			go func(hash *externalapi.DomainHash) {
+				defer wg.Done()
+				// Fetch the block from the database.
+				block, found, err := context.Domain().Consensus().GetBlock(hash)
+				if err != nil {
+					errChan <- errors.Wrapf(err, "unable to fetch requested block hash %s", hash)
+					return
+				}
 
-			// TODO (Partial nodes): Convert block to partial block if needed
+				if !found {
+					errChan <- protocolerrors.Errorf(false, "IBD block %s not found", hash)
+					return
+				}
 
-			blockMessage := appmessage.DomainBlockToMsgBlock(block)
-			ibdBlockMessage := appmessage.NewMsgIBDBlock(blockMessage)
-			err = outgoingRoute.Enqueue(ibdBlockMessage)
+				// TODO (Partial nodes): Convert block to partial block if needed
+
+				blockMessage := appmessage.DomainBlockToMsgBlock(block)
+				ibdBlockMessage := appmessage.NewMsgIBDBlock(blockMessage)
+				err = outgoingRoute.Enqueue(ibdBlockMessage)
+				if err != nil {
+					errChan <- err
+					return
+				}
+				log.Debugf("sent %d out of %d", i+1, len(msgRequestIBDBlocks.Hashes))
+			}(hash)
+		}
+
+		wg.Wait()
+		close(errChan)
+
+		for err := range errChan {
 			if err != nil {
 				return err
 			}
-			log.Debugf("sent %d out of %d", i+1, len(msgRequestIBDBlocks.Hashes))
 		}
 	}
 }

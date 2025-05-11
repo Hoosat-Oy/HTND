@@ -194,17 +194,17 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 
 	for {
 		var lowestUnknownSyncerChainHash, currentHighestKnownSyncerChainHash *externalapi.DomainHash
-		for _, syncerChainHash := range locatorHashes {
-			info, err := flow.Domain().Consensus().GetBlockInfo(syncerChainHash)
+		for i := 0; i < len(locatorHashes); i++ {
+			info, err := flow.Domain().Consensus().GetBlockInfo(locatorHashes[i])
 			if err != nil {
 				return nil, nil, err
 			}
 			if info.Exists {
 				if info.BlockStatus == externalapi.StatusInvalid {
-					return nil, nil, protocolerrors.Errorf(true, "Sent invalid chain block %s", syncerChainHash)
+					return nil, nil, protocolerrors.Errorf(true, "Sent invalid chain block %s", locatorHashes[i])
 				}
 
-				isPruningPointOnSyncerChain, err := flow.Domain().Consensus().IsInSelectedParentChainOf(pruningPoint, syncerChainHash)
+				isPruningPointOnSyncerChain, err := flow.Domain().Consensus().IsInSelectedParentChainOf(pruningPoint, locatorHashes[i])
 				if err != nil {
 					log.Errorf("Error checking isPruningPointOnSyncerChain: %s", err)
 				}
@@ -216,11 +216,11 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 				// 2) syncerChainHash is actually in the past of our pruning point so there's no
 				//    point in syncing from it.
 				if err == nil && isPruningPointOnSyncerChain {
-					currentHighestKnownSyncerChainHash = syncerChainHash
+					currentHighestKnownSyncerChainHash = locatorHashes[i]
 					break
 				}
 			}
-			lowestUnknownSyncerChainHash = syncerChainHash
+			lowestUnknownSyncerChainHash = locatorHashes[i]
 		}
 		// No unknown blocks, break. Note this can only happen in the first iteration
 		if lowestUnknownSyncerChainHash == nil {
