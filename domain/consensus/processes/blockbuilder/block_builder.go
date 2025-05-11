@@ -307,7 +307,7 @@ func (bb *blockBuilder) newBlockAcceptedIDMerkleRoot(stagingArea *model.StagingA
 func (bb *blockBuilder) calculateAcceptedIDMerkleRoot(acceptanceData externalapi.AcceptanceData) (*externalapi.DomainHash, error) {
 	var acceptedTransactions []*externalapi.DomainTransaction
 	for i := 0; i < len(acceptanceData); i++ {
-		for x := 0; x < len(acceptanceData[i].TransactionAcceptanceData); i++ {
+		for x := 0; x < len(acceptanceData[i].TransactionAcceptanceData); x++ {
 			if !acceptanceData[i].TransactionAcceptanceData[x].IsAccepted {
 				continue
 			}
