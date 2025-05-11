@@ -12,15 +12,15 @@ func (mp *mempool) handleNewBlockTransactions(blockTransactions []*externalapi.D
 	// Skip the coinbase transaction
 	blockTransactions = blockTransactions[transactionhelper.CoinbaseTransactionIndex+1:]
 
-	acceptedOrphans := []*externalapi.DomainTransaction{}
-	for _, transaction := range blockTransactions {
-		transactionID := consensushashing.TransactionID(transaction)
+	acceptedOrphans := make([]*externalapi.DomainTransaction, 0, len(blockTransactions))
+	for i := 0; i < len(blockTransactions); i++ {
+		transactionID := consensushashing.TransactionID(blockTransactions[i])
 		err := mp.removeTransaction(transactionID, false)
 		if err != nil {
 			return nil, err
 		}
 
-		err = mp.removeDoubleSpends(transaction)
+		err = mp.removeDoubleSpends(blockTransactions[i])
 		if err != nil {
 			return nil, err
 		}
@@ -30,7 +30,7 @@ func (mp *mempool) handleNewBlockTransactions(blockTransactions []*externalapi.D
 			return nil, err
 		}
 
-		acceptedOrphansFromThisTransaction, err := mp.orphansPool.processOrphansAfterAcceptedTransaction(transaction)
+		acceptedOrphansFromThisTransaction, err := mp.orphansPool.processOrphansAfterAcceptedTransaction(blockTransactions[i])
 		if err != nil {
 			return nil, err
 		}
@@ -50,8 +50,8 @@ func (mp *mempool) handleNewBlockTransactions(blockTransactions []*externalapi.D
 }
 
 func (mp *mempool) removeDoubleSpends(transaction *externalapi.DomainTransaction) error {
-	for _, input := range transaction.Inputs {
-		if redeemer, ok := mp.mempoolUTXOSet.transactionByPreviousOutpoint[input.PreviousOutpoint]; ok {
+	for i := 0; i < len(transaction.Inputs); i++ {
+		if redeemer, ok := mp.mempoolUTXOSet.transactionByPreviousOutpoint[transaction.Inputs[i].PreviousOutpoint]; ok {
 			err := mp.removeTransaction(redeemer.TransactionID(), true)
 			if err != nil {
 				return err
