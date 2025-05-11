@@ -61,7 +61,7 @@ func (c *RPCClient) connect() error {
 	c.GRPCClient = rpcClient
 	c.rpcRouter = rpcRouter
 
-	log.Infof("Connected to %s", c.rpcAddress)
+	log.Debugf("Connected to %s", c.rpcAddress)
 
 	getInfoResponse, err := c.GetInfo()
 	if err != nil {
@@ -83,7 +83,7 @@ func (c *RPCClient) disconnect() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Disconnected from %s", c.rpcAddress)
+	log.Debugf("Disconnected from %s", c.rpcAddress)
 	return nil
 }
 

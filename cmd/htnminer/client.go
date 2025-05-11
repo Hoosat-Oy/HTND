@@ -41,7 +41,7 @@ func (mc *minerClient) connect() error {
 		return errors.Wrapf(err, "error requesting new-block-template notifications")
 	}
 
-	log.Infof("Connected to %s", rpcAddress)
+	log.Debugf("Connected to %s", rpcAddress)
 
 	return nil
 }

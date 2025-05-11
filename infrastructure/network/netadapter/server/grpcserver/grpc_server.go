@@ -117,7 +117,7 @@ func (s *gRPCServer) handleInboundConnection(ctx context.Context, stream grpcStr
 		return err
 	}
 
-	log.Infof("%s Incoming connection from %s #%d", s.name, peerInfo.Addr, connectionCount)
+	log.Debugf("%s Incoming connection from %s #%d", s.name, peerInfo.Addr, connectionCount)
 
 	<-connection.stopChan
 	return nil

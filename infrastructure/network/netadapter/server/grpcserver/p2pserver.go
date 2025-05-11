@@ -78,7 +78,7 @@ func (p *p2pServer) Connect(address string) (server.Connection, error) {
 		return nil, err
 	}
 
-	log.Infof("%s Connected to %s", p.name, address)
+	log.Debugf("%s Connected to %s", p.name, address)
 
 	return connection, nil
 }

@@ -101,7 +101,7 @@ func (c *ConnectionManager) run() {
 }
 
 func (c *ConnectionManager) initiateConnection(address string) error {
-	log.Infof("Connecting to %s", address)
+	log.Debugf("Connecting to %s", address)
 	return c.netAdapter.P2PConnect(address)
 }
 
