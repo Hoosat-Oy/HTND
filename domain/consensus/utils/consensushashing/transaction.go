@@ -80,26 +80,26 @@ func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodi
 		return err
 	}
 
-	count := uint64(len(tx.Inputs))
-	err = serialization.WriteElement(w, count)
+	lenInputs := len(tx.Inputs)
+	err = serialization.WriteElement(w, uint64(lenInputs))
 	if err != nil {
 		return err
 	}
 
-	for i := 0; i < len(tx.Inputs); i++ {
+	for i := 0; i < lenInputs; i++ {
 		err = writeTransactionInput(w, tx.Inputs[i], encodingFlags)
 		if err != nil {
 			return err
 		}
 	}
 
-	count = uint64(len(tx.Outputs))
-	err = serialization.WriteElement(w, count)
+	lenOutputs := len(tx.Outputs)
+	err = serialization.WriteElement(w, uint64(lenOutputs))
 	if err != nil {
 		return err
 	}
 
-	for i := 0; i < len(tx.Outputs); i++ {
+	for i := 0; i < lenOutputs; i++ {
 		err = writeTxOut(w, tx.Outputs[i])
 		if err != nil {
 			return err
