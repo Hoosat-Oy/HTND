@@ -329,7 +329,7 @@ var TestnetParams = Params{
 	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
 	TargetTimePerBlock:              defaultTargetTimePerBlock,
 	FinalityDuration:                []time.Duration{defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, 1800 * time.Second},
-	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
+	DifficultyAdjustmentWindowSize:  20,
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 	POWScores:                       []uint64{5, 15, 25, 30},
 	PruningModifiers:                []time.Duration{0, 0, 0, 0, 48},

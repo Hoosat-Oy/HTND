@@ -24,12 +24,11 @@ func TestGenesisBlock(t *testing.T) {
 // TestTestnetGenesisBlock tests the genesis block of the test network for
 // validity by checking the hash.
 func TestTestnetGenesisBlock(t *testing.T) {
-	// Check hash of the block against expected hash.
-	hash := consensushashing.BlockHash(TestnetParams.GenesisBlock)
-	if !TestnetParams.GenesisHash.Equal(hash) {
-		t.Fatalf("TestTestnetGenesisBlock: Genesis block hash does "+
-			"not appear valid - got %v, want %v", hash,
-			TestnetParams.GenesisHash)
+	genesisBlock := TestnetParams.GenesisBlock
+
+	calculatedBlockHash := consensushashing.BlockHash(genesisBlock)
+	if !TestnetParams.GenesisHash.Equal(calculatedBlockHash) {
+		t.Fatalf("Genesis block hash mismatch:\nGot:  %s\nWant: %s", calculatedBlockHash, TestnetParams.GenesisHash)
 	}
 }
 
