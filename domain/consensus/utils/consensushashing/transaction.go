@@ -68,8 +68,8 @@ func TransactionID(tx *externalapi.DomainTransaction) *externalapi.DomainTransac
 // TransactionIDs converts the provided slice of DomainTransactions to a corresponding slice of TransactionIDs
 func TransactionIDs(txs []*externalapi.DomainTransaction) []*externalapi.DomainTransactionID {
 	txIDs := make([]*externalapi.DomainTransactionID, len(txs))
-	for i, tx := range txs {
-		txIDs[i] = TransactionID(tx)
+	for i := 0; i < len(txs); i++ {
+		txIDs[i] = TransactionID(txs[i])
 	}
 	return txIDs
 }
@@ -86,8 +86,8 @@ func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodi
 		return err
 	}
 
-	for _, ti := range tx.Inputs {
-		err = writeTransactionInput(w, ti, encodingFlags)
+	for i := 0; i < len(tx.Inputs); i++ {
+		err = writeTransactionInput(w, tx.Inputs[i], encodingFlags)
 		if err != nil {
 			return err
 		}
@@ -99,8 +99,8 @@ func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodi
 		return err
 	}
 
-	for _, output := range tx.Outputs {
-		err = writeTxOut(w, output)
+	for i := 0; i < len(tx.Outputs); i++ {
+		err = writeTxOut(w, tx.Outputs[i])
 		if err != nil {
 			return err
 		}
