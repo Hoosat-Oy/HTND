@@ -73,7 +73,7 @@ const (
 	// defaultTargetTimePerBlock represents how much time should pass on average between two consecutive block creations.
 	// Should be parametrized such that the average width of the DAG is about defaultMaxBlockParents and such that most of the
 	// time the width of the DAG is at most defaultGHOSTDAGK.
-	defaultTargetTimePerBlock = 100 * time.Millisecond
+	defaultTargetTimePerBlock = 28 * time.Millisecond
 
 	defaultPruningProofM = 1000
 
