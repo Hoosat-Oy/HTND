@@ -206,12 +206,14 @@ func (gh *ghostdagHelper) isAnticone(stagingArea *model.StagingArea, blockA, blo
 	if err != nil {
 		return false, err
 	}
+	if isAAncestorOfAB {
+		return false, nil
+	}
 	isBAncestorOfA, err := gh.dagTopologyManager.IsAncestorOf(stagingArea, blockB, blockA)
 	if err != nil {
 		return false, err
 	}
 	return !isAAncestorOfAB && !isBAncestorOfA, nil
-
 }
 
 /* ----------------validateKCluster------------------- */
