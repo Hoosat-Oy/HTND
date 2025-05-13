@@ -5,6 +5,9 @@
 package dagconfig
 
 import (
+	"fmt"
+	"math/big"
+	"strings"
 	"testing"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
@@ -28,7 +31,15 @@ func TestTestnetGenesisBlock(t *testing.T) {
 
 	calculatedBlockHash := consensushashing.BlockHash(genesisBlock)
 	if !TestnetParams.GenesisHash.Equal(calculatedBlockHash) {
-		t.Fatalf("Genesis block hash mismatch:\nGot:  %s\nWant: %s", calculatedBlockHash, TestnetParams.GenesisHash)
+		hashBytes := calculatedBlockHash.ByteSlice()
+		var formatted []string
+		for _, b := range hashBytes {
+			formatted = append(formatted, fmt.Sprintf("0x%02x", b))
+		}
+		formattedStr := strings.Join(formatted, ", ")
+
+		t.Fatalf("TestGenesisBlock: Genesis block hash does not appear valid.\nGot:\n[]byte{%s}\nWant:\n%v",
+			formattedStr, MainnetParams.GenesisHash)
 	}
 }
 
@@ -53,5 +64,62 @@ func TestDevnetGenesisBlock(t *testing.T) {
 		t.Fatalf("TestDevnetGenesisBlock: Genesis block hash does "+
 			"not appear valid - got %v, want %v", hash,
 			DevnetParams.GenesisHash)
+	}
+}
+
+// CompactToBig converts compact bits to target big.Int
+func CompactToBig(compact uint32) *big.Int {
+	size := compact >> 24
+	mant := compact & 0x007fffff
+	if compact&0x00800000 != 0 {
+		// Negative targets are not allowed; make it positive
+		mant &= 0x007fffff
+	}
+	target := big.NewInt(int64(mant))
+	if size <= 3 {
+		target.Rsh(target, uint(8*(3-size)))
+	} else {
+		target.Lsh(target, uint(8*(size-3)))
+	}
+	return target
+}
+
+// BigToCompact converts target big.Int to compact bits format
+func BigToCompact(target *big.Int) uint32 {
+	bytes := target.Bytes()
+	size := len(bytes)
+
+	var mant uint32
+	if size <= 3 {
+		// Cast to uint32 after shifting the value to prevent overflow
+		mant = uint32(new(big.Int).SetBytes(bytes).Uint64() >> (8 * (3 - size)))
+	} else {
+		// Only use the first 3 bytes to avoid overflow
+		mant = uint32(new(big.Int).SetBytes(bytes[:3]).Uint64())
+	}
+
+	if mant&0x00800000 != 0 {
+		mant >>= 8
+		size++
+	}
+
+	return uint32(size<<24) | (mant & 0x007fffff)
+}
+
+// DifficultyToBits computes compact bits for desired difficulty
+func DifficultyToBits(baseBits uint32, difficulty int64) uint32 {
+	baseTarget := CompactToBig(baseBits)
+	newTarget := new(big.Int).Div(baseTarget, big.NewInt(difficulty))
+	return BigToCompact(newTarget)
+}
+
+// Unit test for difficulty 100 from 0x207fffff
+func TestDifficultyToBits(t *testing.T) {
+	baseBits := uint32(0x207fffff) // Regtest maximum target
+	wantBits := uint32(0x1c7fffff) // Expected for difficulty 100
+
+	gotBits := DifficultyToBits(baseBits, 250)
+	if gotBits != wantBits {
+		t.Errorf("DifficultyToBits() = 0x%x, want 0x%x", gotBits, wantBits)
 	}
 }
