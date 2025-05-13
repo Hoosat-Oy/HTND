@@ -121,7 +121,7 @@ func logHashRate() {
 
 func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.BlockHash(block)
-	log.Infof("Submitting block: %s\n with PoW Hash: %s", blockHash, block.PoWHash)
+	log.Infof("Submitting block: %s with PoW Hash: %s", blockHash, block.PoWHash)
 
 	rejectReason, err := client.SubmitBlock(block, block.PoWHash)
 	if err != nil {
@@ -130,12 +130,12 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 			return client.Reconnect()
 		}
 		if nativeerrors.Is(err, router.ErrRouteClosed) {
-			log.Debugf("Got route is closed while requesting block template from %s. "+
+			log.Infof("Got route is closed while requesting block template from %s. "+
 				"The client is most likely reconnecting", client.Address())
 			return nil
 		}
 		if rejectReason == appmessage.RejectReasonIsInIBD {
-			const waitTime = 1 * time.Second
+			const waitTime = 100 * time.Millisecond
 			log.Warnf("Block %s was rejected because the node is in IBD. Waiting for %s", blockHash, waitTime)
 			time.Sleep(waitTime)
 			return nil
@@ -163,7 +163,7 @@ func mineNextBlock(mineWhenNotSynced bool) *externalapi.DomainBlock {
 			mutHeader.SetNonce(nonce)
 			block.PoWHash = hash.String()
 			block.Header = mutHeader.ToImmutable()
-			log.Infof("Found block %s\n with parents %s", consensushashing.BlockHash(block), block.Header.DirectParents())
+			// log.Infof("Found block %s\n with parents %s", consensushashing.BlockHash(block), block.Header.DirectParents())
 			return block
 		}
 	}
@@ -172,7 +172,7 @@ func mineNextBlock(mineWhenNotSynced bool) *externalapi.DomainBlock {
 func getBlockForMining(mineWhenNotSynced bool) (*externalapi.DomainBlock, *pow.State) {
 	tryCount := 0
 
-	const sleepTime = 500 * time.Millisecond
+	const sleepTime = 200 * time.Millisecond
 	const sleepTimeWhenNotSynced = 5 * time.Second
 
 	for {
@@ -227,7 +227,7 @@ func templatesLoop(client *minerClient, miningAddr util.Address, errChan chan er
 	}
 
 	getBlockTemplate()
-	const tickerTime = 500 * time.Millisecond
+	const tickerTime = 100 * time.Millisecond
 	ticker := time.NewTicker(tickerTime)
 	for {
 		select {
