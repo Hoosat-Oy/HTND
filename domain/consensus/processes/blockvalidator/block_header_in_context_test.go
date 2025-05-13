@@ -201,7 +201,7 @@ func TestCheckMergeSizeLimit(t *testing.T) {
 
 func TestVirtualSelectionViolatingMergeSizeLimit(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		consensusConfig.MergeSetSizeLimit = 2 * uint64(consensusConfig.K)
+		consensusConfig.MergeSetSizeLimit = 2 * uint64(consensusConfig.K[constants.BlockVersion-1])
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestVirtualSelectionViolatingMergeSizeLimit")
 		if err != nil {

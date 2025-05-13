@@ -9,6 +9,7 @@ import (
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/testutils"
 	"github.com/Hoosat-Oy/HTND/domain/dagconfig"
 )
@@ -25,8 +26,8 @@ func TestGenerateFastPruningIBDTest(t *testing.T) {
 
 		// This is done to reduce the pruning depth to 6 blocks
 		finalityDepth := 200
-		consensusConfig.FinalityDuration = []time.Duration{time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock}
-		consensusConfig.K = 0
+		consensusConfig.FinalityDuration = []time.Duration{time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock[constants.BlockVersion-1]}
+		consensusConfig.K[constants.BlockVersion-1] = 0
 		consensusConfig.PruningProofM = 1
 		consensusConfig.MergeSetSizeLimit = 30
 

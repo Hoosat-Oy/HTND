@@ -217,7 +217,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	transactionValidator := transactionvalidator.New(config.BlockCoinbaseMaturity,
 		config.EnableNonNativeSubnetworks,
 		config.MaxCoinbasePayloadLength,
-		config.K,
+		config.K[constants.BlockVersion-1],
 		config.CoinbasePayloadScriptPublicKeyMaxLength,
 		dbManager,
 		pastMedianTimeManager,
@@ -235,7 +235,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.PowMax,
 		config.DifficultyAdjustmentWindowSize,
 		config.DisableDifficultyAdjustment,
-		config.TargetTimePerBlock,
+		config.TargetTimePerBlock[constants.BlockVersion-1],
 		config.GenesisHash,
 		config.GenesisBlock.Header.Bits())
 	coinbaseManager := coinbasemanager.New(
@@ -280,7 +280,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		finalityStore)
 	consensusStateManager, err := consensusstatemanager.New(
 		dbManager,
-		config.MaxBlockParents,
+		config.MaxBlockParents[constants.BlockVersion-1],
 		config.MergeSetSizeLimit,
 		genesisHash,
 
@@ -336,7 +336,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.FinalityDepth(),
 		config.PruningDepth(),
 		config.EnableSanityCheckPruningUTXOSet,
-		config.K,
+		config.K[constants.BlockVersion-1],
 		config.DifficultyAdjustmentWindowSize,
 	)
 
@@ -347,9 +347,9 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.EnableNonNativeSubnetworks,
 		config.MaxBlockMass[constants.BlockVersion-1],
 		config.MergeSetSizeLimit,
-		config.MaxBlockParents,
+		config.MaxBlockParents[constants.BlockVersion-1],
 		config.TimestampDeviationTolerance,
-		config.TargetTimePerBlock,
+		config.TargetTimePerBlock[constants.BlockVersion-1],
 		config.POWScores,
 		config.MaxBlockLevel,
 
@@ -420,7 +420,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 
 	blockProcessor := blockprocessor.New(
 		genesisHash,
-		config.TargetTimePerBlock,
+		config.TargetTimePerBlock[constants.BlockVersion-1],
 		config.MaxBlockLevel,
 		dbManager,
 		consensusStateManager,
@@ -470,7 +470,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		reachabilityDataStore,
 
 		genesisHash,
-		config.K,
+		config.K[constants.BlockVersion-1],
 		config.PruningProofM,
 		config.MaxBlockLevel,
 	)
@@ -482,7 +482,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		genesisBlock: config.GenesisBlock,
 		genesisHash:  config.GenesisHash,
 
-		expectedDAAWindowDurationInMilliseconds: config.TargetTimePerBlock.Milliseconds() *
+		expectedDAAWindowDurationInMilliseconds: config.TargetTimePerBlock[constants.BlockVersion-1].Milliseconds() *
 			int64(config.DifficultyAdjustmentWindowSize),
 
 		blockProcessor:        blockProcessor,
@@ -726,7 +726,7 @@ func (f *factory) dagProcesses(config *Config,
 			dagTopologyManagers[i],
 			ghostdagDataStores[i],
 			blockHeaderStore,
-			config.K,
+			config.K[constants.BlockVersion-1],
 			config.GenesisHash)
 
 		dagTraversalManagers[i] = dagtraversalmanager.New(

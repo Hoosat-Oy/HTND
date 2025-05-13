@@ -5,6 +5,7 @@
 package dagconfig
 
 import (
+	"math"
 	"testing"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
@@ -85,5 +86,92 @@ func TestSkipProofOfWork(t *testing.T) {
 			t.Errorf("SkipProofOfWork is enabled for %s. This option should be "+
 				"used only for tests.", params.Name)
 		}
+	}
+}
+
+// calculateK estimates the k value for GHOSTDAG based on blocks per second (bps).
+// It uses a heuristic that scales k with bps, adjusts for network latency, and ensures
+// security against a target hashrate attack (e.g., 47.5%).
+// Parameters:
+// - bps: Blocks per second (e.g., 1, 5, 10).
+// - latencyMs: Network latency in milliseconds (e.g., 500 ms).
+// - attackerHashrate: Attacker's hashrate fraction (e.g., 0.475 for 47.5%).
+// - errorProb: Error probability for security (e.g., 0.01 for 99% confidence).
+// Returns: Estimated k value (rounded up to the nearest integer).
+func calculateK(bps float64, latencyMs float64, attackerHashrate float64, errorProb float64) int {
+	// Base k value at 1 bps (Kaspa's current setting).
+	const baseK = 18
+	const baseBps = 1.0
+
+	// Step 1: Security threshold based on GHOSTDAG whitepaper formula.
+	// k >= ln(1/epsilon) / ln((1-p)/p), where p is attacker's hashrate fraction.
+	securityK := math.Log(1/errorProb) / math.Log((1-attackerHashrate)/attackerHashrate)
+
+	// Step 2: Scale k based on block rate to accommodate more parallel blocks.
+	// Rough scaling: k_new = baseK * (bps / baseBps).
+	bpsScaling := baseK * (bps / baseBps)
+
+	// Step 3: Adjust for network latency.
+	// Blocks in latency window = bps * (latencyMs / 1000).
+	latencyBlocks := bps * (latencyMs / 1000)
+	// k should be ~15x the number of blocks in the latency window to ensure honest blocks form a k-cluster.
+	latencyK := latencyBlocks * 15
+
+	// Step 4: Take the maximum of securityK, bpsScaling, and latencyK to ensure all constraints are met.
+	estimatedK := math.Max(securityK, math.Max(bpsScaling, latencyK))
+
+	// Step 5: Round up to the nearest integer and add a safety margin (e.g., 10%).
+	return int(math.Ceil(estimatedK * 1.1))
+}
+
+// TestCalculateK tests the calculateK function for various bps values.
+// It verifies that k values are within expected ranges based\left
+func TestCalculateK(t *testing.T) {
+	tests := []struct {
+		name             string
+		bps              float64
+		latencyMs        float64
+		attackerHashrate float64
+		errorProb        float64
+		expectedMinK     int
+		expectedMaxK     int
+	}{
+		{
+			name:             "1 bps (current Kaspa setting)",
+			bps:              1.0,
+			latencyMs:        500.0,
+			attackerHashrate: 0.475,
+			errorProb:        0.01,
+			expectedMinK:     18, // Kaspa's current k at 1 bps.
+			expectedMaxK:     25,
+		},
+		{
+			name:             "5 bps",
+			bps:              5.0,
+			latencyMs:        500.0,
+			attackerHashrate: 0.475,
+			errorProb:        0.01,
+			expectedMinK:     40,
+			expectedMaxK:     60,
+		},
+		{
+			name:             "10 bps",
+			bps:              10.0,
+			latencyMs:        500.0,
+			attackerHashrate: 0.475,
+			errorProb:        0.01,
+			expectedMinK:     80,
+			expectedMaxK:     120,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			k := calculateK(tt.bps, tt.latencyMs, tt.attackerHashrate, tt.errorProb)
+			if k < tt.expectedMinK || k > tt.expectedMaxK {
+				t.Errorf("calculateK(bps=%.1f, latencyMs=%.1f, attackerHashrate=%.3f, errorProb=%.3f) = %d; expected between %d and %d",
+					tt.bps, tt.latencyMs, tt.attackerHashrate, tt.errorProb, k, tt.expectedMinK, tt.expectedMaxK)
+			}
+		})
 	}
 }

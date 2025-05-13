@@ -9,6 +9,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/util/mstime"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
@@ -30,7 +31,7 @@ func TestDifficulty(t *testing.T) {
 			t.Fatalf("TestDifficulty requires the GenesisBlock to be at least 1 hour old to pass")
 		}
 
-		consensusConfig.K = 1
+		consensusConfig.K[constants.BlockVersion-1] = 1
 		consensusConfig.DifficultyAdjustmentWindowSize = 140
 
 		factory := consensus.NewFactory()
@@ -54,7 +55,7 @@ func TestDifficulty(t *testing.T) {
 					t.Fatalf("BlockHeader: %+v", err)
 				}
 
-				blockTime = header.TimeInMilliseconds() + consensusConfig.TargetTimePerBlock.Milliseconds()
+				blockTime = header.TimeInMilliseconds() + consensusConfig.TargetTimePerBlock[constants.BlockVersion-1].Milliseconds()
 			}
 
 			block, _, err := tc.BuildBlockWithParents(parents, nil, nil)
@@ -173,7 +174,7 @@ func TestDifficulty(t *testing.T) {
 			}
 		}
 
-		slowBlockTime := tip.Header.TimeInMilliseconds() + consensusConfig.TargetTimePerBlock.Milliseconds() + 1000
+		slowBlockTime := tip.Header.TimeInMilliseconds() + consensusConfig.TargetTimePerBlock[constants.BlockVersion-1].Milliseconds() + 1000
 		slowBlock, tipHash := addBlock(slowBlockTime, tipHash)
 		if slowBlock.Header.Bits() != tip.Header.Bits() {
 			t.Fatalf("The difficulty should only change when slowBlock is in the past of a block")

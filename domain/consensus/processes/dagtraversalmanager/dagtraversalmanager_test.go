@@ -8,12 +8,13 @@ import (
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/testutils"
 )
 
 func TestLowestChainBlockAboveOrEqualToBlueScore(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		consensusConfig.FinalityDuration = []time.Duration{10 * consensusConfig.TargetTimePerBlock}
+		consensusConfig.FinalityDuration = []time.Duration{10 * consensusConfig.TargetTimePerBlock[constants.BlockVersion-1]}
 		factory := consensus.NewFactory()
 		tc, tearDown, err := factory.NewTestConsensus(consensusConfig,
 			"TestLowestChainBlockAboveOrEqualToBlueScore")

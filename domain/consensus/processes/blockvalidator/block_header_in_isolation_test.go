@@ -39,7 +39,7 @@ func TestBlockValidator_ValidateHeaderInIsolation(t *testing.T) {
 }
 
 func CheckParentsLimit(t *testing.T, tc testapi.TestConsensus, consensusConfig *consensus.Config) {
-	for i := externalapi.KType(0); i < consensusConfig.MaxBlockParents+1; i++ {
+	for i := externalapi.KType(0); i < consensusConfig.MaxBlockParents[constants.BlockVersion-1]+1; i++ {
 		_, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
@@ -102,7 +102,7 @@ func CheckBlockTimestampInIsolation(t *testing.T, tc testapi.TestConsensus, cfg 
 
 		// Give 10 seconds slack to take care of the test duration
 		timestamp := mstime.Now().UnixMilliseconds() +
-			int64(consensusConfig.TimestampDeviationTolerance)*consensusConfig.TargetTimePerBlock.Milliseconds() + 10_000
+			int64(consensusConfig.TimestampDeviationTolerance)*consensusConfig.TargetTimePerBlock[constants.BlockVersion-1].Milliseconds() + 10_000
 
 		block.Header = blockheader.NewImmutableBlockHeader(
 			block.Header.Version(),

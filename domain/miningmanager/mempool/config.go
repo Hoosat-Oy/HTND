@@ -54,7 +54,7 @@ type Config struct {
 
 // DefaultConfig returns the default mempool configuration
 func DefaultConfig(dagParams *dagconfig.Params) *Config {
-	targetBlocksPerSecond := time.Second.Seconds() / dagParams.TargetTimePerBlock.Seconds()
+	targetBlocksPerSecond := time.Second.Seconds() / dagParams.TargetTimePerBlock[constants.BlockVersion-1].Seconds()
 
 	return &Config{
 		MaximumTransactionCount:               defaultMaximumTransactionCount,

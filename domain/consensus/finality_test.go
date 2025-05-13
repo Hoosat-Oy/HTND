@@ -13,6 +13,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/testapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/testutils"
 	"github.com/pkg/errors"
 )
@@ -20,7 +21,7 @@ import (
 func TestFinality(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		// Set finalityInterval to 20 blocks, so that test runs quickly
-		consensusConfig.FinalityDuration = []time.Duration{20 * consensusConfig.TargetTimePerBlock}
+		consensusConfig.FinalityDuration = []time.Duration{20 * consensusConfig.TargetTimePerBlock[constants.BlockVersion-1]}
 
 		factory := consensus.NewFactory()
 		consensus, teardown, err := factory.NewTestConsensus(consensusConfig, "TestFinality")
@@ -184,15 +185,15 @@ func TestBoundedMergeDepth(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		rd := rand.New(rand.NewSource(0))
 		// Set finalityInterval to 50 blocks, so that test runs quickly
-		consensusConfig.K = 5
+		consensusConfig.K[constants.BlockVersion-1] = 5
 		consensusConfig.MergeDepth = 7
-		consensusConfig.FinalityDuration = []time.Duration{20 * consensusConfig.TargetTimePerBlock}
+		consensusConfig.FinalityDuration = []time.Duration{20 * consensusConfig.TargetTimePerBlock[constants.BlockVersion-1]}
 
-		if uint64(consensusConfig.K) >= consensusConfig.FinalityDepth() {
+		if uint64(consensusConfig.K[constants.BlockVersion-1]) >= consensusConfig.FinalityDepth() {
 			t.Fatal("K must be smaller than finality duration for this test to run")
 		}
 
-		if uint64(consensusConfig.K) >= consensusConfig.MergeDepth {
+		if uint64(consensusConfig.K[constants.BlockVersion-1]) >= consensusConfig.MergeDepth {
 			t.Fatal("K must be smaller than merge depth for this test to run")
 		}
 
@@ -398,7 +399,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 			// Now let's make the kosherizing block red and try to merge again
 			tip := consensushashing.BlockHash(selectedChain[len(selectedChain)-1])
 			// we use k-1 because `kosherizingBlock` points at tip-2, so 2+k-1 = k+1 anticone.
-			for i := 0; i < int(consensusConfig.K)-1; i++ {
+			for i := 0; i < int(consensusConfig.K[constants.BlockVersion-1])-1; i++ {
 				block := buildAndInsertBlock(consensusReal, []*externalapi.DomainHash{tip})
 				tip = consensushashing.BlockHash(block)
 			}
@@ -493,7 +494,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 func TestFinalityResolveVirtual(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		// Set finalityInterval to 20 blocks, so that test runs quickly
-		consensusConfig.FinalityDuration = []time.Duration{20 * consensusConfig.TargetTimePerBlock}
+		consensusConfig.FinalityDuration = []time.Duration{20 * consensusConfig.TargetTimePerBlock[constants.BlockVersion-1]}
 
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestFinalityResolveVirtual")

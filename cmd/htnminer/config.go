@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/infrastructure/config"
 
 	"github.com/Hoosat-Oy/HTND/util"
@@ -68,7 +69,7 @@ func parseConfig() (*configFlags, error) {
 	}
 
 	if cfg.TargetBlocksPerSecond == nil {
-		targetBlocksPerSecond := defaultTargetBlockRateRatio / cfg.NetParams().TargetTimePerBlock.Seconds()
+		targetBlocksPerSecond := defaultTargetBlockRateRatio / cfg.NetParams().TargetTimePerBlock[constants.BlockVersion-1].Seconds()
 		cfg.TargetBlocksPerSecond = &targetBlocksPerSecond
 	}
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/mining"
 
 	"github.com/Hoosat-Oy/HTND/domain/dagconfig"
@@ -143,11 +144,11 @@ func TestIBDWithPruning(t *testing.T) {
 	// blocks with timestamps that are spaced far enough apart
 	// to avoid failing the timestamp threshold validation of
 	// ibd-with-headers-proof
-	overrideDAGParams.TargetTimePerBlock = time.Minute
+	overrideDAGParams.TargetTimePerBlock[constants.BlockVersion-1] = time.Minute
 
 	// This is done to make a pruning depth of 6 blocks
-	overrideDAGParams.FinalityDuration = []time.Duration{2 * overrideDAGParams.TargetTimePerBlock}
-	overrideDAGParams.K = 0
+	overrideDAGParams.FinalityDuration = []time.Duration{2 * overrideDAGParams.TargetTimePerBlock[constants.BlockVersion-1]}
+	overrideDAGParams.K[constants.BlockVersion-1] = 0
 	overrideDAGParams.PruningProofM = 20
 
 	expectedPruningDepth := uint64(6)

@@ -780,7 +780,7 @@ func TestModifyBlockTemplate(t *testing.T) {
 		sweepCompareModifiedTemplateToBuilt(t, consensusConfig, miningManager.GetBlockTemplateBuilder())
 
 		// Create some blue blocks
-		for i := externalapi.KType(0); i < consensusConfig.K-2; i++ {
+		for i := externalapi.KType(0); i < consensusConfig.K[constants.BlockVersion-1]-2; i++ {
 			chainTip, _, err = tc.AddBlock([]*externalapi.DomainHash{chainTip}, coinbaseUsual, emptyTransactions)
 			if err != nil {
 				t.Fatalf("AddBlock: %v", err)
@@ -790,7 +790,7 @@ func TestModifyBlockTemplate(t *testing.T) {
 		sweepCompareModifiedTemplateToBuilt(t, consensusConfig, miningManager.GetBlockTemplateBuilder())
 
 		// Mine more such that we have a merged red
-		for i := externalapi.KType(0); i < consensusConfig.K; i++ {
+		for i := externalapi.KType(0); i < consensusConfig.K[constants.BlockVersion-1]; i++ {
 			chainTip, _, err = tc.AddBlock([]*externalapi.DomainHash{chainTip}, coinbaseUsual, emptyTransactions)
 			if err != nil {
 				t.Fatalf("AddBlock: %v", err)

@@ -8,6 +8,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/app/protocol/protocolerrors"
 	"github.com/Hoosat-Oy/HTND/domain"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/infrastructure/config"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
 )
@@ -94,7 +95,7 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 					return err
 				}
 
-				trustedDataGHOSTDAGDataIndexes[*pointAndItsAnticone[i]] = make([]uint64, 0, context.Config().NetParams().K)
+				trustedDataGHOSTDAGDataIndexes[*pointAndItsAnticone[i]] = make([]uint64, 0, context.Config().NetParams().K[constants.BlockVersion-1])
 				for y := 0; y < len(ghostdagDataBlockHashes); y++ {
 					index, exists := ghostdagDataHashToIndex[*ghostdagDataBlockHashes[y]]
 					if !exists {

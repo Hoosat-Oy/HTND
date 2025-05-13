@@ -95,7 +95,7 @@ func TestGHOSTDAG(t *testing.T) {
 			if err != nil {
 				t.Fatalf("TestGHOSTDAG:failed decoding json: %v", err)
 			}
-			consensusConfig.K = test.K
+			consensusConfig.K[constants.BlockVersion-1] = test.K
 
 			genesisHash := *StringToDomainHash(test.GenesisID)
 

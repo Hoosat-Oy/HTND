@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/utxo"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
@@ -189,7 +190,7 @@ func TestTransactionAcceptance(t *testing.T) {
 		// Add a chain of K blocks above blockC so we'll
 		// be able to mine a red block on top of it.
 		chainTipHash := blockHashC
-		for i := externalapi.KType(0); i < consensusConfig.K; i++ {
+		for i := externalapi.KType(0); i < consensusConfig.K[constants.BlockVersion-1]; i++ {
 			var err error
 			chainTipHash, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{chainTipHash}, nil, nil)
 			if err != nil {
@@ -376,7 +377,7 @@ func TestResolveBlockStatusSanity(t *testing.T) {
 			t.Fatalf("genesis is unexpectedly non-valid. Its status is: %s", genesisStatus)
 		}
 
-		chainLength := int(consensusConfig.K) + 1
+		chainLength := int(consensusConfig.K[constants.BlockVersion-1]) + 1
 
 		// Add a chain of blocks over the genesis and make sure all their
 		// statuses are valid

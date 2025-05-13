@@ -8,6 +8,7 @@ import (
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus"
 
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/testutils"
 	"github.com/Hoosat-Oy/HTND/domain/dagconfig"
 	"github.com/Hoosat-Oy/HTND/util/difficulty"
@@ -22,7 +23,7 @@ func TestGetHashrateString(t *testing.T) {
 	}
 	testutils.ForAllNets(t, false, func(t *testing.T, consensusConfig *consensus.Config) {
 		targetGenesis := difficulty.CompactToBig(consensusConfig.GenesisBlock.Header.Bits())
-		hashrate := difficulty.GetHashrateString(targetGenesis, consensusConfig.TargetTimePerBlock)
+		hashrate := difficulty.GetHashrateString(targetGenesis, consensusConfig.TargetTimePerBlock[constants.BlockVersion-1])
 		if hashrate != results[consensusConfig.Name] {
 			t.Errorf("Expected %s, found %s", results[consensusConfig.Name], hashrate)
 		}

@@ -120,11 +120,11 @@ func (networkFlags *NetworkFlags) overrideDAGParams() error {
 	}
 
 	if config.K != nil {
-		networkFlags.ActiveNetParams.K = *config.K
+		networkFlags.ActiveNetParams.K = []externalapi.KType{*config.K}
 	}
 
 	if config.MaxBlockParents != nil {
-		networkFlags.ActiveNetParams.MaxBlockParents = *config.MaxBlockParents
+		networkFlags.ActiveNetParams.MaxBlockParents = []externalapi.KType{*config.MaxBlockParents}
 	}
 
 	if config.MergeSetSizeLimit != nil {
@@ -178,8 +178,7 @@ func (networkFlags *NetworkFlags) overrideDAGParams() error {
 	}
 
 	if config.TargetTimePerBlockInMilliSeconds != nil {
-		networkFlags.ActiveNetParams.TargetTimePerBlock = time.Duration(*config.TargetTimePerBlockInMilliSeconds) *
-			time.Millisecond
+		networkFlags.ActiveNetParams.TargetTimePerBlock = []time.Duration{time.Duration(*config.TargetTimePerBlockInMilliSeconds) * time.Millisecond}
 	}
 
 	if config.FinalityDuration != nil {
