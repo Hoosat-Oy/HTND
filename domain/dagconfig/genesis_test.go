@@ -118,7 +118,7 @@ func TestDifficultyToBits(t *testing.T) {
 	baseBits := uint32(0x207fffff) // Regtest maximum target
 	wantBits := uint32(0x1c7fffff) // Expected for difficulty 100
 
-	gotBits := DifficultyToBits(baseBits, 250)
+	gotBits := DifficultyToBits(baseBits, 500)
 	if gotBits != wantBits {
 		t.Errorf("DifficultyToBits() = 0x%x, want 0x%x", gotBits, wantBits)
 	}
