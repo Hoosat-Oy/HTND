@@ -332,7 +332,7 @@ var TestnetParams = Params{
 	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 	POWScores:                       []uint64{5, 15, 25, 30},
-	PruningModifiers:                []time.Duration{0, 0, 0, 0, 48},
+	PruningModifiers:                []time.Duration{0, 0, 0, 0, 480},
 	MaxBlockMass:                    []uint64{defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, 10_000_000},
 
 	// Consensus rule change deployments.

@@ -48,8 +48,7 @@ func (csm *consensusStateManager) isViolatingFinality(stagingArea *model.Staging
 		finalityPoint = pruningPoint
 	}
 
-	isInSelectedParentChainOfFinalityPoint, err :=
-		csm.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, finalityPoint, blockHash)
+	isInSelectedParentChainOfFinalityPoint, err := csm.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, finalityPoint, blockHash)
 	if err != nil {
 		return false, false, err
 	}
