@@ -43,7 +43,7 @@ func (bl *BlockLogger) LogBlock(block *externalapi.DomainBlock) {
 
 	now := time.Now()
 	duration := now.Sub(bl.lastBlockLogTime)
-	if duration < time.Second*10 {
+	if duration < time.Second*1 {
 		return
 	}
 
