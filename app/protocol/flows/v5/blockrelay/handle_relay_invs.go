@@ -136,204 +136,183 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 
-		go func(inv invRelayBlock) {
-			log.Debugf("Got relay inv for block %s", inv.Hash)
-			blockInfo, err := flow.Domain().Consensus().GetBlockInfo(inv.Hash)
+		log.Debugf("Got relay inv for block %s", inv.Hash)
+		blockInfo, err := flow.Domain().Consensus().GetBlockInfo(inv.Hash)
+		if err != nil {
+			return err
+		}
+		if blockInfo.Exists && blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
+			if blockInfo.BlockStatus == externalapi.StatusInvalid {
+				return protocolerrors.Errorf(true, "sent inv of an invalid block %s", inv.Hash)
+			}
+			log.Debugf("Block %s already exists. continuing...", inv.Hash)
+			continue
+		}
+
+		isGenesisVirtualSelectedParent, err := flow.isGenesisVirtualSelectedParent()
+		if err != nil {
+			return err
+		}
+
+		if flow.IsOrphan(inv.Hash) {
+			if flow.Config().NetParams().DisallowDirectBlocksOnTopOfGenesis && !flow.Config().AllowSubmitBlockWhenNotSynced && isGenesisVirtualSelectedParent {
+				log.Infof("Cannot process orphan %s for a node with only the genesis block. The node needs to IBD to the recent pruning point before normal operation can resume.", inv.Hash)
+				continue
+			}
+
+			log.Debugf("Block %s is a known orphan. Requesting its missing ancestors", inv.Hash)
+			err := flow.AddOrphanRootsToQueue(inv.Hash)
 			if err != nil {
-				log.Warnf("error: %s", err)
-				return
+				return err
 			}
-			if blockInfo.Exists && blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
-				if blockInfo.BlockStatus == externalapi.StatusInvalid {
-					log.Warnf("error: %s", protocolerrors.Errorf(true, "sent inv of an invalid block %s", inv.Hash))
-					return
-				}
-				log.Debugf("Block %s already exists. continuing...", inv.Hash)
-				return
-			}
+			continue
+		}
 
-			isGenesisVirtualSelectedParent, err := flow.isGenesisVirtualSelectedParent()
+		log.Debugf("Requesting block %s", inv.Hash)
+		block, exists, err := flow.requestBlock(inv.Hash)
+		if err != nil {
+			return err
+		}
+		if exists {
+			log.Debugf("Aborting requesting block %s because it already exists", inv.Hash)
+			continue
+		}
+		if block.PoWHash == "" && block.Header.Version() >= constants.BanMinVersion {
+			flow.banConnection()
+		}
+		if !flow.IsIBDRunning() {
+			daaScore := block.Header.DAAScore()
+			var version uint16 = 1
+			for _, powScore := range flow.Config().ActiveNetParams.POWScores {
+				if daaScore >= powScore {
+					version = version + 1
+				}
+			}
+			constants.BlockVersion = version
+			if block.Header.Version() != constants.BlockVersion {
+				log.Infof("Cannot process %s, Wrong block version %d, it should be %d", consensushashing.BlockHash(block), block.Header.Version(), constants.BlockVersion)
+				log.Infof("Unprocessable block relayed by %s", flow.netConnection.NetAddress().String())
+				if block.Header.Version() >= constants.BanMinVersion {
+					flow.banConnection()
+				}
+				continue
+			}
+		}
+
+		err = flow.banIfBlockIsHeaderOnly(block)
+		if err != nil {
+			return err
+		}
+
+		if flow.Config().NetParams().DisallowDirectBlocksOnTopOfGenesis && !flow.Config().AllowSubmitBlockWhenNotSynced && !flow.Config().Devnet && flow.isChildOfGenesis(block) {
+			log.Infof("Cannot process %s because it's a direct child of genesis.", consensushashing.BlockHash(block))
+			continue
+		}
+
+		// Note we do not apply the heuristic below if inv was queued as an orphan root, since
+		// that means the process started by a proper and relevant relay block
+		if !inv.IsOrphanRoot {
+			// Check bounded merge depth to avoid requesting irrelevant data which cannot be merged under virtual
+			virtualMergeDepthRoot, err := flow.Domain().Consensus().VirtualMergeDepthRoot()
 			if err != nil {
-				log.Warnf("error: %s", err)
-				return
+				return err
 			}
-
-			if flow.IsOrphan(inv.Hash) {
-				if flow.Config().NetParams().DisallowDirectBlocksOnTopOfGenesis && !flow.Config().AllowSubmitBlockWhenNotSynced && isGenesisVirtualSelectedParent {
-					log.Infof("Cannot process orphan %s for a node with only the genesis block. The node needs to IBD "+
-						"to the recent pruning point before normal operation can resume.", inv.Hash)
-					return
-				}
-
-				log.Debugf("Block %s is a known orphan. Requesting its missing ancestors", inv.Hash)
-				err := flow.AddOrphanRootsToQueue(inv.Hash)
+			if !virtualMergeDepthRoot.Equal(model.VirtualGenesisBlockHash) {
+				mergeDepthRootHeader, err := flow.Domain().Consensus().GetBlockHeader(virtualMergeDepthRoot)
 				if err != nil {
-					log.Warnf("error: %s", err)
-					return
+					return err
 				}
-				return
-			}
-
-			log.Debugf("Requesting block %s", inv.Hash)
-			block, exists, err := flow.requestBlock(inv.Hash)
-			if err != nil {
-				log.Warnf("error: %s", err)
-				return
-			}
-			if exists {
-				log.Debugf("Aborting requesting block %s because it already exists", inv.Hash)
-				return
-			}
-			if block.PoWHash == "" && block.Header.Version() >= constants.BanMinVersion {
-				flow.banConnection()
-			}
-			if !flow.IsIBDRunning() {
-				daaScore := block.Header.DAAScore()
-				var version uint16 = 1
-				for _, powScore := range flow.Config().ActiveNetParams.POWScores {
-					if daaScore >= powScore {
-						version = version + 1
-					}
-				}
-				constants.BlockVersion = version
-				if block.Header.Version() != constants.BlockVersion {
-					log.Infof("Cannot process %s, Wrong block version %d, it should be %d", consensushashing.BlockHash(block), block.Header.Version(), constants.BlockVersion)
-					log.Infof("Unprocessable block relayed by %s", flow.netConnection.NetAddress().String())
-					if block.Header.Version() >= constants.BanMinVersion {
-						flow.banConnection()
-					}
-					return
-				}
-			}
-
-			err = flow.banIfBlockIsHeaderOnly(block)
-			if err != nil {
-				log.Warnf("error: %s", err)
-				return
-			}
-
-			if flow.Config().NetParams().DisallowDirectBlocksOnTopOfGenesis && !flow.Config().AllowSubmitBlockWhenNotSynced && !flow.Config().Devnet && flow.isChildOfGenesis(block) {
-				log.Infof("Cannot process %s because it's a direct child of genesis.", consensushashing.BlockHash(block))
-				return
-			}
-
-			// Note we do not apply the heuristic below if inv was queued as an orphan root, since
-			// that means the process started by a proper and relevant relay block
-			if !inv.IsOrphanRoot {
-				// Check bounded merge depth to avoid requesting irrelevant data which cannot be merged under virtual
-				virtualMergeDepthRoot, err := flow.Domain().Consensus().VirtualMergeDepthRoot()
-				if err != nil {
-					log.Warnf("error: %s", err)
-					return
-				}
-				if !virtualMergeDepthRoot.Equal(model.VirtualGenesisBlockHash) {
-					mergeDepthRootHeader, err := flow.Domain().Consensus().GetBlockHeader(virtualMergeDepthRoot)
-					if err != nil {
-						log.Warnf("error: %s", err)
-						return
-					}
-					// Since `BlueWork` respects topology, this condition means that the relay
-					// block is not in the future of virtual's merge depth root, and thus cannot be merged unless
-					// other valid blocks Kosherize it, in which case it will be obtained once the merger is relayed
-					if block.Header.BlueWork().Cmp(mergeDepthRootHeader.BlueWork()) <= 0 {
-						log.Debugf("Block %s has lower blue work than virtual's merge root %s (%d <= %d), hence we are skipping it",
-							inv.Hash, virtualMergeDepthRoot, block.Header.BlueWork(), mergeDepthRootHeader.BlueWork())
-						return
-					}
-				}
-			}
-			log.Debugf("Processing block %s", inv.Hash)
-			oldVirtualInfo, err := flow.Domain().Consensus().GetVirtualInfo()
-			if err != nil {
-				log.Warnf("error: %s", err)
-				return
-			}
-			// We need the PoW hash for processBlock from P2P.
-			missingParents, err := flow.processBlock(block, false)
-			if err != nil {
-				if errors.Is(err, ruleerrors.ErrPrunedBlock) {
-					log.Infof("Ignoring pruned block %s", inv.Hash)
-					return
-				}
-				if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-					log.Infof("Ignoring duplicate block %s", inv.Hash)
-					return
-				}
-				if errors.Is(err, ruleerrors.ErrInvalidPoW) {
-					log.Infof(fmt.Sprintf("Ignoring invalid PoW on version %d block, consider banning: %s", block.Header.Version(), flow.netConnection.NetAddress().String()))
-					if block.Header.Version() >= constants.BanMinVersion {
-						flow.banConnection()
-					}
-					return
-				}
-				log.Warnf("error: %s", err)
-				return
-			}
-			if len(missingParents) > 0 {
-				err := flow.processOrphan(block)
-				if err != nil {
-					log.Warnf("error: %s", err)
-					return
-				}
-				return
-			}
-
-			oldVirtualParents := hashset.New()
-			for _, parent := range oldVirtualInfo.ParentHashes {
-				oldVirtualParents.Add(parent)
-			}
-
-			newVirtualInfo, err := flow.Domain().Consensus().GetVirtualInfo()
-			if err != nil {
-				log.Warnf("error: %s", err)
-				return
-			}
-
-			virtualHasNewParents := false
-			for _, parent := range newVirtualInfo.ParentHashes {
-				if oldVirtualParents.Contains(parent) {
+				// Since `BlueWork` respects topology, this condition means that the relay
+				// block is not in the future of virtual's merge depth root, and thus cannot be merged unless
+				// other valid blocks Kosherize it, in which case it will be obtained once the merger is relayed
+				if block.Header.BlueWork().Cmp(mergeDepthRootHeader.BlueWork()) <= 0 {
+					log.Debugf("Block %s has lower blue work than virtual's merge root %s (%d <= %d), hence we are skipping it", inv.Hash, virtualMergeDepthRoot, block.Header.BlueWork(), mergeDepthRootHeader.BlueWork())
 					continue
 				}
-				virtualHasNewParents = true
-				block, found, err := flow.Domain().Consensus().GetBlock(parent)
-				if err != nil {
-					log.Warnf("error: %s", err)
-					return
-				}
-
-				if !found {
-					log.Warnf("error: %s", protocolerrors.Errorf(false, "Virtual parent %s not found", parent))
-					return
-				}
-				if block.PoWHash != "" {
-					blockHash := consensushashing.BlockHash(block)
-					log.Debugf("Relaying block %s", blockHash)
-					err = flow.relayBlock(block)
-					if err != nil {
-						log.Warnf("error: %s", err)
-						return
-					}
-				}
 			}
-
-			if virtualHasNewParents {
-				log.Debugf("Virtual %d has new parents, raising new block template event", newVirtualInfo.DAAScore)
-				err = flow.OnNewBlockTemplate()
-				if err != nil {
-					log.Warnf("error: %s", err)
-					return
-				}
+		}
+		log.Debugf("Processing block %s", inv.Hash)
+		oldVirtualInfo, err := flow.Domain().Consensus().GetVirtualInfo()
+		if err != nil {
+			return err
+		}
+		// We need the PoW hash for processBlock from P2P.
+		missingParents, err := flow.processBlock(block, false)
+		if err != nil {
+			if errors.Is(err, ruleerrors.ErrPrunedBlock) {
+				log.Infof("Ignoring pruned block %s", inv.Hash)
+				return err
 			}
-			txslen := len(block.Transactions)
-			log.Infof("Accepted relayed block from node %s", flow.netConnection.Address())
-			log.Infof("Accepted block %s via relay with %d tx", inv.Hash, txslen)
-			log.Infof("Accepted PoW hash %s", block.PoWHash)
-			err = flow.OnNewBlock(block)
+			if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
+				log.Infof("Ignoring duplicate block %s", inv.Hash)
+				return err
+			}
+			if errors.Is(err, ruleerrors.ErrInvalidPoW) {
+				log.Infof(fmt.Sprintf("Ignoring invalid PoW on version %d block, consider banning: %s", block.Header.Version(), flow.netConnection.NetAddress().String()))
+				if block.Header.Version() >= constants.BanMinVersion {
+					flow.banConnection()
+				}
+				continue
+			}
+			return err
+		}
+		if len(missingParents) > 0 {
+			err := flow.processOrphan(block)
 			if err != nil {
-				log.Warnf("error: %s", err)
-				return
+				return err
 			}
-		}(inv)
+			continue
+		}
+
+		oldVirtualParents := hashset.New()
+		for _, parent := range oldVirtualInfo.ParentHashes {
+			oldVirtualParents.Add(parent)
+		}
+
+		newVirtualInfo, err := flow.Domain().Consensus().GetVirtualInfo()
+		if err != nil {
+			return err
+		}
+
+		virtualHasNewParents := false
+		for _, parent := range newVirtualInfo.ParentHashes {
+			if oldVirtualParents.Contains(parent) {
+				continue
+			}
+			virtualHasNewParents = true
+			block, found, err := flow.Domain().Consensus().GetBlock(parent)
+			if err != nil {
+				return err
+			}
+
+			if !found {
+				return protocolerrors.Errorf(false, "Virtual parent %s not found", parent)
+			}
+			if block.PoWHash != "" {
+				blockHash := consensushashing.BlockHash(block)
+				log.Debugf("Relaying block %s", blockHash)
+				err = flow.relayBlock(block)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		if virtualHasNewParents {
+			log.Debugf("Virtual %d has new parents, raising new block template event", newVirtualInfo.DAAScore)
+			err = flow.OnNewBlockTemplate()
+			if err != nil {
+				return err
+			}
+		}
+		txslen := len(block.Transactions)
+		log.Infof("Accepted relayed block from node %s", flow.netConnection.Address())
+		log.Infof("Accepted block %s via relay with %d tx", inv.Hash, txslen)
+		log.Infof("Accepted PoW hash %s", block.PoWHash)
+		err = flow.OnNewBlock(block)
+		if err != nil {
+			return err
+		}
 	}
 }
 
@@ -360,8 +339,7 @@ func (flow *handleRelayInvsFlow) readInv() (invRelayBlock, error) {
 
 	msgInv, ok := msg.(*appmessage.MsgInvRelayBlock)
 	if !ok {
-		return invRelayBlock{}, protocolerrors.Errorf(true, "unexpected %s message in the block relay handleRelayInvsFlow while "+
-			"expecting an inv message", msg.Command())
+		return invRelayBlock{}, protocolerrors.Errorf(true, "unexpected %s message in the block relay handleRelayInvsFlow while sexpecting an inv message", msg.Command())
 	}
 	return invRelayBlock{Hash: msgInv.Hash, IsOrphanRoot: false}, nil
 }
