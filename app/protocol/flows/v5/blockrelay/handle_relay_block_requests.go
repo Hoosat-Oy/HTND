@@ -1,18 +1,15 @@
 package blockrelay
 
 import (
-	"sync"
 	"time"
 
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
 	peerpkg "github.com/Hoosat-Oy/HTND/app/protocol/peer"
-	"github.com/Hoosat-Oy/HTND/app/protocol/protocolerrors"
 	"github.com/Hoosat-Oy/HTND/domain"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/pow"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
-	"github.com/pkg/errors"
 )
 
 // RelayBlockRequestsContext is the interface for the context needed for the HandleRelayBlockRequests flow.
@@ -78,24 +75,17 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 			return err
 		}
 		getRelayBlocksMessage := message.(*appmessage.MsgRequestRelayBlocks)
-
-		var wg sync.WaitGroup
-		errChan := make(chan error, len(getRelayBlocksMessage.Hashes))
-
 		for i := 0; i < len(getRelayBlocksMessage.Hashes); i++ {
 			hash := getRelayBlocksMessage.Hashes[i]
-
-			wg.Add(1)
 			go func(hash *externalapi.DomainHash) {
-				defer wg.Done()
 
 				block, found, err := context.Domain().Consensus().GetBlock(hash)
 				if err != nil {
-					errChan <- errors.Wrapf(err, "unable to fetch requested block hash %s", hash)
+					log.Warnf("unable to fetch requested block hash %s: %s", hash, err)
 					return
 				}
 				if !found {
-					errChan <- protocolerrors.Errorf(false, "Relay block %s not found", hash)
+					log.Warnf("Relay block %s not found", hash)
 					return
 				}
 
@@ -105,11 +95,11 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 						time.Sleep(30 * time.Millisecond)
 						block, found, err = context.Domain().Consensus().GetBlock(hash)
 						if err != nil {
-							errChan <- errors.Wrapf(err, "unable to re-fetch requested block hash %s", hash)
+							log.Warnf("unable to re-fetch requested block hash %s: %s", hash, err)
 							return
 						}
 						if !found {
-							errChan <- protocolerrors.Errorf(false, "Relay block %s not found on retry", hash)
+							log.Warnf("Relay block %s not found on retry", hash)
 							return
 						}
 						if block.PoWHash != "" {
@@ -126,19 +116,10 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 
 				err = outgoingRoute.Enqueue(appmessage.DomainBlockToMsgBlock(block))
 				if err != nil {
-					errChan <- errors.Wrapf(err, "failed to enqueue block %s", hash)
+					log.Warnf("failed to enqueue block %s: %s", hash, err)
 					return
 				}
 			}(hash)
-		}
-
-		wg.Wait()
-		close(errChan)
-
-		for err := range errChan {
-			if err != nil {
-				return err
-			}
 		}
 	}
 }
