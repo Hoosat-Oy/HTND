@@ -75,58 +75,41 @@ func TransactionIDs(txs []*externalapi.DomainTransaction) []*externalapi.DomainT
 }
 
 func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodingFlags txEncoding) error {
-	err := binaryserializer.PutUint16(w, tx.Version)
-	if err != nil {
+	if err := binaryserializer.PutUint16(w, tx.Version); err != nil {
 		return err
 	}
 
-	lenInputs := len(tx.Inputs)
-	err = serialization.WriteElement(w, uint64(lenInputs))
-	if err != nil {
+	if err := serialization.WriteElement(w, uint64(len(tx.Inputs))); err != nil {
 		return err
 	}
-
-	for i := 0; i < lenInputs; i++ {
-		err = writeTransactionInput(w, tx.Inputs[i], encodingFlags)
-		if err != nil {
+	for _, input := range tx.Inputs {
+		if err := writeTransactionInput(w, input, encodingFlags); err != nil {
 			return err
 		}
 	}
 
-	lenOutputs := len(tx.Outputs)
-	err = serialization.WriteElement(w, uint64(lenOutputs))
-	if err != nil {
+	if err := serialization.WriteElement(w, uint64(len(tx.Outputs))); err != nil {
 		return err
 	}
-
-	for i := 0; i < lenOutputs; i++ {
-		err = writeTxOut(w, tx.Outputs[i])
-		if err != nil {
+	for _, output := range tx.Outputs {
+		if err := writeTxOut(w, output); err != nil {
 			return err
 		}
 	}
 
-	err = binaryserializer.PutUint64(w, tx.LockTime)
-	if err != nil {
+	if err := binaryserializer.PutUint64(w, tx.LockTime); err != nil {
 		return err
 	}
 
-	_, err = w.Write(tx.SubnetworkID[:])
-	if err != nil {
+	if _, err := w.Write(tx.SubnetworkID[:]); err != nil {
 		return err
 	}
 
-	err = binaryserializer.PutUint64(w, tx.Gas)
-	if err != nil {
+	if err := binaryserializer.PutUint64(w, tx.Gas); err != nil {
 		return err
 	}
 
-	err = writeVarBytes(w, tx.Payload)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return writeVarBytes(w, tx.Payload)
 }
 
 // writeTransactionInput encodes ti to the hoosat protocol encoding for a transaction
