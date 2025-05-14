@@ -1,8 +1,6 @@
 package reachabilitymanager
 
 import (
-	"sync"
-
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 )
@@ -15,7 +13,6 @@ type reachabilityManager struct {
 	ghostdagDataStore     model.GHOSTDAGDataStore
 	reindexSlack          uint64
 	reindexWindow         uint64
-	intervalCache         sync.Map
 }
 
 // New instantiates a new reachabilityManager

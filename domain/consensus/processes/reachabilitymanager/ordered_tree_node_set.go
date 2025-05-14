@@ -33,19 +33,7 @@ func (rt *reachabilityManager) findAncestorOfNode(stagingArea *model.StagingArea
 func (rt *reachabilityManager) findAncestorIndexOfNode(stagingArea *model.StagingArea, tns orderedTreeNodeSet,
 	node *externalapi.DomainHash) (int, bool, error) {
 
-	getInterval := func(n *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
-		if cached, ok := rt.intervalCache.Load(n); ok {
-			return cached.(*model.ReachabilityInterval), nil
-		}
-		iv, err := rt.interval(stagingArea, n)
-		if err != nil {
-			return nil, err
-		}
-		rt.intervalCache.Store(n, iv)
-		return iv, nil
-	}
-
-	blockInterval, err := getInterval(node)
+	blockInterval, err := rt.interval(stagingArea, node)
 	if err != nil {
 		return 0, false, err
 	}
@@ -55,10 +43,11 @@ func (rt *reachabilityManager) findAncestorIndexOfNode(stagingArea *model.Stagin
 	high := len(tns)
 	for low < high {
 		middle := (low + high) / 2
-		middleInterval, err := getInterval(tns[middle])
+		middleInterval, err := rt.interval(stagingArea, tns[middle])
 		if err != nil {
 			return 0, false, err
 		}
+
 		if end < middleInterval.Start {
 			high = middle
 		} else {
