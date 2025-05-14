@@ -173,7 +173,6 @@ func getBlockForMining(mineWhenNotSynced bool) (*externalapi.DomainBlock, *pow.S
 	tryCount := 0
 
 	const sleepTime = 200 * time.Millisecond
-	const sleepTimeWhenNotSynced = 5 * time.Second
 
 	for {
 		tryCount++
@@ -191,7 +190,7 @@ func getBlockForMining(mineWhenNotSynced bool) (*externalapi.DomainBlock, *pow.S
 			if shouldLog {
 				log.Warnf("Hoosatd is not synced. Skipping current block template")
 			}
-			time.Sleep(sleepTimeWhenNotSynced)
+			time.Sleep(sleepTime)
 			continue
 		}
 
