@@ -121,7 +121,6 @@ func (flow *handleRelayInvsFlow) banConnection() {
 func (flow *handleRelayInvsFlow) start() error {
 	for {
 		if flow.IsIBDRunning() {
-			continue
 			isNearlySynced, err := flow.IsNearlySynced()
 			if err != nil {
 				return err
