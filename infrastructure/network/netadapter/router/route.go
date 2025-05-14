@@ -39,12 +39,13 @@ type Route struct {
 
 // NewRoute create a new Route
 func NewRoute(name string) *Route {
-	return &Route{
-		name:     name,
-		channel:  make(chan appmessage.Message, DefaultMaxMessages),
-		closed:   false,
-		capacity: -1,
-	}
+	return NewRouteWithCapacity(name, DefaultMaxMessages)
+	// return &Route{
+	// 	name:     name,
+	// 	channel:  make(chan appmessage.Message, DefaultMaxMessages),
+	// 	closed:   false,
+	// 	capacity: -1,
+	// }
 }
 
 func NewRouteWithCapacity(name string, capacity int) *Route {
