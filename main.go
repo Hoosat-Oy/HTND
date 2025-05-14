@@ -9,11 +9,13 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"runtime"
 
 	"github.com/Hoosat-Oy/HTND/app"
 )
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	go func() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
