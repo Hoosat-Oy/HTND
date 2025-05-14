@@ -70,12 +70,12 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		}
 	}
 
-	if !isBlockWithTrustedData {
-		err = v.checkIndirectParents(stagingArea, header)
-		if err != nil {
-			return err
-		}
-	}
+	// if !isBlockWithTrustedData {
+	// 	err = v.checkIndirectParents(stagingArea, header)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	err = v.mergeDepthManager.CheckBoundedMergeDepth(stagingArea, blockHash, isBlockWithTrustedData)
 	if err != nil {
