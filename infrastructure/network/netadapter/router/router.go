@@ -27,7 +27,7 @@ type Router struct {
 func NewRouter(name string) *Router {
 	router := Router{
 		incomingRoutes: make(map[appmessage.MessageCommand]*Route),
-		outgoingRoute:  newRouteWithCapacity(fmt.Sprintf("%s - outgoing", name), outgoingRouteMaxMessages),
+		outgoingRoute:  NewRouteWithCapacity(fmt.Sprintf("%s - outgoing", name), outgoingRouteMaxMessages),
 	}
 	return &router
 }
@@ -46,7 +46,7 @@ func (r *Router) AddIncomingRoute(name string, messageTypes []appmessage.Message
 // AddIncomingRouteWithCapacity registers the messages of types `messageTypes` to
 // be routed to the given `route` with a capacity of `capacity`
 func (r *Router) AddIncomingRouteWithCapacity(name string, capacity int, messageTypes []appmessage.MessageCommand) (*Route, error) {
-	route := newRouteWithCapacity(fmt.Sprintf("%s - incoming", name), capacity)
+	route := NewRouteWithCapacity(fmt.Sprintf("%s - incoming", name), capacity)
 	err := r.initializeIncomingRoute(route, messageTypes)
 	if err != nil {
 		return nil, err

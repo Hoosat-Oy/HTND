@@ -121,6 +121,7 @@ func (flow *handleRelayInvsFlow) banConnection() {
 func (flow *handleRelayInvsFlow) start() error {
 	for {
 		if flow.IsIBDRunning() {
+			continue
 			isNearlySynced, err := flow.IsNearlySynced()
 			if err != nil {
 				return err
@@ -262,7 +263,6 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 		if len(missingParents) > 0 {
-			log.Infof("Received a block with missing parents from %s, adding to orphan pool: %s", flow.netConnection.NetAddress().String(), inv.Hash)
 			err := flow.processOrphan(block)
 			if err != nil {
 				return err
