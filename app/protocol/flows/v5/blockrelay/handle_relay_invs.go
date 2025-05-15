@@ -339,7 +339,7 @@ func (flow *handleRelayInvsFlow) readInv() (invRelayBlock, error) {
 
 	msgInv, ok := msg.(*appmessage.MsgInvRelayBlock)
 	if !ok {
-		return invRelayBlock{}, protocolerrors.Errorf(true, "unexpected %s message in the block relay handleRelayInvsFlow while sexpecting an inv message", msg.Command())
+		return invRelayBlock{}, protocolerrors.Errorf(true, "unexpected %s message in the block relay handleRelayInvsFlow while expecting an inv message", msg.Command())
 	}
 	return invRelayBlock{Hash: msgInv.Hash, IsOrphanRoot: false}, nil
 }

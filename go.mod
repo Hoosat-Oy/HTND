@@ -10,7 +10,6 @@ require (
 	github.com/btcsuite/winsvc v1.0.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/gofrs/flock v0.8.1
-	github.com/golang/protobuf v1.5.4
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/jrick/logrotate v1.0.0
 	github.com/kaspanet/go-muhash v0.0.4
@@ -24,7 +23,10 @@ require (
 	google.golang.org/protobuf v1.36.6
 )
 
-require github.com/klauspost/cpuid/v2 v2.0.9 // indirect
+require (
+	github.com/golang/protobuf v1.5.4 // indirect
+	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
+)
 
 require (
 	github.com/chewxy/math32 v1.11.0
