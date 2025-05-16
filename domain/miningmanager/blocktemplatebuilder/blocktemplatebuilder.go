@@ -140,13 +140,13 @@ func (btb *blockTemplateBuilder) BuildBlockTemplate(
 
 	invalidTxsErr := ruleerrors.ErrInvalidTransactionsInNewBlock{}
 	if errors.As(err, &invalidTxsErr) {
-		log.Criticalf("consensusReference.Consensus().BuildBlock returned invalid txs in BuildBlockTemplate")
+		log.Debugf("consensusReference.Consensus().BuildBlock returned invalid txs in BuildBlockTemplate")
 		err = btb.mempool.RemoveInvalidTransactions(&invalidTxsErr)
 		if err != nil {
 			// mempool.RemoveInvalidTransactions might return errors in situations that are perfectly fine in this context.
 			// TODO: Once the mempool invariants are clear, this should be converted back `return nil, err`:
 			// https://github.com/kaspanet/kapsad/issues/1553
-			log.Criticalf("Error from mempool.RemoveInvalidTransactions: %+v", err)
+			log.Debugf("Error from mempool.RemoveInvalidTransactions: %+v", err)
 		}
 		// We can call this recursively without worry because this should almost never happen
 		return btb.BuildBlockTemplate(coinbaseData)
