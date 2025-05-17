@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/infrastructure/config"
 
 	"github.com/Hoosat-Oy/HTND/util"
@@ -21,7 +20,7 @@ import (
 const (
 	defaultLogFilename          = "hoosatminer.log"
 	defaultErrLogFilename       = "hoosatminer_err.log"
-	defaultTargetBlockRateRatio = 2.0
+	defaultTargetBlockRateRatio = 10.0
 )
 
 var (
@@ -69,7 +68,7 @@ func parseConfig() (*configFlags, error) {
 	}
 
 	if cfg.TargetBlocksPerSecond == nil {
-		targetBlocksPerSecond := defaultTargetBlockRateRatio / cfg.NetParams().TargetTimePerBlock[constants.BlockVersion-1].Seconds()
+		targetBlocksPerSecond := defaultTargetBlockRateRatio
 		cfg.TargetBlocksPerSecond = &targetBlocksPerSecond
 	}
 
