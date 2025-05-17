@@ -20,7 +20,7 @@ import (
 const (
 	defaultLogFilename          = "hoosatminer.log"
 	defaultErrLogFilename       = "hoosatminer_err.log"
-	defaultTargetBlockRateRatio = 100.0
+	defaultTargetBlockRateRatio = 5
 )
 
 var (
