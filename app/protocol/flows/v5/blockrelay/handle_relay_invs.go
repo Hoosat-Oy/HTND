@@ -120,6 +120,11 @@ func (flow *handleRelayInvsFlow) banConnection() {
 
 func (flow *handleRelayInvsFlow) start() error {
 	for {
+		log.Debugf("Waiting for inv")
+		inv, err := flow.readInv()
+		if err != nil {
+			return err
+		}
 		if flow.IsIBDRunning() {
 			isNearlySynced, err := flow.IsNearlySynced()
 			if err != nil {
@@ -129,11 +134,6 @@ func (flow *handleRelayInvsFlow) start() error {
 				log.Debugf("Got block while in IBD and the node is out of sync. Continuing...")
 				continue
 			}
-		}
-		log.Debugf("Waiting for inv")
-		inv, err := flow.readInv()
-		if err != nil {
-			return err
 		}
 
 		log.Debugf("Got relay inv for block %s", inv.Hash)
