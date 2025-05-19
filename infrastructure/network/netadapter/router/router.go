@@ -57,7 +57,8 @@ func (r *Router) AddIncomingRouteWithCapacity(name string, capacity int, message
 func (r *Router) initializeIncomingRoute(route *Route, messageTypes []appmessage.MessageCommand) error {
 	for _, messageType := range messageTypes {
 		if r.doesIncomingRouteExist(messageType) {
-			return errors.Errorf("a route for '%s' already exists", messageType)
+			log.Debugf("a route for '%s' already exists", messageType)
+			continue
 		}
 		r.setIncomingRoute(messageType, route)
 	}
@@ -69,7 +70,8 @@ func (r *Router) initializeIncomingRoute(route *Route, messageTypes []appmessage
 func (r *Router) RemoveRoute(messageTypes []appmessage.MessageCommand) error {
 	for _, messageType := range messageTypes {
 		if !r.doesIncomingRouteExist(messageType) {
-			return errors.Errorf("a route for '%s' does not exist", messageType)
+			log.Debugf("a route for '%s' does not exist", messageType)
+			continue
 		}
 		r.deleteIncomingRoute(messageType)
 	}
