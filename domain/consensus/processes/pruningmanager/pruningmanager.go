@@ -167,20 +167,6 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 		return err
 	}
 	if !newPruningPoint.Equal(currentPruningPoint) {
-		currentPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningPoint, false)
-		if err != nil {
-			return err
-		}
-
-		newPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, newPruningPoint, false)
-		if err != nil {
-			return err
-		}
-
-		if newPruningPointGHOSTDAGData.BlueScore()-currentPruningPointGHOSTDAGData.BlueScore() < pm.pruningDepth/2 {
-			return nil
-		}
-
 		log.Debugf("Moving pruning point from %s to %s", currentPruningPoint, newPruningPoint)
 		err = pm.savePruningPoint(stagingArea, newPruningPoint)
 		if err != nil {
@@ -324,9 +310,8 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 		newCandidate = selectedChild
 		newCandidateGHOSTDAGData := selectedChildGHOSTDAGData
 
-		// We move the pruning point every time the candidate's finality score is
-		// bigger than the current pruning point finality score.
-		if pm.finalityScore(newCandidateGHOSTDAGData.BlueScore()) > pm.finalityScore(newPruningPointGHOSTDAGData.BlueScore()) {
+		// We move the pruning point every time the candidate's blue score distance is more than pruning depth divided by two to current pruning point.
+		if newPruningPointGHOSTDAGData.BlueScore() < currentPruningPointGHOSTDAGData.BlueScore()+(pm.pruningDepth/2) {
 			newPruningPoint = newCandidate
 			newPruningPointGHOSTDAGData = newCandidateGHOSTDAGData
 		}
