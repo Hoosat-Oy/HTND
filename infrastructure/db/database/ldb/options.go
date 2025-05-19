@@ -6,11 +6,13 @@ import "github.com/syndtr/goleveldb/leveldb/opt"
 // opt.Options struct for opening a database.
 func Options() opt.Options {
 	return opt.Options{
-		Compression:            opt.NoCompression, // Skip compression for speed
-		NoSync:                 true,              // Skip fsync for faster writes (not durable)
-		WriteBuffer:            64 * opt.MiB,      // Larger memtable
-		BlockCacheCapacity:     64 * opt.MiB,      // Larger block cache for reads
-		OpenFilesCacheCapacity: 500,               // Avoid file open/close overhead
-		BlockRestartInterval:   32,                // Slightly larger blocks
+		Compression:            opt.NoCompression,
+		NoSync:                 true,
+		WriteBuffer:            128 * opt.MiB,
+		BlockCacheCapacity:     128 * opt.MiB,
+		OpenFilesCacheCapacity: 1000,
+		BlockRestartInterval:   32,
+		CompactionTableSize:    8 * opt.MiB,
+		CompactionTotalSize:    512 * opt.MiB,
 	}
 }
