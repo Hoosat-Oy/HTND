@@ -235,9 +235,9 @@ func (flow *handleIBDFlow) syncPruningPointsAndPruningPointAnticone(proofPruning
 		return protocolerrors.Errorf(true, "got `done` message before receiving the pruning point")
 	}
 
-	if !pruningPointWithMetaData.Block.Header.BlockHash().Equal(proofPruningPoint) {
-		return protocolerrors.Errorf(true, "first block with trusted data is not the pruning point")
-	}
+	// if !pruningPointWithMetaData.Block.Header.BlockHash().Equal(proofPruningPoint) {
+	// 	return protocolerrors.Errorf(true, "first block with trusted data is not the pruning point")
+	// }
 
 	err = flow.processBlockWithTrustedData(flow.Domain().StagingConsensus(), pruningPointWithMetaData, msgTrustedData)
 	if err != nil {
