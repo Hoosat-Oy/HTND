@@ -8,11 +8,11 @@ func Options() opt.Options {
 	return opt.Options{
 		Compression:            opt.NoCompression,
 		NoSync:                 true,
-		WriteBuffer:            128 * opt.MiB,
-		BlockCacheCapacity:     128 * opt.MiB,
-		OpenFilesCacheCapacity: 1000,
-		BlockRestartInterval:   32,
-		CompactionTableSize:    8 * opt.MiB,
-		CompactionTotalSize:    512 * opt.MiB,
+		WriteBuffer:            32 * opt.MiB,
+		BlockCacheCapacity:     32 * opt.MiB,
+		OpenFilesCacheCapacity: 256,
+		BlockRestartInterval:   16,
+		CompactionTableSize:    4 * opt.MiB,
+		CompactionTotalSize:    128 * opt.MiB,
 	}
 }

@@ -104,7 +104,7 @@ type Params struct {
 	// FinalityDuration is the duration of the finality window.
 	FinalityDuration []time.Duration
 
-	PruningModifiers []time.Duration
+	PruningMultiplier []uint64
 
 	// TimestampDeviationTolerance is the maximum offset a block timestamp
 	// is allowed to be in the future before it gets delayed
@@ -214,19 +214,15 @@ func (p *Params) NormalizeRPCServerAddress(addr string) (string, error) {
 // FinalityDepth returns the finality duration represented in blocks
 func (p *Params) FinalityDepth() uint64 {
 	depth := uint64(p.FinalityDuration[constants.BlockVersion-1].Seconds() / p.TargetTimePerBlock[constants.BlockVersion-1].Seconds())
-	// log.Infof("Finality Depth: %d", depth)
+	log.Infof("Finality Depth: %d", depth)
 	return depth
 }
 
 // PruningDepth returns the pruning duration represented in blocks
 func (p *Params) PruningDepth() uint64 {
-	twoTimesFinalityDepth := 2 * p.FinalityDepth() * uint64(p.PruningModifiers[constants.BlockVersion-1].Seconds())
-	fourTimesMergesetSizeLimitTimessK := 4 * p.MergeSetSizeLimit * uint64(p.K[constants.BlockVersion-1])
-	twoTimesKplusTwo := 2*uint64(p.K[constants.BlockVersion-1]) + 2
-	depth := uint64(float64(twoTimesFinalityDepth+fourTimesMergesetSizeLimitTimessK+twoTimesKplusTwo) / p.TargetTimePerBlock[constants.BlockVersion-1].Seconds())
-	log.Infof("Pruning depth: %d", depth)
+	depth := 2*p.FinalityDepth()*p.PruningMultiplier[constants.BlockVersion-1] + 4*p.MergeSetSizeLimit*uint64(p.K[constants.BlockVersion-1]) + 2*uint64(p.K[constants.BlockVersion-1]) + 2
+	log.Infof("Pruning Depth: %d", depth)
 	return depth
-	// 2*1800 + 4*180*18 + 2*18 + 2
 }
 
 // MainnetParams defines the network parameters for the main Hoosat network.
@@ -260,7 +256,7 @@ var MainnetParams = Params{
 	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 	POWScores:                       []uint64{17500000, 21821800, 29335426},
-	PruningModifiers:                []time.Duration{0, 0, 0, 0, 48 * time.Second},
+	PruningMultiplier:               []uint64{0, 0, 0, 0, 48},
 	MaxBlockMass:                    []uint64{defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, 10_000_000},
 
 	// Consensus rule change deployments.
@@ -335,7 +331,7 @@ var TestnetParams = Params{
 	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 	POWScores:                       []uint64{5, 15, 25, 30},
-	PruningModifiers:                []time.Duration{0, 0, 0, 0, (48 * 5) * time.Second},
+	PruningMultiplier:               []uint64{0, 0, 0, 0, 48},
 	MaxBlockMass:                    []uint64{defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, 10_000_000},
 
 	// Consensus rule change deployments.
@@ -405,7 +401,7 @@ var SimnetParams = Params{
 	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 	POWScores:                       []uint64{5},
-	PruningModifiers:                []time.Duration{0},
+	PruningMultiplier:               []uint64{0, 0, 0, 0, 48},
 	MaxBlockMass:                    []uint64{defaultMaxBlockMass},
 
 	// Consensus rule change deployments.
@@ -467,7 +463,7 @@ var DevnetParams = Params{
 	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 	POWScores:                       []uint64{5},
-	PruningModifiers:                []time.Duration{0},
+	PruningMultiplier:               []uint64{0, 0, 0, 0, 48},
 	MaxBlockMass:                    []uint64{defaultMaxBlockMass},
 
 	// Consensus rule change deployments.
