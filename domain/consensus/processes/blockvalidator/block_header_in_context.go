@@ -70,6 +70,7 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		}
 	}
 
+	// TODO: Think if there is better way to check for indirect parents than the whole reachability.
 	// if !isBlockWithTrustedData {
 	// 	err = v.checkIndirectParents(stagingArea, header)
 	// 	if err != nil {
@@ -98,6 +99,7 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		return err
 	}
 
+	// TODO: Test to re-enable in few days.
 	// if !isBlockWithTrustedData {
 	// 	err = v.validateHeaderPruningPoint(stagingArea, blockHash)
 	// 	if err != nil {

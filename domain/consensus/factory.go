@@ -247,6 +247,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.DeflationaryPhaseDaaScore,
 		config.DeflationaryPhaseBaseSubsidy,
 		config.DeflationaryPhaseCurveFactor,
+		config.TargetTimePerBlock[constants.BlockVersion-1],
 
 		dagTraversalManager,
 		ghostdagDataStore,

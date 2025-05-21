@@ -22,11 +22,11 @@ func (bp *blockProcessor) validateAndInsertImportedPruningPoint(
 			newPruningPointHash)
 	}
 
+	// TODO: Test to re-enable in few days.
 	// arePruningPointsInValidChain, err := bp.pruningManager.ArePruningPointsInValidChain(stagingArea)
 	// if err != nil {
 	// 	return err
 	// }
-
 	// if !arePruningPointsInValidChain {
 	// 	return errors.Wrapf(ruleerrors.ErrInvalidPruningPointsChain, "pruning points do not compose a valid chain to genesis")
 	// }

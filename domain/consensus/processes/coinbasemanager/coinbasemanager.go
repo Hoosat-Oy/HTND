@@ -2,6 +2,7 @@ package coinbasemanager
 
 import (
 	"math"
+	"time"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
@@ -23,6 +24,7 @@ type coinbaseManager struct {
 	deflationaryPhaseDaaScore               uint64
 	deflationaryPhaseBaseSubsidy            uint64
 	deflationaryPhaseCurveFactor            float64
+	targetTimePerBlock                      time.Duration
 
 	databaseContext     model.DBReader
 	dagTraversalManager model.DAGTraversalManager
@@ -333,7 +335,7 @@ func (c *coinbaseManager) getDeflationaryPeriodBlockSubsidyFromTable(year uint64
 	if year >= uint64(len(subsidyByDeflationaryYearTable)) {
 		year = uint64(len(subsidyByDeflationaryYearTable) - 1)
 	}
-	return subsidyByDeflationaryYearTable[year]
+	return uint64(float64(subsidyByDeflationaryYearTable[year]) * c.targetTimePerBlock.Seconds())
 }
 
 func (c *coinbaseManager) calcDeflationaryPeriodBlockSubsidyFloatCalc(year uint64) uint64 {
@@ -386,6 +388,7 @@ func New(
 	deflationaryPhaseDaaScore uint64,
 	deflationaryPhaseBaseSubsidy uint64,
 	defaultdeflationaryPhaseCurveFactor float64,
+	targetTimePerBlock time.Duration,
 	dagTraversalManager model.DAGTraversalManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	acceptanceDataStore model.AcceptanceDataStore,
@@ -404,6 +407,7 @@ func New(
 		deflationaryPhaseDaaScore:               deflationaryPhaseDaaScore,
 		deflationaryPhaseBaseSubsidy:            deflationaryPhaseBaseSubsidy,
 		deflationaryPhaseCurveFactor:            defaultdeflationaryPhaseCurveFactor,
+		targetTimePerBlock:                      targetTimePerBlock,
 
 		dagTraversalManager: dagTraversalManager,
 		ghostdagDataStore:   ghostdagDataStore,
