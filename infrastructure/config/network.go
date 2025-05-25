@@ -18,6 +18,8 @@ import (
 // NetworkFlags holds the network configuration, that is which network is selected.
 type NetworkFlags struct {
 	Testnet               bool   `long:"testnet" description:"Use the test network"`
+	TestnetB5             bool   `long:"testnet-b5" description:"Use the test network"`
+	TestnetB10            bool   `long:"testnet-b10" description:"Use the test network"`
 	Simnet                bool   `long:"simnet" description:"Use the simulation test network"`
 	Devnet                bool   `long:"devnet" description:"Use the development test network"`
 	OverrideDAGParamsFile string `long:"override-dag-params-file" description:"Overrides DAG params (allowed only on devnet)"`
@@ -65,6 +67,14 @@ func (networkFlags *NetworkFlags) ResolveNetwork(parser *flags.Parser) error {
 	if networkFlags.Testnet {
 		numNets++
 		networkFlags.ActiveNetParams = &dagconfig.TestnetParams
+	}
+	if networkFlags.TestnetB5 {
+		numNets++
+		networkFlags.ActiveNetParams = &dagconfig.TestnetParamsB5
+	}
+	if networkFlags.TestnetB10 {
+		numNets++
+		networkFlags.ActiveNetParams = &dagconfig.TestnetParamsB10
 	}
 	if networkFlags.Simnet {
 		numNets++

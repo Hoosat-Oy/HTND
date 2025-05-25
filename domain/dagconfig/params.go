@@ -373,6 +373,148 @@ var TestnetParams = Params{
 	MergeDepth:    defaultMergeDepth,
 }
 
+var TestnetParamsB5 = Params{
+	K:           []externalapi.KType{defaultGHOSTDAGK, defaultGHOSTDAGK, defaultGHOSTDAGK, defaultGHOSTDAGK, 40},
+	Name:        "hoosat-testnet-b5",
+	Net:         appmessage.Testnet,
+	RPCPort:     "42422",
+	DefaultPort: "42423",
+	DNSSeeds: []string{
+		// This DNS seeder is run by Toni Lukkaroinen
+		"mainnet-dnsseed.hoosat.fi",
+		// These DNS seeders are run by Cryptonoob
+		"mainnet-node-1.hoosat.org",
+		"mainnet-node-2.hoosat.org",
+		"mainnet-node-3.hoosat.org",
+		"mainnet-node-4.hoosat.org",
+	},
+
+	// DAG parameters
+	GenesisBlock:                    &testnetGenesisBlock,
+	GenesisHash:                     testnetGenesisHash,
+	PowMax:                          testnetPowMax,
+	BlockCoinbaseMaturity:           100,
+	SubsidyGenesisReward:            defaultSubsidyGenesisReward,
+	PreDeflationaryPhaseBaseSubsidy: defaultPreDeflationaryPhaseBaseSubsidy,
+	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
+	TargetTimePerBlock:              []time.Duration{defaultTargetTimePerBlock, defaultTargetTimePerBlock, defaultTargetTimePerBlock, defaultTargetTimePerBlock, 200 * time.Millisecond},
+	FinalityDuration:                []time.Duration{defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, 1800 * time.Second},
+	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
+	POWScores:                       []uint64{5, 15, 25, 30},
+	PruningMultiplier:               []uint64{0, 0, 0, 0, 48},
+	MaxBlockMass:                    []uint64{defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, 10_000_000},
+
+	// Consensus rule change deployments.
+	//
+	// The miner confirmation window is defined as:
+	//   target proof of work timespan / target proof of work spacing
+	RuleChangeActivationThreshold: 1512, // 75% of MinerConfirmationWindow
+	MinerConfirmationWindow:       2016,
+
+	// Mempool parameters
+	RelayNonStdTxs: false,
+
+	// AcceptUnroutable specifies whether this network accepts unroutable
+	// IP addresses, such as 10.0.0.0/8
+	AcceptUnroutable: false,
+
+	// Human-readable part for Bech32 encoded addresses
+	Prefix: util.Bech32PrefixHoosatTest,
+
+	// Address encoding magics
+	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
+
+	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
+	EnableNonNativeSubnetworks: false,
+
+	DisableDifficultyAdjustment: false,
+
+	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
+	MaxBlockParents:                         []externalapi.KType{defaultMaxBlockParents, defaultMaxBlockParents, defaultMaxBlockParents, defaultMaxBlockParents, 40},
+	MassPerTxByte:                           defaultMassPerTxByte,
+	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
+	MassPerSigOp:                            defaultMassPerSigOp,
+	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
+	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
+	PruningProofM:                           defaultPruningProofM,
+	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
+
+	MaxBlockLevel: 250,
+	MergeDepth:    defaultMergeDepth,
+}
+
+var TestnetParamsB10 = Params{
+	K:           []externalapi.KType{defaultGHOSTDAGK, defaultGHOSTDAGK, defaultGHOSTDAGK, defaultGHOSTDAGK, 40},
+	Name:        "hoosat-testnet-b5",
+	Net:         appmessage.Testnet,
+	RPCPort:     "42422",
+	DefaultPort: "42423",
+	DNSSeeds: []string{
+		// This DNS seeder is run by Toni Lukkaroinen
+		"mainnet-dnsseed.hoosat.fi",
+		// These DNS seeders are run by Cryptonoob
+		"mainnet-node-1.hoosat.org",
+		"mainnet-node-2.hoosat.org",
+		"mainnet-node-3.hoosat.org",
+		"mainnet-node-4.hoosat.org",
+	},
+
+	// DAG parameters
+	GenesisBlock:                    &testnetGenesisBlock,
+	GenesisHash:                     testnetGenesisHash,
+	PowMax:                          testnetPowMax,
+	BlockCoinbaseMaturity:           100,
+	SubsidyGenesisReward:            defaultSubsidyGenesisReward,
+	PreDeflationaryPhaseBaseSubsidy: defaultPreDeflationaryPhaseBaseSubsidy,
+	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
+	TargetTimePerBlock:              []time.Duration{defaultTargetTimePerBlock, defaultTargetTimePerBlock, defaultTargetTimePerBlock, defaultTargetTimePerBlock, 100 * time.Millisecond},
+	FinalityDuration:                []time.Duration{defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, 1800 * time.Second},
+	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
+	POWScores:                       []uint64{5, 15, 25, 30},
+	PruningMultiplier:               []uint64{0, 0, 0, 0, 48},
+	MaxBlockMass:                    []uint64{defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, 10_000_000},
+
+	// Consensus rule change deployments.
+	//
+	// The miner confirmation window is defined as:
+	//   target proof of work timespan / target proof of work spacing
+	RuleChangeActivationThreshold: 1512, // 75% of MinerConfirmationWindow
+	MinerConfirmationWindow:       2016,
+
+	// Mempool parameters
+	RelayNonStdTxs: false,
+
+	// AcceptUnroutable specifies whether this network accepts unroutable
+	// IP addresses, such as 10.0.0.0/8
+	AcceptUnroutable: false,
+
+	// Human-readable part for Bech32 encoded addresses
+	Prefix: util.Bech32PrefixHoosatTest,
+
+	// Address encoding magics
+	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
+
+	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
+	EnableNonNativeSubnetworks: false,
+
+	DisableDifficultyAdjustment: false,
+
+	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
+	MaxBlockParents:                         []externalapi.KType{defaultMaxBlockParents, defaultMaxBlockParents, defaultMaxBlockParents, defaultMaxBlockParents, 40},
+	MassPerTxByte:                           defaultMassPerTxByte,
+	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
+	MassPerSigOp:                            defaultMassPerSigOp,
+	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
+	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
+	PruningProofM:                           defaultPruningProofM,
+	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
+
+	MaxBlockLevel: 250,
+	MergeDepth:    defaultMergeDepth,
+}
+
 // SimnetParams defines the network parameters for the simulation test Hoosat
 // network. This network is similar to the normal test network except it is
 // intended for private use within a group of individuals doing simulation

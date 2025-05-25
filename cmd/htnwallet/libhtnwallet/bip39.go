@@ -72,6 +72,10 @@ func versionFromParams(params *dagconfig.Params) ([4]byte, error) {
 		return bip32.HoosatMainnetPrivate, nil
 	case dagconfig.TestnetParams.Name:
 		return bip32.HoosatTestnetPrivate, nil
+	case dagconfig.TestnetParamsB5.Name:
+		return bip32.HoosatTestnetPrivate, nil
+	case dagconfig.TestnetParamsB10.Name:
+		return bip32.HoosatTestnetPrivate, nil
 	case dagconfig.DevnetParams.Name:
 		return bip32.HoosatDevnetPrivate, nil
 	case dagconfig.SimnetParams.Name:
