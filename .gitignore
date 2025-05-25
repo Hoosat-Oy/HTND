@@ -1,5 +1,6 @@
 # Temp files
 *~
+.vs 
 
 # Databases
 htnd.db
