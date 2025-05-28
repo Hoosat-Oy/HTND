@@ -310,9 +310,9 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 		newCandidate = selectedChild
 		newCandidateGHOSTDAGData := selectedChildGHOSTDAGData
 
-		// We move the pruning point every time the candidate's blue score distance is more than pruning depth divided by two to current pruning point.
-		// TODO: Test to decrease this minimum bluescore distance between new and current pruning points.
-		if newPruningPointGHOSTDAGData.BlueScore()-currentPruningPointGHOSTDAGData.BlueScore() >= (pm.pruningDepth / 12) {
+		// We move the pruning point every time the candidate's finality score is
+		// bigger than the current pruning point finality score.
+		if pm.finalityScore(newCandidateGHOSTDAGData.BlueScore()) > pm.finalityScore(newPruningPointGHOSTDAGData.BlueScore()) {
 			newPruningPoint = newCandidate
 			newPruningPointGHOSTDAGData = newCandidateGHOSTDAGData
 		}
