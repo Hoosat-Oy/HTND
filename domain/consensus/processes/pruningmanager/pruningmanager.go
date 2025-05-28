@@ -303,7 +303,7 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 			return nil, nil, err
 		}
 
-		if ghostdagData.BlueScore()-selectedChildGHOSTDAGData.BlueScore() < pm.pruningDepth {
+		if ghostdagData.BlueScore()-selectedChildGHOSTDAGData.BlueScore() < (pm.pruningDepth / 12) {
 			break
 		}
 
