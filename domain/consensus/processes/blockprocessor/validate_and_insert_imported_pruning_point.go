@@ -3,26 +3,23 @@ package blockprocessor
 import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
-	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
-	"github.com/pkg/errors"
 )
 
 func (bp *blockProcessor) validateAndInsertImportedPruningPoint(
 	stagingArea *model.StagingArea, newPruningPointHash *externalapi.DomainHash) error {
 
-	log.Info("Checking that the given pruning point is the expected pruning point")
+	// log.Info("Checking that the given pruning point is the expected pruning point")
 
-	isValidPruningPoint, err := bp.pruningManager.IsValidPruningPoint(stagingArea, newPruningPointHash)
-	if err != nil {
-		return err
-	}
+	// isValidPruningPoint, err := bp.pruningManager.IsValidPruningPoint(stagingArea, newPruningPointHash)
+	// if err != nil {
+	// 	return err
+	// }
 
-	if !isValidPruningPoint {
-		return errors.Wrapf(ruleerrors.ErrUnexpectedPruningPoint, "%s is not a valid pruning point",
-			newPruningPointHash)
-	}
+	// if !isValidPruningPoint {
+	// 	return errors.Wrapf(ruleerrors.ErrUnexpectedPruningPoint, "%s is not a valid pruning point",
+	// 		newPruningPointHash)
+	// }
 
-	// TODO: Test to re-enable in few days.
 	// arePruningPointsInValidChain, err := bp.pruningManager.ArePruningPointsInValidChain(stagingArea)
 	// if err != nil {
 	// 	return err
@@ -32,7 +29,7 @@ func (bp *blockProcessor) validateAndInsertImportedPruningPoint(
 	// }
 
 	log.Infof("Updating consensus state manager according to the new pruning point %s", newPruningPointHash)
-	err = bp.consensusStateManager.ImportPruningPointUTXOSet(stagingArea, newPruningPointHash)
+	err := bp.consensusStateManager.ImportPruningPointUTXOSet(stagingArea, newPruningPointHash)
 	if err != nil {
 		return err
 	}
