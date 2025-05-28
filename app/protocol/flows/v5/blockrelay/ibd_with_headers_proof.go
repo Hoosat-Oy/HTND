@@ -385,7 +385,7 @@ func (flow *handleIBDFlow) syncPruningPointUTXOSet(consensus externalapi.Consens
 	pruningPoint *externalapi.DomainHash) (bool, error) {
 
 	// TODO: Disable this check for testnet purposes
-	if flow.Config().NetParams().Net == appmessage.Testnet {
+	if flow.Config().NetParams().Net != appmessage.Testnet {
 		log.Infof("Checking if the suggested pruning point %s is compatible to the node DAG", pruningPoint)
 		isValid, err := flow.Domain().StagingConsensus().IsValidPruningPoint(pruningPoint)
 		if err != nil {
