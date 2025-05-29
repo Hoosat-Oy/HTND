@@ -384,16 +384,15 @@ func (flow *handleIBDFlow) validateAndInsertPruningPoints(proofPruningPoint *ext
 func (flow *handleIBDFlow) syncPruningPointUTXOSet(consensus externalapi.Consensus,
 	pruningPoint *externalapi.DomainHash) (bool, error) {
 
-	// TODO: Renable in few days.
-	// log.Infof("Checking if the suggested pruning point %s is compatible to the node DAG", pruningPoint)
-	// isValid, err := flow.Domain().StagingConsensus().IsValidPruningPoint(pruningPoint)
-	// if err != nil {
-	// 	return false, err
-	// }
+	log.Infof("Checking if the suggested pruning point %s is compatible to the node DAG", pruningPoint)
+	isValid, err := flow.Domain().StagingConsensus().IsValidPruningPoint(pruningPoint)
+	if err != nil {
+		return false, err
+	}
 
-	// if !isValid {
-	// 	return false, protocolerrors.Errorf(true, "invalid pruning point %s", pruningPoint)
-	// }
+	if !isValid {
+		return false, protocolerrors.Errorf(true, "invalid pruning point %s", pruningPoint)
+	}
 
 	log.Info("Fetching the pruning point UTXO set")
 	isSuccessful, err := flow.fetchMissingUTXOSet(consensus, pruningPoint)

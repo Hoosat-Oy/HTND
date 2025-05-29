@@ -100,12 +100,12 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 	}
 
 	// TODO: Test to re-enable in few days.
-	// if !isBlockWithTrustedData {
-	// 	err = v.validateHeaderPruningPoint(stagingArea, blockHash)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
+	if !isBlockWithTrustedData {
+		err = v.validateHeaderPruningPoint(stagingArea, blockHash)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
