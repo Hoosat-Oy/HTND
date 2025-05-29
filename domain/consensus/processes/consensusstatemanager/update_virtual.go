@@ -1,8 +1,6 @@
 package consensusstatemanager
 
 import (
-	"sync"
-
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
@@ -57,7 +55,6 @@ func (csm *consensusStateManager) updateVirtual(stagingArea *model.StagingArea, 
 
 	return selectedParentChainChanges, virtualUTXODiff, nil
 }
-
 func (csm *consensusStateManager) updateVirtualWithParents(
 	stagingArea *model.StagingArea, virtualParents []*externalapi.DomainHash) (externalapi.UTXODiff, error) {
 	err := csm.dagTopologyManager.SetParents(stagingArea, model.VirtualBlockHash, virtualParents)
@@ -88,26 +85,10 @@ func (csm *consensusStateManager) updateVirtualWithParents(
 		"Diff toAdd length: %d, toRemove length: %d",
 		virtualUTXODiff.ToAdd().Len(), virtualUTXODiff.ToRemove().Len())
 
-	var wg sync.WaitGroup
-	var stageErr error
+	csm.acceptanceDataStore.Stage(stagingArea, model.VirtualBlockHash, virtualAcceptanceData)
+	csm.multisetStore.Stage(stagingArea, model.VirtualBlockHash, virtualMultiset)
+	csm.consensusStateStore.StageVirtualUTXODiff(stagingArea, virtualUTXODiff)
 
-	wg.Add(3)
-	go func() {
-		defer wg.Done()
-		csm.acceptanceDataStore.Stage(stagingArea, model.VirtualBlockHash, virtualAcceptanceData)
-	}()
-	go func() {
-		defer wg.Done()
-		csm.multisetStore.Stage(stagingArea, model.VirtualBlockHash, virtualMultiset)
-	}()
-	go func() {
-		defer wg.Done()
-		csm.consensusStateStore.StageVirtualUTXODiff(stagingArea, virtualUTXODiff)
-	}()
-	wg.Wait()
-	if stageErr != nil {
-		return nil, stageErr
-	}
 	log.Debugf("Updating the selected tip's utxo-diff")
 	err = csm.updateSelectedTipUTXODiff(stagingArea, virtualUTXODiff)
 	if err != nil {
