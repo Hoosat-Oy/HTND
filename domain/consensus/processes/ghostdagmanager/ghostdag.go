@@ -243,26 +243,40 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(stagingArea *model.S
 func (gm *ghostdagManager) blueAnticoneSize(stagingArea *model.StagingArea,
 	block *externalapi.DomainHash, context *externalapi.BlockGHOSTDAGData) (externalapi.KType, error) {
 
+	// Generate a cache key based on the block and context
+	cacheKey := struct {
+		Parent externalapi.DomainHash
+		Block  externalapi.DomainHash
+	}{
+		Parent: *context.SelectedParent(),
+		Block:  *block,
+	}
+
+	// Check the cache first
+	if cachedSize, exists := gm.blueAnticoneSizeCache.Get(cacheKey); exists {
+		return cachedSize.(externalapi.KType), nil
+	}
+
 	isTrustedData := false
 	for current := context; current != nil; {
 		if blueAnticoneSize, ok := current.BluesAnticoneSizes()[*block]; ok {
+			// Store the result in the cache
+			gm.blueAnticoneSizeCache.Add(cacheKey, blueAnticoneSize)
 			return blueAnticoneSize, nil
 		}
+
+		// Early exit if we reach genesis or virtual genesis
 		if current.SelectedParent().Equal(gm.genesisHash) {
 			break
 		}
 
 		var err error
+		if current.SelectedParent().Equal(model.VirtualGenesisBlockHash) {
+			isTrustedData = true
+		}
 		current, err = gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent(), isTrustedData)
 		if err != nil {
 			return 0, err
-		}
-		if current.SelectedParent().Equal(model.VirtualGenesisBlockHash) {
-			isTrustedData = true
-			current, err = gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent(), isTrustedData)
-			if err != nil {
-				return 0, err
-			}
 		}
 	}
 	return 0, errors.Errorf("block %s is not in blue set of the given context", block)
