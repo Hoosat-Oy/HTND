@@ -58,11 +58,7 @@ func (csm *consensusStateManager) calculatePastUTXOAndAcceptanceDataWithSelected
 	externalapi.UTXODiff, externalapi.AcceptanceData, model.Multiset, error) {
 
 	if blockGHOSTDAGData == nil {
-		fetchedBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, blockHash, false)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		blockGHOSTDAGData = fetchedBlockGHOSTDAGData
+		return nil, nil, nil, errors.Errorf("blockGHOSTDAGData is nil for block %s", blockHash)
 	}
 
 	daaScore, err := csm.daaBlocksStore.DAAScore(csm.databaseContext, stagingArea, blockHash)

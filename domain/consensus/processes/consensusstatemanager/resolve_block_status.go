@@ -199,8 +199,12 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 	defer onEnd()
 
 	log.Tracef("Calculating pastUTXO and acceptance data and multiset for block %s", blockHash)
+	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, blockHash, false)
+	if err != nil {
+		return 0, nil, err
+	}
 	pastUTXOSet, acceptanceData, multiset, err := csm.calculatePastUTXOAndAcceptanceDataWithSelectedParentUTXO(
-		stagingArea, blockHash, selectedParentPastUTXOSet, nil)
+		stagingArea, blockHash, selectedParentPastUTXOSet, blockGHOSTDAGData)
 	if err != nil {
 		return 0, nil, err
 	}
