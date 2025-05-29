@@ -17,7 +17,7 @@ type RelayBlockRequestsContext interface {
 	Domain() domain.Domain
 }
 
-const getBlockRetryInterval = 100 * time.Millisecond
+const getBlockRetryInterval = 10 * time.Millisecond
 
 // HandleRelayBlockRequests listens to appmessage.MsgRequestRelayBlocks messages and sends
 // their corresponding blocks to the requesting peer.
