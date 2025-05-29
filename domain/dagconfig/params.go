@@ -446,7 +446,7 @@ var TestnetParamsB5 = Params{
 
 var TestnetParamsB10 = Params{
 	K:           []externalapi.KType{defaultGHOSTDAGK, defaultGHOSTDAGK, defaultGHOSTDAGK, defaultGHOSTDAGK, 40},
-	Name:        "hoosat-testnet-b5",
+	Name:        "hoosat-testnet-b10",
 	Net:         appmessage.Testnet,
 	RPCPort:     "42422",
 	DefaultPort: "42423",
