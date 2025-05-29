@@ -1,6 +1,8 @@
 package consensusstatemanager
 
 import (
+	"sync"
+
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
@@ -86,15 +88,26 @@ func (csm *consensusStateManager) updateVirtualWithParents(
 		"Diff toAdd length: %d, toRemove length: %d",
 		virtualUTXODiff.ToAdd().Len(), virtualUTXODiff.ToRemove().Len())
 
-	log.Debugf("Staging new acceptance data for the virtual block")
-	csm.acceptanceDataStore.Stage(stagingArea, model.VirtualBlockHash, virtualAcceptanceData)
+	var wg sync.WaitGroup
+	var stageErr error
 
-	log.Debugf("Staging new multiset for the virtual block")
-	csm.multisetStore.Stage(stagingArea, model.VirtualBlockHash, virtualMultiset)
-
-	log.Debugf("Staging new UTXO diff for the virtual block")
-	csm.consensusStateStore.StageVirtualUTXODiff(stagingArea, virtualUTXODiff)
-
+	wg.Add(3)
+	go func() {
+		defer wg.Done()
+		csm.acceptanceDataStore.Stage(stagingArea, model.VirtualBlockHash, virtualAcceptanceData)
+	}()
+	go func() {
+		defer wg.Done()
+		csm.multisetStore.Stage(stagingArea, model.VirtualBlockHash, virtualMultiset)
+	}()
+	go func() {
+		defer wg.Done()
+		csm.consensusStateStore.StageVirtualUTXODiff(stagingArea, virtualUTXODiff)
+	}()
+	wg.Wait()
+	if stageErr != nil {
+		return nil, stageErr
+	}
 	log.Debugf("Updating the selected tip's utxo-diff")
 	err = csm.updateSelectedTipUTXODiff(stagingArea, virtualUTXODiff)
 	if err != nil {

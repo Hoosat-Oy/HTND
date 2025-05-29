@@ -50,16 +50,19 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(stagingArea
 		"Diff toAdd length: %d, toRemove length: %d", blockHash, blockGHOSTDAGData.SelectedParent(),
 		selectedParentPastUTXO.ToAdd().Len(), selectedParentPastUTXO.ToRemove().Len())
 
-	return csm.calculatePastUTXOAndAcceptanceDataWithSelectedParentUTXO(stagingArea, blockHash, selectedParentPastUTXO)
+	return csm.calculatePastUTXOAndAcceptanceDataWithSelectedParentUTXO(stagingArea, blockHash, selectedParentPastUTXO, blockGHOSTDAGData)
 }
 
 func (csm *consensusStateManager) calculatePastUTXOAndAcceptanceDataWithSelectedParentUTXO(stagingArea *model.StagingArea,
-	blockHash *externalapi.DomainHash, selectedParentPastUTXO externalapi.UTXODiff) (
+	blockHash *externalapi.DomainHash, selectedParentPastUTXO externalapi.UTXODiff, blockGHOSTDAGData *externalapi.BlockGHOSTDAGData) (
 	externalapi.UTXODiff, externalapi.AcceptanceData, model.Multiset, error) {
 
-	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, blockHash, false)
-	if err != nil {
-		return nil, nil, nil, err
+	if blockGHOSTDAGData == nil {
+		fetchedBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, blockHash, false)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		blockGHOSTDAGData = fetchedBlockGHOSTDAGData
 	}
 
 	daaScore, err := csm.daaBlocksStore.DAAScore(csm.databaseContext, stagingArea, blockHash)

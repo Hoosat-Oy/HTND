@@ -200,7 +200,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 
 	log.Tracef("Calculating pastUTXO and acceptance data and multiset for block %s", blockHash)
 	pastUTXOSet, acceptanceData, multiset, err := csm.calculatePastUTXOAndAcceptanceDataWithSelectedParentUTXO(
-		stagingArea, blockHash, selectedParentPastUTXOSet)
+		stagingArea, blockHash, selectedParentPastUTXOSet, nil)
 	if err != nil {
 		return 0, nil, err
 	}
