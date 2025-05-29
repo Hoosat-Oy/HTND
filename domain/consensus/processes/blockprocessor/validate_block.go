@@ -5,6 +5,8 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/pow"
 	"github.com/Hoosat-Oy/HTND/util/staging"
 	"github.com/pkg/errors"
 )
@@ -49,6 +51,13 @@ func (bp *blockProcessor) validateBlock(stagingArea *model.StagingArea, block *e
 		if err != nil {
 			return err
 		}
+	}
+
+	// Before staging the block, confirm that the PoWHash is set.
+	if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
+		state := pow.NewState(block.Header.ToMutable())
+		_, powHash := state.CalculateProofOfWorkValue()
+		block.PoWHash = powHash.String()
 	}
 
 	// Pow validation was success, lets stage the block or add the .
