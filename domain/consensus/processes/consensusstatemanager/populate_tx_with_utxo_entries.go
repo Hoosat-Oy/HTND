@@ -1,10 +1,11 @@
 package consensusstatemanager
 
 import (
+	"sync"
+
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
-	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
 )
 
 // PopulateTransactionWithUTXOEntries populates the transaction UTXO entries with data from the virtual's UTXO set.
@@ -19,59 +20,100 @@ func (csm *consensusStateManager) PopulateTransactionWithUTXOEntries(
 func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualOrDiff(stagingArea *model.StagingArea,
 	transaction *externalapi.DomainTransaction, utxoDiff externalapi.UTXODiff) error {
 
-	transactionID := consensushashing.TransactionID(transaction)
-	log.Tracef("populateTransactionWithUTXOEntriesFromVirtualOrDiff start for transaction %s", transactionID)
-	defer log.Tracef("populateTransactionWithUTXOEntriesFromVirtualOrDiff end for transaction %s", transactionID)
+	var (
+		missingOutpoints []*externalapi.DomainOutpoint
+		missingMu        sync.Mutex // Protects missingOutpoints
+		errMu            sync.Mutex // Protects error collection
+		firstErr         error      // Stores the first error encountered
+		wg               sync.WaitGroup
+	)
 
-	var missingOutpoints []*externalapi.DomainOutpoint
+	// Process each input in a separate goroutine
 	for i := 0; i < len(transaction.Inputs); i++ {
-		// skip all inputs that have a pre-filled utxo entry
-		if transaction.Inputs[i].UTXOEntry != nil {
-			log.Tracef("Skipping outpoint %s:%d because it is already populated",
-				transaction.Inputs[i].PreviousOutpoint.TransactionID, transaction.Inputs[i].PreviousOutpoint.Index)
-			continue
-		}
+		wg.Add(1)
+		go func(index int) {
+			defer wg.Done()
 
-		// check if utxoDiff says anything about the input's outpoint
-		if utxoDiff != nil {
-			if utxoEntry, ok := utxoDiff.ToAdd().Get(&transaction.Inputs[i].PreviousOutpoint); ok {
-				log.Tracef("Populating outpoint %s:%d from the given utxoDiff",
-					transaction.Inputs[i].PreviousOutpoint.TransactionID, transaction.Inputs[i].PreviousOutpoint.Index)
-				transaction.Inputs[i].UTXOEntry = utxoEntry
-				continue
+			// Skip if error already occurred
+			errMu.Lock()
+			if firstErr != nil {
+				errMu.Unlock()
+				return
+			}
+			errMu.Unlock()
+
+			// Skip inputs with pre-filled UTXO entries
+			if transaction.Inputs[index].UTXOEntry != nil {
+				log.Tracef("Skipping outpoint %s:%d because it is already populated",
+					transaction.Inputs[index].PreviousOutpoint.TransactionID, transaction.Inputs[index].PreviousOutpoint.Index)
+				return
 			}
 
-			if utxoDiff.ToRemove().Contains(&transaction.Inputs[i].PreviousOutpoint) {
-				log.Tracef("Outpoint %s:%d is missing in the given utxoDiff",
-					transaction.Inputs[i].PreviousOutpoint.TransactionID, transaction.Inputs[i].PreviousOutpoint.Index)
-				missingOutpoints = append(missingOutpoints, &transaction.Inputs[i].PreviousOutpoint)
-				continue
+			// Check utxoDiff if provided
+			if utxoDiff != nil {
+				if utxoEntry, ok := utxoDiff.ToAdd().Get(&transaction.Inputs[index].PreviousOutpoint); ok {
+					log.Tracef("Populating outpoint %s:%d from the given utxoDiff",
+						transaction.Inputs[index].PreviousOutpoint.TransactionID, transaction.Inputs[index].PreviousOutpoint.Index)
+					transaction.Inputs[index].UTXOEntry = utxoEntry
+					return
+				}
+
+				if utxoDiff.ToRemove().Contains(&transaction.Inputs[index].PreviousOutpoint) {
+					log.Tracef("Outpoint %s:%d is missing in the given utxoDiff",
+						transaction.Inputs[index].PreviousOutpoint.TransactionID, transaction.Inputs[index].PreviousOutpoint.Index)
+					missingMu.Lock()
+					missingOutpoints = append(missingOutpoints, &transaction.Inputs[index].PreviousOutpoint)
+					missingMu.Unlock()
+					return
+				}
 			}
-		}
 
-		// Check for the input's outpoint in virtual's UTXO set.
-		hasUTXOEntry, err := csm.consensusStateStore.HasUTXOByOutpoint(
-			csm.databaseContext, stagingArea, &transaction.Inputs[i].PreviousOutpoint)
-		if err != nil {
-			return err
-		}
-		if !hasUTXOEntry {
-			log.Tracef("Outpoint %s:%d is missing in the database",
-				transaction.Inputs[i].PreviousOutpoint.TransactionID, transaction.Inputs[i].PreviousOutpoint.Index)
-			missingOutpoints = append(missingOutpoints, &transaction.Inputs[i].PreviousOutpoint)
-			continue
-		}
+			// Check virtual's UTXO set
+			hasUTXOEntry, err := csm.consensusStateStore.HasUTXOByOutpoint(
+				csm.databaseContext, stagingArea, &transaction.Inputs[index].PreviousOutpoint)
+			if err != nil {
+				errMu.Lock()
+				if firstErr == nil {
+					firstErr = err
+				}
+				errMu.Unlock()
+				return
+			}
+			if !hasUTXOEntry {
+				log.Tracef("Outpoint %s:%d is missing in the database",
+					transaction.Inputs[index].PreviousOutpoint.TransactionID, transaction.Inputs[index].PreviousOutpoint.Index)
+				missingMu.Lock()
+				missingOutpoints = append(missingOutpoints, &transaction.Inputs[index].PreviousOutpoint)
+				missingMu.Unlock()
+				return
+			}
 
-		log.Tracef("Populating outpoint %s:%d from the database",
-			transaction.Inputs[i].PreviousOutpoint.TransactionID, transaction.Inputs[i].PreviousOutpoint.Index)
-		utxoEntry, err := csm.consensusStateStore.UTXOByOutpoint(
-			csm.databaseContext, stagingArea, &transaction.Inputs[i].PreviousOutpoint)
-		if err != nil {
-			return err
-		}
-		transaction.Inputs[i].UTXOEntry = utxoEntry
+			log.Tracef("Populating outpoint %s:%d from the database",
+				transaction.Inputs[index].PreviousOutpoint.TransactionID, transaction.Inputs[index].PreviousOutpoint.Index)
+			utxoEntry, err := csm.consensusStateStore.UTXOByOutpoint(
+				csm.databaseContext, stagingArea, &transaction.Inputs[index].PreviousOutpoint)
+			if err != nil {
+				errMu.Lock()
+				if firstErr == nil {
+					firstErr = err
+				}
+				errMu.Unlock()
+				return
+			}
+
+			transaction.Inputs[index].UTXOEntry = utxoEntry
+		}(i)
 	}
 
+	// Wait for all goroutines to complete
+	wg.Wait()
+
+	// Check for errors
+	if firstErr != nil {
+		return firstErr
+	}
+
+	// Check for missing outpoints
 	if len(missingOutpoints) > 0 {
 		return ruleerrors.NewErrMissingTxOut(missingOutpoints)
 	}
