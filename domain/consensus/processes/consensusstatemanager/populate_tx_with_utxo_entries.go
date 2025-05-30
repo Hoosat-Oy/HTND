@@ -45,23 +45,17 @@ func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualO
 
 			// Skip inputs with pre-filled UTXO entries
 			if transaction.Inputs[index].UTXOEntry != nil {
-				log.Tracef("Skipping outpoint %s:%d because it is already populated",
-					transaction.Inputs[index].PreviousOutpoint.TransactionID, transaction.Inputs[index].PreviousOutpoint.Index)
 				return
 			}
 
 			// Check utxoDiff if provided
 			if utxoDiff != nil {
 				if utxoEntry, ok := utxoDiff.ToAdd().Get(&transaction.Inputs[index].PreviousOutpoint); ok {
-					log.Tracef("Populating outpoint %s:%d from the given utxoDiff",
-						transaction.Inputs[index].PreviousOutpoint.TransactionID, transaction.Inputs[index].PreviousOutpoint.Index)
 					transaction.Inputs[index].UTXOEntry = utxoEntry
 					return
 				}
 
 				if utxoDiff.ToRemove().Contains(&transaction.Inputs[index].PreviousOutpoint) {
-					log.Tracef("Outpoint %s:%d is missing in the given utxoDiff",
-						transaction.Inputs[index].PreviousOutpoint.TransactionID, transaction.Inputs[index].PreviousOutpoint.Index)
 					missingMu.Lock()
 					missingOutpoints = append(missingOutpoints, &transaction.Inputs[index].PreviousOutpoint)
 					missingMu.Unlock()
@@ -82,8 +76,6 @@ func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualO
 				return
 			}
 			if !hasUTXOEntry {
-				log.Tracef("Outpoint %s:%d is missing in the database",
-					transaction.Inputs[index].PreviousOutpoint.TransactionID, transaction.Inputs[index].PreviousOutpoint.Index)
 				missingMu.Lock()
 				missingOutpoints = append(missingOutpoints, &transaction.Inputs[index].PreviousOutpoint)
 				missingMu.Unlock()
