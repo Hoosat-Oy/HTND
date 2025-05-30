@@ -179,17 +179,11 @@ func (csm *consensusStateManager) applyMergeSetBlocks(stagingArea *model.Staging
 		for j, transaction := range mergeSetBlock.Transactions {
 			var isAccepted bool
 
-			transactionID := consensushashing.TransactionID(transaction)
-			log.Tracef("Attempting to accept transaction %s in block %s",
-				transactionID, mergeSetBlockHash)
-
 			isAccepted, accumulatedMass, err = csm.maybeAcceptTransaction(stagingArea, transaction, blockHash,
 				isSelectedParent, accumulatedUTXODiff, accumulatedMass, selectedParentMedianTime, daaScore)
 			if err != nil {
 				return nil, nil, err
 			}
-			log.Tracef("Transaction %s in block %s isAccepted: %t, fee: %d",
-				transactionID, mergeSetBlockHash, isAccepted, transaction.Fee)
 
 			var transactionInputUTXOEntries []externalapi.UTXOEntry
 			if isAccepted {
