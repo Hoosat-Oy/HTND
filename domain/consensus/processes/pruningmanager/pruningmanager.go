@@ -6,6 +6,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/multiset"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/utxo"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/virtual"
@@ -317,9 +318,14 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 		if err != nil {
 			return nil, nil, err
 		}
-
-		if ghostdagData.BlueScore()-selectedChildGHOSTDAGData.BlueScore() < pm.pruningDepth {
-			break
+		if constants.BlockVersion >= 5 {
+			if ghostdagData.BlueScore()-selectedChildGHOSTDAGData.BlueScore() < pm.pruningDepth/2 {
+				break
+			}
+		} else {
+			if ghostdagData.BlueScore()-selectedChildGHOSTDAGData.BlueScore() < pm.pruningDepth {
+				break
+			}
 		}
 
 		newCandidate = selectedChild
@@ -560,8 +566,14 @@ func (pm *pruningManager) IsValidPruningPoint(stagingArea *model.StagingArea, bl
 	}
 
 	// A pruning point has to be at depth of at least pm.pruningDepth
-	if headersSelectedTipGHOSTDAGData.BlueScore()-ghostdagData.BlueScore() < pm.pruningDepth {
-		return false, nil
+	if constants.BlockVersion >= 5 {
+		if headersSelectedTipGHOSTDAGData.BlueScore()-ghostdagData.BlueScore() < pm.pruningDepth/2 {
+			return false, nil
+		}
+	} else {
+		if headersSelectedTipGHOSTDAGData.BlueScore()-ghostdagData.BlueScore() < pm.pruningDepth {
+			return false, nil
+		}
 	}
 
 	return true, nil
