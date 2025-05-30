@@ -70,8 +70,9 @@ func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualO
 			}
 
 			// Check virtual's UTXO set
-			hasUTXOEntry, err := csm.consensusStateStore.HasUTXOByOutpoint(
-				csm.databaseContext, stagingArea, &transaction.Inputs[index].PreviousOutpoint)
+			outpointsMu.Lock()
+			hasUTXOEntry, err := csm.consensusStateStore.HasUTXOByOutpoint(csm.databaseContext, stagingArea, &transaction.Inputs[index].PreviousOutpoint)
+			outpointsMu.Unlock()
 			if err != nil {
 				errMu.Lock()
 				if firstErr == nil {
