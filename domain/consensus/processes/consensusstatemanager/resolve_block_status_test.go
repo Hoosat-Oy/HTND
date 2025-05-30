@@ -209,7 +209,7 @@ func TestTransactionAcceptance(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating a transactionFromRedBlock: %+v", err)
 		}
-		transactionFromRedBlockInput0UTXOEntry, err := testConsensus.ConsensusStateStore().
+		transactionFromRedBlockInput0UTXOEntry, _, err := testConsensus.ConsensusStateStore().
 			UTXOByOutpoint(testConsensus.DatabaseContext(), stagingArea, &transactionFromRedBlock.Inputs[0].PreviousOutpoint)
 		if err != nil {
 			t.Fatalf("Error getting UTXOEntry for transactionFromRedBlockInput: %s", err)
@@ -224,7 +224,7 @@ func TestTransactionAcceptance(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating transactionFromBlueChildOfRedBlock: %+v", err)
 		}
-		transactionFromBlueChildOfRedBlockInput0UTXOEntry, err := testConsensus.ConsensusStateStore().
+		transactionFromBlueChildOfRedBlockInput0UTXOEntry, _, err := testConsensus.ConsensusStateStore().
 			UTXOByOutpoint(testConsensus.DatabaseContext(), stagingArea, &transactionFromBlueChildOfRedBlock.Inputs[0].PreviousOutpoint)
 		if err != nil {
 			t.Fatalf("Error getting UTXOEntry for transactionFromBlueChildOfRedBlockInput: %s", err)

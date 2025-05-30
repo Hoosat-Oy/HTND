@@ -79,7 +79,7 @@ func (csss *consensusStateStagingShard) commitVirtualUTXODiff(dbTx model.DBTrans
 }
 
 func (css *consensusStateStore) UTXOByOutpoint(dbContext model.DBReader, stagingArea *model.StagingArea,
-	outpoint *externalapi.DomainOutpoint) (externalapi.UTXOEntry, error) {
+	outpoint *externalapi.DomainOutpoint) (externalapi.UTXOEntry, bool, error) {
 
 	stagingShard := css.stagingShard(stagingArea)
 
@@ -87,38 +87,38 @@ func (css *consensusStateStore) UTXOByOutpoint(dbContext model.DBReader, staging
 }
 
 func (css *consensusStateStore) utxoByOutpointFromStagedVirtualUTXODiff(dbContext model.DBReader,
-	stagingShard *consensusStateStagingShard, outpoint *externalapi.DomainOutpoint) (externalapi.UTXOEntry, error) {
+	stagingShard *consensusStateStagingShard, outpoint *externalapi.DomainOutpoint) (externalapi.UTXOEntry, bool, error) {
 
 	if stagingShard.virtualUTXODiffStaging != nil {
 		if stagingShard.virtualUTXODiffStaging.ToRemove().Contains(outpoint) {
-			return nil, errors.Errorf("outpoint was not found")
+			return nil, false, errors.Errorf("outpoint was not found")
 		}
 		if utxoEntry, ok := stagingShard.virtualUTXODiffStaging.ToAdd().Get(outpoint); ok {
-			return utxoEntry, nil
+			return utxoEntry, true, nil
 		}
 	}
 
 	if entry, ok := css.virtualUTXOSetCache.Get(outpoint); ok {
-		return entry, nil
+		return entry, true, nil
 	}
 
 	key, err := css.utxoKey(outpoint)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	serializedUTXOEntry, err := dbContext.Get(key)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	entry, err := deserializeUTXOEntry(serializedUTXOEntry)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	css.virtualUTXOSetCache.Add(outpoint, entry)
-	return entry, nil
+	return entry, true, nil
 }
 
 func (css *consensusStateStore) HasUTXOByOutpoint(dbContext model.DBReader, stagingArea *model.StagingArea,
