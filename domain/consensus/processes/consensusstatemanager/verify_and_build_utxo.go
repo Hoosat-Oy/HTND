@@ -37,8 +37,6 @@ func (csm *consensusStateManager) verifyUTXO(stagingArea *model.StagingArea, blo
 	log.Debugf("AcceptedIDMerkleRoot validation passed for block %s", blockHash)
 
 	coinbaseTransaction := block.Transactions[0]
-	log.Debugf("Validating coinbase transaction %s for block %s",
-		consensushashing.TransactionID(coinbaseTransaction), blockHash)
 	err = csm.validateCoinbaseTransaction(stagingArea, blockHash, coinbaseTransaction)
 	if err != nil {
 		return err
