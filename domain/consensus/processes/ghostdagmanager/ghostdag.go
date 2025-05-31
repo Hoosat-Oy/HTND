@@ -243,17 +243,8 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(stagingArea *model.S
 func (gm *ghostdagManager) blueAnticoneSize(stagingArea *model.StagingArea,
 	block *externalapi.DomainHash, context *externalapi.BlockGHOSTDAGData) (externalapi.KType, error) {
 
-	// Generate a cache key based on the block and context
-	cacheKey := struct {
-		Parent externalapi.DomainHash
-		Block  externalapi.DomainHash
-	}{
-		Parent: *context.SelectedParent(),
-		Block:  *block,
-	}
-
 	// Check the cache first
-	if cachedSize, exists := gm.blueAnticoneSizeCache.Get(cacheKey); exists {
+	if cachedSize, exists := gm.blueAnticoneSizeCache.Get(block); exists {
 		return cachedSize.(externalapi.KType), nil
 	}
 
@@ -261,7 +252,7 @@ func (gm *ghostdagManager) blueAnticoneSize(stagingArea *model.StagingArea,
 	for current := context; current != nil; {
 		if blueAnticoneSize, ok := current.BluesAnticoneSizes()[*block]; ok {
 			// Store the result in the cache
-			gm.blueAnticoneSizeCache.Add(cacheKey, blueAnticoneSize)
+			gm.blueAnticoneSizeCache.Add(block, blueAnticoneSize)
 			return blueAnticoneSize, nil
 		}
 

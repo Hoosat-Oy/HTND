@@ -3,12 +3,12 @@ package ghostdagmanager
 import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
-	lru "github.com/hashicorp/golang-lru"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/lrucache"
 )
 
 // ghostdagManager resolves and manages GHOSTDAG block data
 type ghostdagManager struct {
-	blueAnticoneSizeCache *lru.Cache
+	blueAnticoneSizeCache *lrucache.LRUCache
 	databaseContext       model.DBReader
 	dagTopologyManager    model.DAGTopologyManager
 	ghostdagDataStore     model.GHOSTDAGDataStore
@@ -26,9 +26,8 @@ func New(
 	headerStore model.BlockHeaderStore,
 	k externalapi.KType,
 	genesisHash *externalapi.DomainHash) model.GHOSTDAGManager {
-	cache, _ := lru.New(9000)
 	return &ghostdagManager{
-		blueAnticoneSizeCache: cache,
+		blueAnticoneSizeCache: lrucache.New(9000, true),
 		databaseContext:       databaseContext,
 		dagTopologyManager:    dagTopologyManager,
 		ghostdagDataStore:     ghostdagDataStore,
