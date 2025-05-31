@@ -10,12 +10,16 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"runtime"
+	"runtime/debug"
 
 	"github.com/Hoosat-Oy/HTND/app"
 )
 
 func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
+	runtime.GOMAXPROCS(runtime.NumCPU()) // Set the maximum number of CPUs that can be executing simultaneously
+	debug.SetGCPercent(200)              // Set GC to run less aggressively
+	debug.SetMemoryLimit(16_000_000_000) // Set memory limit to 16GB
+
 	go func() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
