@@ -132,10 +132,10 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	pruningWindowSizePlusFinalityDepthForCache := int(config.PruningDepth() + config.FinalityDepth())
 
 	// Data Structures
-	mergeDepthRootStore := mergedepthrootstore.New(prefixBucket, 200, preallocateCaches)
+	mergeDepthRootStore := mergedepthrootstore.New(prefixBucket, 2000, preallocateCaches)
 	daaWindowStore := daawindowstore.New(prefixBucket, 10_000, preallocateCaches)
-	acceptanceDataStore := acceptancedatastore.New(prefixBucket, 200, preallocateCaches)
-	blockStore, err := blockstore.New(dbManager, prefixBucket, 200, preallocateCaches)
+	acceptanceDataStore := acceptancedatastore.New(prefixBucket, 2000, preallocateCaches)
+	blockStore, err := blockstore.New(dbManager, prefixBucket, 2000, preallocateCaches)
 	if err != nil {
 		return nil, false, err
 	}
@@ -145,13 +145,13 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	}
 
 	blockStatusStore := blockstatusstore.New(prefixBucket, pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
-	multisetStore := multisetstore.New(prefixBucket, 200, preallocateCaches)
+	multisetStore := multisetstore.New(prefixBucket, 2000, preallocateCaches)
 	pruningStore := pruningstore.New(prefixBucket, 2, preallocateCaches)
-	utxoDiffStore := utxodiffstore.New(prefixBucket, 200, preallocateCaches)
-	consensusStateStore := consensusstatestore.New(prefixBucket, 10_000, preallocateCaches)
+	utxoDiffStore := utxodiffstore.New(prefixBucket, 2000, preallocateCaches)
+	consensusStateStore := consensusstatestore.New(prefixBucket, 50_000, preallocateCaches)
 
 	headersSelectedTipStore := headersselectedtipstore.New(prefixBucket)
-	finalityStore := finalitystore.New(prefixBucket, 200, preallocateCaches)
+	finalityStore := finalitystore.New(prefixBucket, 2000, preallocateCaches)
 	headersSelectedChainStore := headersselectedchainstore.New(prefixBucket, pruningWindowSizeForCaches, preallocateCaches)
 	daaBlocksStore := daablocksstore.New(prefixBucket, pruningWindowSizeForCaches, int(config.FinalityDepth()), preallocateCaches)
 	windowHeapSliceStore := blockwindowheapslicestore.New(2000, preallocateCaches)
