@@ -3,6 +3,7 @@ package consensusstatemanager
 import (
 	"sort"
 
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/transactionhelper"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
@@ -142,10 +143,13 @@ func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData externalapi.Acceptan
 			acceptedTransactions = append(acceptedTransactions, transactionAcceptance.Transaction)
 		}
 	}
-	sort.Slice(acceptedTransactions, func(i, j int) bool {
-		return consensushashing.TransactionID(acceptedTransactions[i]).Less(
-			consensushashing.TransactionID(acceptedTransactions[j]))
-	})
+	// In block version 4 and below, the accepted transactions are sorted by their IDs, in Block Version 5 and above, the order is not important
+	if constants.BlockVersion < 5 {
+		sort.Slice(acceptedTransactions, func(i, j int) bool {
+			return consensushashing.TransactionID(acceptedTransactions[i]).Less(
+				consensushashing.TransactionID(acceptedTransactions[j]))
+		})
+	}
 
 	return merkle.CalculateIDMerkleRoot(acceptedTransactions)
 }
