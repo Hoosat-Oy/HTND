@@ -314,11 +314,14 @@ func (bb *blockBuilder) calculateAcceptedIDMerkleRoot(acceptanceData externalapi
 			acceptedTransactions = append(acceptedTransactions, acceptanceData[i].TransactionAcceptanceData[x].Transaction)
 		}
 	}
-	sort.Slice(acceptedTransactions, func(i, j int) bool {
-		acceptedTransactionIID := consensushashing.TransactionID(acceptedTransactions[i])
-		acceptedTransactionJID := consensushashing.TransactionID(acceptedTransactions[j])
-		return acceptedTransactionIID.Less(acceptedTransactionJID)
-	})
+	// In block version 4 and below, the accepted transactions are sorted by their IDs, in Block Version 5 and above, the order is not important
+	if constants.BlockVersion < 5 {
+		sort.Slice(acceptedTransactions, func(i, j int) bool {
+			acceptedTransactionIID := consensushashing.TransactionID(acceptedTransactions[i])
+			acceptedTransactionJID := consensushashing.TransactionID(acceptedTransactions[j])
+			return acceptedTransactionIID.Less(acceptedTransactionJID)
+		})
+	}
 
 	return merkle.CalculateIDMerkleRoot(acceptedTransactions), nil
 }
