@@ -178,7 +178,7 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 		}
 		tx := appmessage.MsgTxToDomainTransaction(msgTx)
 		txID := consensushashing.TransactionID(tx)
-		log.Infof("Received relayed transaction %s", txID)
+		// log.Infof("Received relayed transaction %s", txID)
 		if !txID.Equal(expectedID) {
 			return protocolerrors.Errorf(true, "expected transaction %s, but got %s",
 				expectedID, txID)
