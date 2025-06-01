@@ -99,19 +99,12 @@ func HandleSubmitBlock(context *rpccontext.Context, router *router.Router, reque
 		}
 
 		if errors.Is(err, ruleerrors.ErrInvalidPoW) {
-			submitBlockRequestJSON, _ := json.MarshalIndent(submitBlockRequest.Block, "", "    ")
-			if submitBlockRequestJSON != nil {
-				log.Warnf("The RPC submitted block triggered a invalid PoW error (%s), consider banning.", powHash)
-				// Consider implementing banning for RPC, though works network wide on P2P.
-				// If node receives submission with wrong PoW hash and submits them forward the node will get banned.
-				// So pool that accepts invalid PoW has submissions will get banned from the network.
-			}
+			log.Warnf("The RPC submitted block triggered a invalid PoW error (%s), consider banning.", powHash)
+			// Consider implementing banning for RPC, though works network wide on P2P.
+			// If node receives submission with wrong PoW hash and submits them forward the node will get banned.
+			// So pool that accepts invalid PoW has submissions will get banned from the network.
 		} else {
-			submitBlockRequestJSON, _ := json.MarshalIndent(submitBlockRequest.Block, "", "    ")
-			if submitBlockRequestJSON != nil {
-				log.Warnf("The RPC submitted block triggered a rule/protocol error (%s), printing "+
-					"the full block for debug purposes: \n%s", err, string(submitBlockRequestJSON))
-			}
+			log.Warnf("The RPC submitted block triggered a rule/protocol error (%s), printing the full block for debug purposes: \n", err)
 		}
 
 		return &appmessage.SubmitBlockResponseMessage{
