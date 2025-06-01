@@ -33,16 +33,16 @@ const (
 	defaultLogDirname          = "logs"
 	defaultLogFilename         = "htnd.log"
 	defaultErrLogFilename      = "htnd_err.log"
-	defaultTargetOutboundPeers = 4
-	defaultMaxInboundPeers     = 117
+	defaultTargetOutboundPeers = 8
+	defaultMaxInboundPeers     = 500
 	defaultBanDuration         = time.Hour * 24
 	defaultBanThreshold        = 100
 	//DefaultConnectTimeout is the default connection timeout when dialing
 	DefaultConnectTimeout = time.Second * 30
 	//DefaultMaxRPCClients is the default max number of RPC clients
-	DefaultMaxRPCClients         = 128
-	defaultMaxRPCWebsockets      = 25
-	defaultMaxRPCConcurrentReqs  = 20
+	DefaultMaxRPCClients         = 500
+	defaultMaxRPCWebsockets      = 250
+	defaultMaxRPCConcurrentReqs  = 1000
 	defaultBlockMaxMass          = 10_000_000
 	blockMaxMassMin              = 1000
 	blockMaxMassMax              = 10_000_000
