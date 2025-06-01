@@ -5,13 +5,13 @@ import "github.com/syndtr/goleveldb/leveldb/opt"
 // Options returns a leveldb opt.Options struct optimized for Kaspa's high block rate.
 func Options() opt.Options {
 	return opt.Options{
-		Compression:            opt.NoCompression, // Keep for low CPU overhead
-		NoSync:                 true,              // Keep for high write throughput
-		WriteBuffer:            64 * opt.MiB,      // Increase to reduce write frequency
-		BlockCacheCapacity:     128 * opt.MiB,     // Increase for better read performance
-		OpenFilesCacheCapacity: 512,               // Increase to handle more SST files
-		BlockRestartInterval:   16,                // Keep default, adjust if needed
-		CompactionTableSize:    8 * opt.MiB,       // Larger tables to reduce file count
-		CompactionTotalSize:    256 * opt.MiB,     // Larger to delay compactions
+		Compression:            opt.NoCompression, // No compression for minimal CPU overhead
+		NoSync:                 true,              // Disable sync for maximum write throughput
+		WriteBuffer:            96 * opt.MiB,      // Slightly reduced to allocate more memory to read cache
+		BlockCacheCapacity:     512 * opt.MiB,     // Significantly increased for better read performance
+		OpenFilesCacheCapacity: 2048,              // Higher to support many SST files for read-heavy workload
+		BlockRestartInterval:   8,                 // Reduced for smaller block sizes, faster read scans
+		CompactionTableSize:    32 * opt.MiB,      // Larger tables to reduce file count and read amplification
+		CompactionTotalSize:    1024 * opt.MiB,    // Larger to delay compactions, reducing read/write interference
 	}
 }
