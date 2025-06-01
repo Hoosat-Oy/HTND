@@ -7,6 +7,7 @@ import (
 
 	consensusexternalapi "github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/subnetworks"
 )
 
@@ -151,10 +152,12 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 
 		markCandidateTxForDeletion(selectedTx)
 	}
-
-	sort.Slice(selectedTxs, func(i, j int) bool {
-		return subnetworks.Less(selectedTxs[i].SubnetworkID, selectedTxs[j].SubnetworkID)
-	})
+	if constants.BlockVersion < 5 {
+		// in block version 4 and below, the transactions are sorted by their subnetwork ids, which is unnecessary in block version 5 and above
+		sort.Slice(selectedTxs, func(i, j int) bool {
+			return subnetworks.Less(selectedTxs[i].SubnetworkID, selectedTxs[j].SubnetworkID)
+		})
+	}
 
 	for i := 0; i < len(selectedTxs); i++ {
 		txsForBlockTemplate.selectedTxs = append(txsForBlockTemplate.selectedTxs, selectedTxs[i].DomainTransaction)
