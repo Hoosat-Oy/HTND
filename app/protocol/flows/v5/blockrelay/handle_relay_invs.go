@@ -241,11 +241,16 @@ func (flow *handleRelayInvsFlow) start() error {
 		if err != nil {
 			if errors.Is(err, ruleerrors.ErrPrunedBlock) {
 				log.Infof("Ignoring pruned block %s", inv.Hash)
-				return err
+				continue
 			}
 			if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 				log.Infof("Ignoring duplicate block %s", inv.Hash)
-				return err
+				continue
+			}
+
+			if errors.Is(err, ruleerrors.ErrUnexpectedBlueWork) {
+				log.Infof("Ignoring unexpecte blue work block %s", inv.Hash)
+				continue
 			}
 			if errors.Is(err, ruleerrors.ErrInvalidPoW) {
 				log.Infof(fmt.Sprintf("Ignoring invalid PoW on version %d block, consider banning: %s", block.Header.Version(), flow.netConnection.NetAddress().String()))
