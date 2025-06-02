@@ -3668,7 +3668,7 @@ func TestGetPreciseSigOps(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		count := GetPreciseSigOpCount(test.scriptSig, test.scriptPublicKey, true)
+		count := GetPreciseSigOpCount(test.scriptSig, test.scriptPublicKey)
 		if count != test.nSigOps {
 			t.Errorf("%s: expected count of %d, got %d", test.name,
 				test.nSigOps, count)

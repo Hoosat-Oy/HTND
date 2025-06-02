@@ -348,8 +348,7 @@ func (v *transactionValidator) validateTransactionSigOpCounts(tx *externalapi.Do
 		// Count the precise number of signature operations in the
 		// referenced public key script.
 		sigScript := tx.Inputs[i].SignatureScript
-		isP2SH := txscript.IsPayToScriptHash(utxoEntry.ScriptPublicKey())
-		sigOpCount := txscript.GetPreciseSigOpCount(sigScript, utxoEntry.ScriptPublicKey(), isP2SH)
+		sigOpCount := txscript.GetPreciseSigOpCount(sigScript, utxoEntry.ScriptPublicKey())
 
 		if sigOpCount != int(tx.Inputs[i].SigOpCount) {
 			return errors.Wrapf(ruleerrors.ErrWrongSigOpCount,

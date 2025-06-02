@@ -160,8 +160,7 @@ func (mp *mempool) checkTransactionStandardInContext(transaction *externalapi.Do
 		originScriptPubKey := utxoEntry.ScriptPublicKey()
 		switch txscript.GetScriptClass(originScriptPubKey.Script) {
 		case txscript.ScriptHashTy:
-			numSigOps := txscript.GetPreciseSigOpCount(
-				input.SignatureScript, originScriptPubKey, true)
+			numSigOps := txscript.GetPreciseSigOpCount(input.SignatureScript, originScriptPubKey)
 			if numSigOps > maxStandardP2SHSigOps {
 				str := fmt.Sprintf("transaction input #%d has %d signature operations which is more "+
 					"than the allowed max amount of %d", i, numSigOps, maxStandardP2SHSigOps)
