@@ -2,6 +2,7 @@ package pruningmanager
 
 import (
 	"sort"
+	"time"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
@@ -47,6 +48,8 @@ type pruningManager struct {
 	k                               externalapi.KType
 	difficultyAdjustmentWindowSize  int
 
+	targetTimePerBlock time.Duration
+
 	cachedPruningPoint         *externalapi.DomainHash
 	cachedPruningPointAnticone []*externalapi.DomainHash
 }
@@ -81,6 +84,7 @@ func New(
 	shouldSanityCheckPruningUTXOSet bool,
 	k externalapi.KType,
 	difficultyAdjustmentWindowSize int,
+	targetTimePerBlock time.Duration,
 ) model.PruningManager {
 
 	return &pruningManager{
@@ -111,6 +115,7 @@ func New(
 		shouldSanityCheckPruningUTXOSet: shouldSanityCheckPruningUTXOSet,
 		k:                               k,
 		difficultyAdjustmentWindowSize:  difficultyAdjustmentWindowSize,
+		targetTimePerBlock:              targetTimePerBlock,
 	}
 }
 
@@ -319,7 +324,7 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 			return nil, nil, err
 		}
 		if constants.BlockVersion >= 5 {
-			if ghostdagData.BlueScore()-selectedChildGHOSTDAGData.BlueScore() < pm.pruningDepth/2 {
+			if ghostdagData.BlueScore()-selectedChildGHOSTDAGData.BlueScore() < pm.pruningDepth*uint64(pm.targetTimePerBlock.Seconds()) {
 				break
 			}
 		} else {
@@ -567,7 +572,7 @@ func (pm *pruningManager) IsValidPruningPoint(stagingArea *model.StagingArea, bl
 
 	// A pruning point has to be at depth of at least pm.pruningDepth
 	if constants.BlockVersion >= 5 {
-		if headersSelectedTipGHOSTDAGData.BlueScore()-ghostdagData.BlueScore() < pm.pruningDepth/2 {
+		if headersSelectedTipGHOSTDAGData.BlueScore()-ghostdagData.BlueScore() < pm.pruningDepth*uint64(pm.targetTimePerBlock.Seconds()) {
 			return false, nil
 		}
 	} else {

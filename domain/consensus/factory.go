@@ -339,6 +339,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.EnableSanityCheckPruningUTXOSet,
 		config.K[constants.BlockVersion-1],
 		config.DifficultyAdjustmentWindowSize,
+		config.TargetTimePerBlock[constants.BlockVersion-1],
 	)
 
 	blockValidator := blockvalidator.New(
