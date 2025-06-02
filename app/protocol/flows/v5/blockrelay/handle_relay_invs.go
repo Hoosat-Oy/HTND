@@ -259,7 +259,8 @@ func (flow *handleRelayInvsFlow) start() error {
 				}
 				continue
 			}
-			return err
+			log.Warnf("Failed to process block %s: %s", inv.Hash, err)
+			continue
 		}
 		if len(missingParents) > 0 {
 			err := flow.processOrphan(block)
