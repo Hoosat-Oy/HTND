@@ -538,7 +538,7 @@ func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlo
 			log.Debugf("Skipping block header %s as it is a duplicate", blockHash)
 		} else {
 			log.Infof("Rejected block header %s from %s during IBD: %s", blockHash, flow.peer, err)
-			return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", blockHash)
+			return protocolerrors.Wrapf(false, err, "got invalid block header %s during IBD", blockHash)
 		}
 	}
 
