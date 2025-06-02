@@ -158,19 +158,20 @@ func (mp *mempool) checkTransactionStandardInContext(transaction *externalapi.Do
 		// function.
 		utxoEntry := input.UTXOEntry
 		originScriptPubKey := utxoEntry.ScriptPublicKey()
-		switch txscript.GetScriptClass(originScriptPubKey.Script) {
-		case txscript.ScriptHashTy:
-			numSigOps := txscript.GetPreciseSigOpCount(input.SignatureScript, originScriptPubKey)
-			if numSigOps > maxStandardP2SHSigOps {
-				str := fmt.Sprintf("transaction input #%d has %d signature operations which is more "+
-					"than the allowed max amount of %d", i, numSigOps, maxStandardP2SHSigOps)
-				return transactionRuleError(RejectNonstandard, str)
-			}
-
-		case txscript.NonStandardTy:
+		parsedScript, err := txscript.ParseScript(originScriptPubKey.Script)
+		if err != nil {
 			str := fmt.Sprintf("transaction input #%d has a non-standard script form", i)
 			return transactionRuleError(RejectNonstandard, str)
 		}
+		scriptClass := txscript.GetScriptClassFromParsedScript(parsedScript)
+		if scriptClass == txscript.ScriptHashTy {
+			numSigOps := txscript.GetPreciseSigOpCountFromParsedScript(input.SignatureScript, parsedScript)
+			if numSigOps > maxStandardP2SHSigOps {
+				str := fmt.Sprintf("transaction input #%d has %d signature operations which is more than the allowed max amount of %d", i, numSigOps, maxStandardP2SHSigOps)
+				return transactionRuleError(RejectNonstandard, str)
+			}
+		}
+
 	}
 
 	minimumFee := mp.minimumRequiredTransactionRelayFee(transaction.Mass)

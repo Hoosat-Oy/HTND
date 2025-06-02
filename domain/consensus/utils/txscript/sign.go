@@ -137,11 +137,11 @@ func mergeScripts(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction
 	case ScriptHashTy:
 		// Remove the last push in the script and then recurse.
 		// this could be a lot less inefficient.
-		sigPops, err := parseScript(sigScript)
+		sigPops, err := ParseScript(sigScript)
 		if err != nil || len(sigPops) == 0 {
 			return prevScript.Script, nil
 		}
-		prevPops, err := parseScript(prevScript.Script)
+		prevPops, err := ParseScript(prevScript.Script)
 		if err != nil || len(prevPops) == 0 {
 			return sigScript, nil
 		}

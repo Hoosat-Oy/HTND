@@ -87,10 +87,13 @@ func typeOfScript(pops []parsedOpcode) ScriptClass {
 //
 // NonStandardTy will be returned when the script does not parse.
 func GetScriptClass(script []byte) ScriptClass {
-	pops, err := parseScript(script)
+	pops, err := ParseScript(script)
 	if err != nil {
 		return NonStandardTy
 	}
+	return GetScriptClassFromParsedScript(pops)
+}
+func GetScriptClassFromParsedScript(pops []parsedOpcode) ScriptClass {
 	return typeOfScript(pops)
 }
 
@@ -138,12 +141,12 @@ type ScriptInfo struct {
 // be analysed, i.e. if they do not parse or the scriptPubKey is not a push-only
 // script
 func CalcScriptInfo(sigScript, scriptPubKey []byte, isP2SH bool) (*ScriptInfo, error) {
-	sigPops, err := parseScript(sigScript)
+	sigPops, err := ParseScript(sigScript)
 	if err != nil {
 		return nil, err
 	}
 
-	scriptPubKeyPops, err := parseScript(scriptPubKey)
+	scriptPubKeyPops, err := ParseScript(scriptPubKey)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +170,7 @@ func CalcScriptInfo(sigScript, scriptPubKey []byte, isP2SH bool) (*ScriptInfo, e
 		// The pay-to-hash-script is the final data push of the
 		// signature script.
 		script := sigPops[len(sigPops)-1].data
-		shPops, err := parseScript(script)
+		shPops, err := ParseScript(script)
 		if err != nil {
 			return nil, err
 		}
@@ -285,7 +288,7 @@ func PayToScriptHashSignatureScript(redeemScript []byte, signature []byte) ([]by
 // PushedData returns an array of byte slices containing any pushed data found
 // in the passed script. This includes OP_0, but not OP_1 - OP_16.
 func PushedData(script []byte) ([][]byte, error) {
-	pops, err := parseScript(script)
+	pops, err := ParseScript(script)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +312,7 @@ func ExtractScriptPubKeyAddress(scriptPubKey *externalapi.ScriptPublicKey, dagPa
 		return NonStandardTy, nil, nil
 	}
 	// No valid address if the script doesn't parse.
-	pops, err := parseScript(scriptPubKey.Script)
+	pops, err := ParseScript(scriptPubKey.Script)
 	if err != nil {
 		return NonStandardTy, nil, err
 	}
@@ -382,7 +385,7 @@ type AtomicSwapDataPushes struct {
 // This function is only defined in the txscript package due to API limitations
 // which prevent callers using txscript to parse nonstandard scripts.
 func ExtractAtomicSwapDataPushes(version uint16, scriptPubKey []byte) (*AtomicSwapDataPushes, error) {
-	pops, err := parseScript(scriptPubKey)
+	pops, err := ParseScript(scriptPubKey)
 	if err != nil {
 		return nil, err
 	}

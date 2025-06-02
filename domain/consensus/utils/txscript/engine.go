@@ -285,7 +285,7 @@ func (vm *Engine) Step() (done bool, err error) {
 			}
 
 			script := vm.savedFirstStack[len(vm.savedFirstStack)-1]
-			pops, err := parseScript(script)
+			pops, err := ParseScript(script)
 			if err != nil {
 				return false, err
 			}
@@ -511,5 +511,5 @@ func parseScriptAndVerifySize(script []byte) ([]parsedOpcode, error) {
 			"allowed size %d", len(script), MaxScriptSize)
 		return nil, scriptError(ErrScriptTooBig, str)
 	}
-	return parseScript(script)
+	return ParseScript(script)
 }
