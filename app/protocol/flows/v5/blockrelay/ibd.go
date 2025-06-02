@@ -201,7 +201,7 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 			}
 			if info.Exists {
 				if info.BlockStatus == externalapi.StatusInvalid {
-					return nil, nil, protocolerrors.Errorf(true, "Sent invalid chain block %s", locatorHashes[i])
+					return nil, nil, protocolerrors.Errorf(false, "Sent invalid chain block %s", locatorHashes[i])
 				}
 
 				isPruningPointOnSyncerChain, err := flow.Domain().Consensus().IsInSelectedParentChainOf(pruningPoint, locatorHashes[i])
