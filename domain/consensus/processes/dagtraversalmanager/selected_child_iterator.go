@@ -75,15 +75,15 @@ func (s *selectedChildIterator) Close() error {
 func (dtm *dagTraversalManager) SelectedChildIterator(stagingArea *model.StagingArea,
 	highHash, lowHash *externalapi.DomainHash, includeLowHash bool) (model.BlockIterator, error) {
 
-	isLowHashInSelectedParentChainOfHighHash, err := dtm.dagTopologyManager.IsInSelectedParentChainOf(
-		stagingArea, lowHash, highHash)
-	if err != nil {
-		return nil, err
-	}
+	// isLowHashInSelectedParentChainOfHighHash, err := dtm.dagTopologyManager.IsInSelectedParentChainOf(
+	// 	stagingArea, lowHash, highHash)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	if !isLowHashInSelectedParentChainOfHighHash {
-		return nil, errors.Errorf("%s is not in the selected parent chain of %s", highHash, lowHash)
-	}
+	// if !isLowHashInSelectedParentChainOfHighHash {
+	// 	return nil, errors.Errorf("%s is not in the selected parent chain of %s", highHash, lowHash)
+	// }
 	return &selectedChildIterator{
 		dagTraversalManager: dtm,
 		includeLowHash:      includeLowHash,

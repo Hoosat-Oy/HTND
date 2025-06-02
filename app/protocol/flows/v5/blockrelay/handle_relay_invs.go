@@ -259,7 +259,7 @@ func (flow *handleRelayInvsFlow) start() error {
 				}
 				continue
 			}
-			log.Warnf("Failed to process block %s: %s", inv.Hash, err)
+			log.Warnf("%s", inv.Hash, err)
 			continue
 		}
 		if len(missingParents) > 0 {
