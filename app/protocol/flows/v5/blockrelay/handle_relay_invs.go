@@ -247,9 +247,12 @@ func (flow *handleRelayInvsFlow) start() error {
 				log.Infof("Ignoring duplicate block %s", inv.Hash)
 				continue
 			}
-
 			if errors.Is(err, ruleerrors.ErrUnexpectedBlueWork) {
-				log.Infof("Ignoring unexpecte blue work block %s", inv.Hash)
+				log.Infof("Ignoring unexpected blue work block %s", inv.Hash)
+				continue
+			}
+			if errors.Is(err, ruleerrors.ErrInvalidAncestorBlock) {
+				log.Infof("Ignoring block with invalid ancestor %s", inv.Hash)
 				continue
 			}
 			if errors.Is(err, ruleerrors.ErrInvalidPoW) {
@@ -401,22 +404,13 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (msgBlock *appmessage.MsgBlock, 
 }
 
 func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock, powSkip bool) ([]*externalapi.DomainHash, error) {
-	blockHash := consensushashing.BlockHash(block)
 	err := flow.Domain().Consensus().ValidateAndInsertBlock(block, true, powSkip)
 	if err != nil {
-		if !errors.As(err, &ruleerrors.RuleError{}) {
-			return nil, errors.Wrapf(err, "failed to process block %s", blockHash)
-		}
-
 		missingParentsError := &ruleerrors.ErrMissingParents{}
 		if errors.As(err, missingParentsError) {
 			return missingParentsError.MissingParentHashes, nil
 		}
-		// A duplicate block should not appear to the user as a warning and is already reported in the calling function
-		if !errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-			log.Warnf("Rejected block %s from %s: %s", blockHash, flow.netConnection.Address(), err)
-		}
-		return nil, protocolerrors.Wrapf(false, err, "got invalid block %s from relay", blockHash)
+		return nil, err
 	}
 	return nil, nil
 }
