@@ -200,7 +200,7 @@ func (networkFlags *NetworkFlags) overrideDAGParams() error {
 	}
 
 	if config.DifficultyAdjustmentWindowSize != nil {
-		networkFlags.ActiveNetParams.DifficultyAdjustmentWindowSize = *config.DifficultyAdjustmentWindowSize
+		networkFlags.ActiveNetParams.DifficultyAdjustmentWindowSize = []int{*config.DifficultyAdjustmentWindowSize}
 	}
 
 	if config.TimestampDeviationTolerance != nil {

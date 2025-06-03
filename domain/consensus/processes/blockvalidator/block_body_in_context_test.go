@@ -25,7 +25,7 @@ func TestCheckBlockIsNotPruned(t *testing.T) {
 		// anticone are kept for the sake of IBD. Setting this value to zero
 		// forces all DAA windows to be empty, and as such, no blocks are kept
 		// below the pruning point
-		consensusConfig.DifficultyAdjustmentWindowSize = 0
+		consensusConfig.DifficultyAdjustmentWindowSize = []int{0}
 
 		factory := consensus.NewFactory()
 

@@ -32,7 +32,7 @@ func TestDifficulty(t *testing.T) {
 		}
 
 		consensusConfig.K[constants.BlockVersion-1] = 1
-		consensusConfig.DifficultyAdjustmentWindowSize = 140
+		consensusConfig.DifficultyAdjustmentWindowSize = []int{140}
 
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDifficulty")
@@ -102,14 +102,14 @@ func TestDifficulty(t *testing.T) {
 
 		tipHash := consensusConfig.GenesisHash
 		tip := consensusConfig.GenesisBlock
-		for i := 0; i < consensusConfig.DifficultyAdjustmentWindowSize; i++ {
+		for i := 0; i < consensusConfig.DifficultyAdjustmentWindowSize[constants.BlockVersion-1]; i++ {
 			tip, tipHash = addBlock(0, tipHash)
 			if tip.Header.Bits() != consensusConfig.GenesisBlock.Header.Bits() {
 				t.Fatalf("As long as the block blue score is less then the difficulty adjustment " +
 					"window size, the difficulty should be the same as genesis'")
 			}
 		}
-		for i := 0; i < consensusConfig.DifficultyAdjustmentWindowSize+10; i++ {
+		for i := 0; i < consensusConfig.DifficultyAdjustmentWindowSize[constants.BlockVersion-1]+10; i++ {
 			tip, tipHash = addBlock(0, tipHash)
 			if tip.Header.Bits() != consensusConfig.GenesisBlock.Header.Bits() {
 				t.Fatalf("As long as the block rate remains the same, the difficulty shouldn't change")
@@ -143,7 +143,7 @@ func TestDifficulty(t *testing.T) {
 		}
 
 		// Increase block rate to increase difficulty
-		for i := 0; i < consensusConfig.DifficultyAdjustmentWindowSize; i++ {
+		for i := 0; i < consensusConfig.DifficultyAdjustmentWindowSize[constants.BlockVersion-1]; i++ {
 			tip, tipHash = addBlockWithMinimumTime(tipHash)
 			tipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, tipHash, false)
 			if err != nil {
@@ -164,7 +164,7 @@ func TestDifficulty(t *testing.T) {
 		// Add blocks until difficulty stabilizes
 		lastBits := tip.Header.Bits()
 		sameBitsCount := 0
-		for sameBitsCount < consensusConfig.DifficultyAdjustmentWindowSize+1 {
+		for sameBitsCount < consensusConfig.DifficultyAdjustmentWindowSize[constants.BlockVersion-1]+1 {
 			tip, tipHash = addBlock(0, tipHash)
 			if tip.Header.Bits() == lastBits {
 				sameBitsCount++
@@ -195,7 +195,7 @@ func TestDifficulty(t *testing.T) {
 		// blocks in its past and one without.
 		splitBlockHash := tipHash
 		blueTipHash := splitBlockHash
-		for i := 0; i < consensusConfig.DifficultyAdjustmentWindowSize; i++ {
+		for i := 0; i < consensusConfig.DifficultyAdjustmentWindowSize[constants.BlockVersion-1]; i++ {
 			_, blueTipHash = addBlock(0, blueTipHash)
 		}
 
@@ -215,7 +215,7 @@ func TestDifficulty(t *testing.T) {
 		// out the red blocks from the window, and check that the red blocks don't
 		// affect the difficulty.
 		blueTipHash = splitBlockHash
-		for i := 0; i < consensusConfig.DifficultyAdjustmentWindowSize+redChainLength+1; i++ {
+		for i := 0; i < consensusConfig.DifficultyAdjustmentWindowSize[constants.BlockVersion-1]+redChainLength+1; i++ {
 			_, blueTipHash = addBlock(0, blueTipHash)
 		}
 
@@ -234,7 +234,7 @@ func TestDifficulty(t *testing.T) {
 
 func TestDAAScore(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		consensusConfig.DifficultyAdjustmentWindowSize = 86
+		consensusConfig.DifficultyAdjustmentWindowSize = []int{86}
 
 		stagingArea := model.NewStagingArea()
 
@@ -290,7 +290,7 @@ func TestDAAScore(t *testing.T) {
 
 		split2Hash := tipHash
 		split2DAAScore := tipDAAScore
-		for i := uint64(0); i < uint64(consensusConfig.DifficultyAdjustmentWindowSize)-1; i++ {
+		for i := uint64(0); i < uint64(consensusConfig.DifficultyAdjustmentWindowSize[constants.BlockVersion-1])-1; i++ {
 			tipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)

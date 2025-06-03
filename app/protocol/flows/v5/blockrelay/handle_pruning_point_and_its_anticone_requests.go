@@ -60,7 +60,7 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 				return err
 			}
 
-			windowSize := context.Config().NetParams().DifficultyAdjustmentWindowSize
+			windowSize := context.Config().NetParams().DifficultyAdjustmentWindowSize[constants.BlockVersion-1]
 			daaWindowBlocks := make([]*externalapi.TrustedDataDataDAAHeader, 0, windowSize)
 			daaWindowHashesToIndex := make(map[externalapi.DomainHash]int, windowSize)
 			trustedDataDAABlockIndexes := make(map[externalapi.DomainHash][]uint64)

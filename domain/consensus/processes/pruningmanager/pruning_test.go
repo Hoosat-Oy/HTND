@@ -72,7 +72,7 @@ func TestPruning(t *testing.T) {
 
 			consensusConfig.FinalityDuration = []time.Duration{time.Duration(test.FinalityDepth) * consensusConfig.TargetTimePerBlock[constants.BlockVersion-1]}
 			consensusConfig.MergeSetSizeLimit = test.MergeSetSizeLimit
-			consensusConfig.DifficultyAdjustmentWindowSize = 400
+			consensusConfig.DifficultyAdjustmentWindowSize = []int{400}
 
 			factory := consensus.NewFactory()
 			factory.SetTestLevelDBCacheSize(128)
@@ -150,7 +150,7 @@ func TestPruning(t *testing.T) {
 			}
 			for _, blockHash := range pruningPointAndItsAnticone {
 				unprunedBlockHashesBelowPruningPoint[*blockHash] = struct{}{}
-				blockWindow, err := tc.DAGTraversalManager().BlockWindow(stagingArea, blockHash, consensusConfig.DifficultyAdjustmentWindowSize)
+				blockWindow, err := tc.DAGTraversalManager().BlockWindow(stagingArea, blockHash, consensusConfig.DifficultyAdjustmentWindowSize[constants.BlockVersion-1])
 				if err != nil {
 					t.Fatalf("BlockWindow: %+v", err)
 				}

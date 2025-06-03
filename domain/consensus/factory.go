@@ -233,7 +233,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		dagTopologyManager,
 		dagTraversalManager,
 		config.PowMax,
-		config.DifficultyAdjustmentWindowSize,
+		config.DifficultyAdjustmentWindowSize[constants.BlockVersion-1],
 		config.DisableDifficultyAdjustment,
 		config.TargetTimePerBlock[constants.BlockVersion-1],
 		config.GenesisHash,
@@ -338,7 +338,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.PruningDepth(),
 		config.EnableSanityCheckPruningUTXOSet,
 		config.K[constants.BlockVersion-1],
-		config.DifficultyAdjustmentWindowSize,
+		config.DifficultyAdjustmentWindowSize[constants.BlockVersion-1],
 		config.TargetTimePerBlock[constants.BlockVersion-1],
 	)
 
@@ -485,7 +485,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		genesisHash:  config.GenesisHash,
 
 		expectedDAAWindowDurationInMilliseconds: config.TargetTimePerBlock[constants.BlockVersion-1].Milliseconds() *
-			int64(config.DifficultyAdjustmentWindowSize),
+			int64(config.DifficultyAdjustmentWindowSize[constants.BlockVersion-1]),
 
 		blockProcessor:        blockProcessor,
 		blockBuilder:          blockBuilder,
@@ -663,8 +663,8 @@ func dagStores(config *Config,
 	ghostdagDataStores := make([]model.GHOSTDAGDataStore, config.MaxBlockLevel+1)
 
 	ghostdagDataCacheSize := pruningWindowSizeForCaches * 2
-	if ghostdagDataCacheSize < config.DifficultyAdjustmentWindowSize {
-		ghostdagDataCacheSize = config.DifficultyAdjustmentWindowSize
+	if ghostdagDataCacheSize < config.DifficultyAdjustmentWindowSize[constants.BlockVersion-1] {
+		ghostdagDataCacheSize = config.DifficultyAdjustmentWindowSize[constants.BlockVersion-1]
 	}
 
 	for i := 0; i <= config.MaxBlockLevel; i++ {
@@ -740,7 +740,7 @@ func (f *factory) dagProcesses(config *Config,
 			daaWindowStore,
 			windowHeapSliceStore,
 			config.GenesisHash,
-			config.DifficultyAdjustmentWindowSize)
+			config.DifficultyAdjustmentWindowSize[constants.BlockVersion-1])
 	}
 
 	return dagTopologyManagers, ghostdagManagers, dagTraversalManagers
