@@ -293,7 +293,7 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 	} else {
 		iterator, err = pm.dagTraversalManager.SelectedChildIterator(stagingArea, ghostdagData.SelectedParent(), lowHash, true)
 		if err != nil {
-			iterator = &blockIteratorFromOneBlock{hash: lowHash}
+			return currentPruningPoint, currentCandidate, nil
 		}
 	}
 	defer iterator.Close()
