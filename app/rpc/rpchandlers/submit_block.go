@@ -95,7 +95,10 @@ func HandleSubmitBlock(context *rpccontext.Context, router *router.Router, reque
 	if err != nil {
 		isProtocolOrRuleError := errors.As(err, &ruleerrors.RuleError{}) || errors.As(err, &protocolerrors.ProtocolError{})
 		if !isProtocolOrRuleError {
-			return nil, err
+			return &appmessage.SubmitBlockResponseMessage{
+				Error:        appmessage.RPCErrorf("Block rejected. Reason: %s", err),
+				RejectReason: appmessage.RejectReasonBlockInvalid,
+			}, nil
 		}
 
 		if errors.Is(err, ruleerrors.ErrInvalidPoW) {
