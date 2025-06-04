@@ -368,10 +368,10 @@ func (flow *handleIBDFlow) validateAndInsertPruningPoints(proofPruningPoint *ext
 		return protocolerrors.Errorf(false, "pruning points are violating finality")
 	}
 
-	// lastPruningPoint := consensushashing.HeaderHash(headers[len(headers)-1])
-	// if !lastPruningPoint.Equal(proofPruningPoint) {
-	// 	return protocolerrors.Errorf(true, "the proof pruning point is not equal to the last pruning point in the list")
-	// }
+	lastPruningPoint := consensushashing.HeaderHash(headers[len(headers)-1])
+	if !lastPruningPoint.Equal(proofPruningPoint) {
+		return protocolerrors.Errorf(true, "the proof pruning point is not equal to the last pruning point in the list")
+	}
 
 	err = flow.Domain().StagingConsensus().ImportPruningPoints(headers)
 	if err != nil {
