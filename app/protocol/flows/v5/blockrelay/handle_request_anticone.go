@@ -44,6 +44,21 @@ func (flow *handleRequestAnticoneFlow) start() error {
 		if err != nil {
 			return err
 		}
+		if blockHash == contextHash {
+			// response with empy headers if the blockhash is the same as the contexthash.
+			log.Debugf("Received requestAnticone with blockHash: %s, contextHash: %s, sending empty headers", blockHash, contextHash)
+			emptyHeaders := make([]*appmessage.MsgBlockHeader, 0)
+			blockHeadersMessage := appmessage.NewBlockHeadersMessage(emptyHeaders)
+			err = flow.outgoingRoute.Enqueue(blockHeadersMessage)
+			if err != nil {
+				return err
+			}
+			err = flow.outgoingRoute.Enqueue(appmessage.NewMsgDoneHeaders())
+			if err != nil {
+				return err
+			}
+			continue
+		}
 		log.Debugf("Received requestAnticone with blockHash: %s, contextHash: %s", blockHash, contextHash)
 		log.Debugf("Getting past(%s) cap anticone(%s) for peer %s", contextHash, blockHash, flow.peer)
 
@@ -54,7 +69,7 @@ func (flow *handleRequestAnticoneFlow) start() error {
 		if constants.BlockVersion >= 5 {
 			blockHashes, err = flow.Domain().Consensus().GetAnticone(blockHash, contextHash, flow.Config().ActiveNetParams.MergeSetSizeLimit*10)
 		} else {
-			blockHashes, err = flow.Domain().Consensus().GetAnticone(blockHash, contextHash, flow.Config().ActiveNetParams.MergeSetSizeLimit*12)
+			blockHashes, err = flow.Domain().Consensus().GetAnticone(blockHash, contextHash, flow.Config().ActiveNetParams.MergeSetSizeLimit*2)
 		}
 		if err != nil {
 			return protocolerrors.Wrap(true, err, "Failed querying anticone")
