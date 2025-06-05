@@ -44,7 +44,7 @@ func (flow *handleRequestAnticoneFlow) start() error {
 		if err != nil {
 			return err
 		}
-		if blockHash == contextHash {
+		if blockHash.Equal(contextHash) {
 			// response with empy headers if the blockhash is the same as the contexthash.
 			log.Debugf("Received requestAnticone with blockHash: %s, contextHash: %s, sending empty headers", blockHash, contextHash)
 			emptyHeaders := make([]*appmessage.MsgBlockHeader, 0)

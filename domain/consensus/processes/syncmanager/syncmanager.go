@@ -73,14 +73,18 @@ func (sm *syncManager) GetHashesBetween(stagingArea *model.StagingArea, lowHash,
 func (sm *syncManager) GetAnticone(stagingArea *model.StagingArea, blockHash, contextHash *externalapi.DomainHash, maxBlocks uint64) (hashes []*externalapi.DomainHash, err error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "GetAnticone")
 	defer onEnd()
+	if contextHash.Equal(blockHash) {
+		// If the blockHash is the same as the contextHash, return an empty anticone
+		log.Debugf("Received requestAnticone with blockHash: %s, contextHash: %s, sending empty anticone", blockHash, contextHash)
+		return nil, nil
+	}
 	isContextAncestorOfBlock, err := sm.dagTopologyManager.IsAncestorOf(stagingArea, contextHash, blockHash)
 	if err != nil {
 		return nil, err
 	}
+
 	if isContextAncestorOfBlock {
-		return nil, errors.Errorf("expected block %s to not be in future of %s",
-			blockHash,
-			contextHash)
+		return nil, errors.Errorf("expected block %s to not be in future of %s", blockHash, contextHash)
 	}
 	return sm.dagTraversalManager.AnticoneFromBlocks(stagingArea, []*externalapi.DomainHash{contextHash}, blockHash, maxBlocks)
 }
