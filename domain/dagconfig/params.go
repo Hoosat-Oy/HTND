@@ -213,16 +213,21 @@ func (p *Params) NormalizeRPCServerAddress(addr string) (string, error) {
 */
 // FinalityDepth returns the finality duration represented in blocks
 func (p *Params) FinalityDepth() uint64 {
-	depth := uint64(p.FinalityDuration[constants.BlockVersion-1].Seconds() / p.TargetTimePerBlock[constants.BlockVersion-1].Seconds())
-	log.Infof("Finality Depth: %d", depth)
-	return depth
+	if constants.BlockVersion < 5 {
+		return uint64(p.FinalityDuration[constants.BlockVersion-1] / p.TargetTimePerBlock[constants.BlockVersion-1])
+	} else {
+		return uint64(p.FinalityDuration[constants.BlockVersion-1].Seconds() / p.TargetTimePerBlock[constants.BlockVersion-1].Seconds())
+	}
 }
 
 // PruningDepth returns the pruning duration represented in blocks
 func (p *Params) PruningDepth() uint64 {
-	depth := 2*p.FinalityDepth()*p.PruningMultiplier[constants.BlockVersion-1] + 4*p.MergeSetSizeLimit*uint64(p.K[constants.BlockVersion-1]) + 2*uint64(p.K[constants.BlockVersion-1]) + 2
-	log.Infof("Pruning Depth: %d", depth)
-	return depth
+	if constants.BlockVersion < 5 {
+		return 2*p.FinalityDepth() + 4*p.MergeSetSizeLimit*uint64(p.K[constants.BlockVersion-1]) + 2*uint64(p.K[constants.BlockVersion-1]) + 2
+	} else {
+		return 2*p.FinalityDepth()*p.PruningMultiplier[constants.BlockVersion-1] + 4*p.MergeSetSizeLimit*uint64(p.K[constants.BlockVersion-1]) + 2*uint64(p.K[constants.BlockVersion-1]) + 2
+	}
+
 }
 
 // MainnetParams defines the network parameters for the main Hoosat network.
