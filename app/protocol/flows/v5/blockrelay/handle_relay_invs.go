@@ -251,8 +251,7 @@ func (flow *handleRelayInvsFlow) start() error {
 				log.Infof("Ignoring unexpected blue work block %s", inv.Hash)
 				continue
 			} else if errors.Is(err, ruleerrors.ErrInvalidAncestorBlock) {
-				log.Infof("Ignoring block with invalid ancestor %s", inv.Hash)
-				continue
+				log.Infof("Handle block with invalid ancestor %s", inv.Hash)
 			} else if errors.Is(err, ruleerrors.ErrInvalidPoW) {
 				log.Infof(fmt.Sprintf("Ignoring invalid PoW on version %d block, consider banning: %s", block.Header.Version(), flow.netConnection.NetAddress().String()))
 				if block.Header.Version() >= constants.BanMinVersion {
