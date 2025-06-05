@@ -429,6 +429,9 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 func (flow *handleIBDFlow) syncMissingRelayPast(consensus externalapi.Consensus, syncerHeaderSelectedTipHash *externalapi.DomainHash, relayBlockHash *externalapi.DomainHash) error {
 	// Finished downloading syncer selected tip blocks,
 	// check if we already have the triggering relayBlockHash
+	if syncerHeaderSelectedTipHash.Equal(relayBlockHash) {
+		return nil
+	}
 	relayBlockInfo, err := consensus.GetBlockInfo(relayBlockHash)
 	if err != nil {
 		return err
@@ -436,6 +439,7 @@ func (flow *handleIBDFlow) syncMissingRelayPast(consensus externalapi.Consensus,
 	if !relayBlockInfo.Exists {
 		// Send a special header request for the selected tip anticone. This is expected to
 		// be a small set, as it is bounded to the size of virtual's mergeset.
+
 		err = flow.sendRequestAnticone(syncerHeaderSelectedTipHash, relayBlockHash)
 		if err != nil {
 			return err
