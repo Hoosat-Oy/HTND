@@ -244,31 +244,28 @@ func (flow *handleRelayInvsFlow) start() error {
 			if errors.Is(err, ruleerrors.ErrPrunedBlock) {
 				log.Infof("Ignoring pruned block %s", inv.Hash)
 				continue
-			}
-			if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
+			} else if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 				log.Infof("Ignoring duplicate block %s", inv.Hash)
 				continue
-			}
-			if errors.Is(err, ruleerrors.ErrUnexpectedBlueWork) {
+			} else if errors.Is(err, ruleerrors.ErrUnexpectedBlueWork) {
 				log.Infof("Ignoring unexpected blue work block %s", inv.Hash)
 				continue
-			}
-			if errors.Is(err, ruleerrors.ErrInvalidAncestorBlock) {
+			} else if errors.Is(err, ruleerrors.ErrInvalidAncestorBlock) {
 				log.Infof("Ignoring block with invalid ancestor %s", inv.Hash)
 				continue
-			}
-			if errors.Is(err, ruleerrors.ErrInvalidPoW) {
+			} else if errors.Is(err, ruleerrors.ErrInvalidPoW) {
 				log.Infof(fmt.Sprintf("Ignoring invalid PoW on version %d block, consider banning: %s", block.Header.Version(), flow.netConnection.NetAddress().String()))
 				if block.Header.Version() >= constants.BanMinVersion {
 					flow.banConnection()
 				}
 				continue
+			} else {
+				log.Warnf("%s", inv.Hash, err)
+				if block.Header.Version() >= constants.BanMinVersion {
+					flow.banConnection()
+				}
+				continue
 			}
-			log.Warnf("%s", inv.Hash, err)
-			if block.Header.Version() >= constants.BanMinVersion {
-				flow.banConnection()
-			}
-			continue
 		}
 		if len(missingParents) > 0 {
 			err := flow.processOrphan(block)
