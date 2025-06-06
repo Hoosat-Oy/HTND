@@ -259,7 +259,7 @@ func (flow *handleRelayInvsFlow) start() error {
 				}
 				continue
 			} else {
-				log.Warnf("%s", inv.Hash, err)
+				log.Errorf("%s errored: %s", inv.Hash, err)
 				if block.Header.Version() >= constants.BanMinVersion {
 					flow.banConnection()
 				}

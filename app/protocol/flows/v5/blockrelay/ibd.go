@@ -534,7 +534,7 @@ func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlo
 	err = consensus.ValidateAndInsertBlock(block, false, true)
 	if err != nil {
 		if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-			log.Debugf("Skipping block header %s as it is a duplicate", blockHash)
+			log.Infof("Skipping block header %s as it is a duplicate", blockHash)
 		} else if errors.Is(err, ruleerrors.ErrPrunedBlock) {
 			log.Infof("Skipping pruned block header %s", blockHash)
 		} else if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
@@ -544,7 +544,7 @@ func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlo
 		} else if errors.Is(err, ruleerrors.ErrInvalidAncestorBlock) {
 			log.Infof("Skipping block with invalid ancestor header %s", blockHash)
 		} else {
-			log.Infof("Rejected block header %s from %s during IBD: %s", blockHash, flow.peer, err)
+			log.Errorf("%s errored: %s", blockHash, err)
 			return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", blockHash)
 		}
 	}
