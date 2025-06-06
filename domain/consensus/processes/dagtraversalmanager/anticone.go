@@ -25,7 +25,7 @@ func (dtm *dagTraversalManager) AnticoneFromBlocks(stagingArea *model.StagingAre
 	queue := tips
 	visited := hashset.New()
 
-	traversalCounter := uint64(0)
+	// traversalCounter := uint64(0)
 	for len(queue) > 0 {
 		var current *externalapi.DomainHash
 		current, queue = queue[0], queue[1:]
