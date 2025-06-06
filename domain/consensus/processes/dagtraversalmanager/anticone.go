@@ -4,7 +4,6 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/hashset"
-	"github.com/pkg/errors"
 )
 
 func (dtm *dagTraversalManager) AnticoneFromVirtualPOV(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (
@@ -53,11 +52,10 @@ func (dtm *dagTraversalManager) AnticoneFromBlocks(stagingArea *model.StagingAre
 
 		// We count the number of blocks in past(tips) \setminus past(blockHash).
 		// We don't use `len(visited)` since it includes some maximal blocks in past(blockHash) as well.
-		traversalCounter++
-		if maxTraversalAllowed > 0 && traversalCounter > maxTraversalAllowed {
-			return nil, errors.Wrapf(model.ErrReachedMaxTraversalAllowed,
-				"Passed max allowed traversal (%d > %d)", traversalCounter, maxTraversalAllowed)
-		}
+		// traversalCounter++
+		// if maxTraversalAllowed > 0 && traversalCounter > maxTraversalAllowed {
+		// 	return nil, errors.Wrapf(model.ErrReachedMaxTraversalAllowed, "Passed max allowed traversal (%d > %d)", traversalCounter, maxTraversalAllowed)
+		// }
 
 		if !blockIsAncestorOfCurrent {
 			anticone = append(anticone, current)
@@ -68,9 +66,7 @@ func (dtm *dagTraversalManager) AnticoneFromBlocks(stagingArea *model.StagingAre
 			return nil, err
 		}
 
-		for _, parent := range currentParents {
-			queue = append(queue, parent)
-		}
+		queue = append(queue, currentParents...)
 	}
 
 	return anticone, nil
