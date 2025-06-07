@@ -543,6 +543,8 @@ func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlo
 			log.Infof("Skipping unexpected blue work block header %s", blockHash)
 		} else if errors.Is(err, ruleerrors.ErrInvalidAncestorBlock) {
 			log.Infof("Skipping block with invalid ancestor header %s", blockHash)
+		} else if errors.As(err, &ruleerrors.ErrMissingParents{}) {
+			log.Infof("Skipping block with missing parents %s", blockHash)
 		} else {
 			log.Errorf("%s errored: %s", blockHash, err)
 			return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", blockHash)
