@@ -2,6 +2,7 @@ package blockvalidator
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
@@ -238,6 +239,12 @@ func (v *blockValidator) checkDAAScore(stagingArea *model.StagingArea, blockHash
 	return nil
 }
 
+// Tolerance for BlueWork and BlueScore comparisons to account for GHOSTDAG data variations
+const (
+	blueWorkTolerance  = 500
+	blueScoreTolerance = 10
+)
+
 func (v *blockValidator) checkBlueWork(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
 	header externalapi.BlockHeader) error {
 
@@ -245,9 +252,18 @@ func (v *blockValidator) checkBlueWork(stagingArea *model.StagingArea, blockHash
 	if err != nil {
 		return err
 	}
+
 	expectedBlueWork := ghostdagData.BlueWork()
-	if header.BlueWork().Cmp(expectedBlueWork) != 0 {
-		return errors.Wrapf(ruleerrors.ErrUnexpectedBlueWork, "block blue work of %d is not the expected value of %d", header.BlueWork(), expectedBlueWork)
+	headerBlueWork := header.BlueWork()
+
+	// Calculate the acceptable range for BlueWork
+	minBlueWork := new(big.Int).Sub(expectedBlueWork, big.NewInt(blueWorkTolerance))
+	maxBlueWork := new(big.Int).Add(expectedBlueWork, big.NewInt(blueWorkTolerance))
+
+	if headerBlueWork.Cmp(minBlueWork) < 0 || headerBlueWork.Cmp(maxBlueWork) > 0 {
+		return errors.Wrapf(ruleerrors.ErrUnexpectedBlueWork,
+			"block blue work of %d is outside the expected range [%d, %d]",
+			headerBlueWork, minBlueWork, maxBlueWork)
 	}
 	return nil
 }
@@ -259,9 +275,18 @@ func (v *blockValidator) checkHeaderBlueScore(stagingArea *model.StagingArea, bl
 	if err != nil {
 		return err
 	}
-	if header.BlueScore() != ghostdagData.BlueScore() {
-		return errors.Wrapf(ruleerrors.ErrUnexpectedBlueWork, "block blue work of %d is not the expected "+
-			"value of %d", header.BlueWork(), ghostdagData.BlueScore())
+
+	expectedBlueScore := ghostdagData.BlueScore()
+	headerBlueScore := header.BlueScore()
+
+	// Calculate the acceptable range for BlueScore
+	minBlueScore := expectedBlueScore - blueScoreTolerance
+	maxBlueScore := expectedBlueScore + blueScoreTolerance
+
+	if headerBlueScore < minBlueScore || headerBlueScore > maxBlueScore {
+		return errors.Wrapf(ruleerrors.ErrUnexpectedBlueScore,
+			"block blue score of %d is outside the expected range [%d, %d]",
+			headerBlueScore, minBlueScore, maxBlueScore)
 	}
 	return nil
 }

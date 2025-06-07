@@ -49,6 +49,10 @@ var (
 	// the expected value.
 	ErrUnexpectedBlueWork = newRuleError("ErrUnexpectedBlueWork")
 
+	// ErrUnexpectedBlueWork indicates specified blue work does not align with
+	// the expected value.
+	ErrUnexpectedBlueScore = newRuleError("ErrUnexpectedBlueScore")
+
 	// ErrUnexpectedFinalityPoint indicates specified finality point does not align with
 	// the expected value.
 	ErrUnexpectedFinalityPoint = newRuleError("ErrUnexpectedFinalityPoint")
