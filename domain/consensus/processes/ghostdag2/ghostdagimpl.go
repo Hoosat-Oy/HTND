@@ -202,18 +202,20 @@ func (gh *ghostdagHelper) divideBlueRed(stagingArea *model.StagingArea,
 
 /* ---------------isAnticone-------------------------- */
 func (gh *ghostdagHelper) isAnticone(stagingArea *model.StagingArea, blockA, blockB *externalapi.DomainHash) (bool, error) {
-	isAAncestorOfAB, err := gh.dagTopologyManager.IsAncestorOf(stagingArea, blockA, blockB)
+	// Check if blockA is ancestor of blockB or vice versa
+	isAAncestorOfB, err := gh.dagTopologyManager.IsAncestorOf(stagingArea, blockA, blockB)
 	if err != nil {
 		return false, err
 	}
-	if isAAncestorOfAB {
+	if isAAncestorOfB {
 		return false, nil
 	}
+
 	isBAncestorOfA, err := gh.dagTopologyManager.IsAncestorOf(stagingArea, blockB, blockA)
 	if err != nil {
 		return false, err
 	}
-	return !isAAncestorOfAB && !isBAncestorOfA, nil
+	return !isBAncestorOfA, nil
 }
 
 /* ----------------validateKCluster------------------- */

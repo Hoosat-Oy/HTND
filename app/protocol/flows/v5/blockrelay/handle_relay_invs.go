@@ -244,27 +244,20 @@ func (flow *handleRelayInvsFlow) start() error {
 			if errors.Is(err, ruleerrors.ErrPrunedBlock) {
 				log.Infof("Ignoring pruned block %s", inv.Hash)
 				continue
-			} else if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
+			}
+			if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 				log.Infof("Ignoring duplicate block %s", inv.Hash)
 				continue
-			} else if errors.Is(err, ruleerrors.ErrUnexpectedBlueWork) {
-				log.Infof("Ignoring unexpected blue work block %s", inv.Hash)
-				continue
-			} else if errors.Is(err, ruleerrors.ErrInvalidAncestorBlock) {
-				log.Infof("Handle block with invalid ancestor %s", inv.Hash)
-			} else if errors.Is(err, ruleerrors.ErrInvalidPoW) {
-				log.Infof(fmt.Sprintf("Ignoring invalid PoW on version %d block, consider banning: %s", block.Header.Version(), flow.netConnection.NetAddress().String()))
-				if block.Header.Version() >= constants.BanMinVersion {
-					flow.banConnection()
-				}
-				continue
-			} else {
-				log.Errorf("%s errored: %s", inv.Hash, err)
-				if block.Header.Version() >= constants.BanMinVersion {
-					flow.banConnection()
+			}
+			if errors.Is(err, ruleerrors.ErrInvalidPoW) {
+				if block.PoWHash != "" {
+					log.Infof(fmt.Sprintf("Ignoring invalid PoW %s, consider banning: %s", block.PoWHash, flow.netConnection.NetAddress().String()))
+				} else {
+					log.Infof(fmt.Sprintf("Ignoring invalid empty PoW, consider banning: %s", flow.netConnection.NetAddress().String()))
 				}
 				continue
 			}
+			return err
 		}
 		if len(missingParents) > 0 {
 			err := flow.processOrphan(block)

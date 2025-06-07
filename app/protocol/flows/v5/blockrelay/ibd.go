@@ -429,9 +429,10 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 func (flow *handleIBDFlow) syncMissingRelayPast(consensus externalapi.Consensus, syncerHeaderSelectedTipHash *externalapi.DomainHash, relayBlockHash *externalapi.DomainHash) error {
 	// Finished downloading syncer selected tip blocks,
 	// check if we already have the triggering relayBlockHash
-	if syncerHeaderSelectedTipHash.Equal(relayBlockHash) {
-		return nil
-	}
+	// TODO: undo this modification to check if it's still needed
+	// if syncerHeaderSelectedTipHash.Equal(relayBlockHash) {
+	// 	return nil
+	// }
 	relayBlockInfo, err := consensus.GetBlockInfo(relayBlockHash)
 	if err != nil {
 		return err

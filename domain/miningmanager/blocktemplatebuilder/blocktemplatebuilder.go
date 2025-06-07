@@ -2,8 +2,10 @@ package blocktemplatebuilder
 
 import (
 	"math"
+	"sort"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/coinbasemanager"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/merkle"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/transactionhelper"
 	"github.com/Hoosat-Oy/HTND/domain/consensusreference"
@@ -129,6 +131,11 @@ func (btb *blockTemplateBuilder) BuildBlockTemplate(
 			DomainTransaction: mempoolTransactions[i],
 			txValue:           btb.calcTxValue(mempoolTransactions[i]),
 			gasLimit:          gasLimit,
+		})
+	}
+	if constants.BlockVersion < 5 {
+		sort.Slice(candidateTxs, func(i, j int) bool {
+			return subnetworks.Less(candidateTxs[i].SubnetworkID, candidateTxs[j].SubnetworkID)
 		})
 	}
 
