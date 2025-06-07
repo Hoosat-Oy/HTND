@@ -15,7 +15,7 @@ import (
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU()) // Set the maximum number of CPUs that can be executing simultaneously
-	debug.SetGCPercent(200)              // Set GC to run less aggressively
+	debug.SetGCPercent(100)              // Run GoGC at 100% of the default rate
 	debug.SetMemoryLimit(8_000_000_000)  // Set memory limit to 8GB
 	//runtime.SetBlockProfileRate(1)       // Set block profile rate to 1 to enable block profiling
 	//runtime.SetMutexProfileFraction(1)   // Set mutex profile fraction to 1 to enable mutex profiling
