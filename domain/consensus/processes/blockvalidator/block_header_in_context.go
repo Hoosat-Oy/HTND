@@ -100,11 +100,9 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 	}
 
 	if !isBlockWithTrustedData {
-		if constants.BlockVersion > 5 {
-			err = v.validateHeaderPruningPoint(stagingArea, blockHash)
-			if err != nil {
-				return err
-			}
+		err = v.validateHeaderPruningPoint(stagingArea, blockHash)
+		if err != nil {
+			return err
 		}
 	}
 
