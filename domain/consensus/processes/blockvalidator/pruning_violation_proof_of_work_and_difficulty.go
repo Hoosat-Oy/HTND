@@ -106,7 +106,6 @@ func (v *blockValidator) setParents(stagingArea *model.StagingArea,
 func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea,
 	blockHash *externalapi.DomainHash,
 	isBlockWithTrustedData bool) error {
-
 	if !isBlockWithTrustedData {
 		// We need to calculate GHOSTDAG for the block in order to check its difficulty and blue work
 		err := v.ghostdagManagers[0].GHOSTDAG(stagingArea, blockHash)
@@ -128,16 +127,18 @@ func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea,
 		}
 	}
 
-	// Ensure the difficulty specified in the block header matches
-	// the calculated difficulty based on the previous block and
-	// difficulty retarget rules.
+	// Ensure the difficulty specified in the block header is within the acceptable range
+	// based on the previous block and difficulty retarget rules.
 	expectedBits, err := v.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, blockHash, isBlockWithTrustedData)
 	if err != nil {
 		return err
 	}
 
-	if header.Bits() != expectedBits {
-		return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block difficulty of %d is not the expected value of %d", header.Bits(), expectedBits)
+	headerBits := header.Bits()
+	if headerBits > expectedBits {
+		return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty,
+			"block difficulty of %d is ahead of the expected difficulty %d",
+			headerBits, expectedBits)
 	}
 
 	return nil

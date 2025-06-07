@@ -2,7 +2,6 @@ package blockvalidator
 
 import (
 	"fmt"
-	"math/big"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
@@ -100,11 +99,12 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		return err
 	}
 
-	// TODO: Test to re-enable in few days.
 	if !isBlockWithTrustedData {
-		err = v.validateHeaderPruningPoint(stagingArea, blockHash)
-		if err != nil {
-			return err
+		if constants.BlockVersion > 5 {
+			err = v.validateHeaderPruningPoint(stagingArea, blockHash)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -239,12 +239,6 @@ func (v *blockValidator) checkDAAScore(stagingArea *model.StagingArea, blockHash
 	return nil
 }
 
-// Tolerance for BlueWork and BlueScore comparisons to account for GHOSTDAG data variations
-const (
-	blueWorkTolerance  = 500
-	blueScoreTolerance = 10
-)
-
 func (v *blockValidator) checkBlueWork(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
 	header externalapi.BlockHeader) error {
 
@@ -256,21 +250,16 @@ func (v *blockValidator) checkBlueWork(stagingArea *model.StagingArea, blockHash
 	expectedBlueWork := ghostdagData.BlueWork()
 	headerBlueWork := header.BlueWork()
 
-	// Calculate the acceptable range for BlueWork
-	minBlueWork := new(big.Int).Sub(expectedBlueWork, big.NewInt(blueWorkTolerance))
-	maxBlueWork := new(big.Int).Add(expectedBlueWork, big.NewInt(blueWorkTolerance))
-
-	if headerBlueWork.Cmp(minBlueWork) < 0 || headerBlueWork.Cmp(maxBlueWork) > 0 {
+	if headerBlueWork.Cmp(expectedBlueWork) > 0 {
 		return errors.Wrapf(ruleerrors.ErrUnexpectedBlueWork,
-			"block blue work of %d is outside the expected range [%d, %d]",
-			headerBlueWork, minBlueWork, maxBlueWork)
+			"block blue work %d is ahead of the expected blue work of %d",
+			headerBlueWork, expectedBlueWork)
 	}
 	return nil
 }
 
 func (v *blockValidator) checkHeaderBlueScore(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
 	header externalapi.BlockHeader) error {
-
 	ghostdagData, err := v.ghostdagDataStores[0].Get(v.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return err
@@ -279,14 +268,10 @@ func (v *blockValidator) checkHeaderBlueScore(stagingArea *model.StagingArea, bl
 	expectedBlueScore := ghostdagData.BlueScore()
 	headerBlueScore := header.BlueScore()
 
-	// Calculate the acceptable range for BlueScore
-	minBlueScore := expectedBlueScore - blueScoreTolerance
-	maxBlueScore := expectedBlueScore + blueScoreTolerance
-
-	if headerBlueScore < minBlueScore || headerBlueScore > maxBlueScore {
+	if headerBlueScore > expectedBlueScore {
 		return errors.Wrapf(ruleerrors.ErrUnexpectedBlueScore,
-			"block blue score of %d is outside the expected range [%d, %d]",
-			headerBlueScore, minBlueScore, maxBlueScore)
+			"block blue score of %d is ahead of the expected blue score of %d",
+			headerBlueScore, expectedBlueScore)
 	}
 	return nil
 }
