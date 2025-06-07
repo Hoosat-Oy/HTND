@@ -537,14 +537,6 @@ func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlo
 			log.Infof("Skipping block header %s as it is a duplicate", blockHash)
 		} else if errors.Is(err, ruleerrors.ErrPrunedBlock) {
 			log.Infof("Skipping pruned block header %s", blockHash)
-		} else if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-			log.Infof("Skipping duplicate block header %s", blockHash)
-		} else if errors.Is(err, ruleerrors.ErrUnexpectedBlueWork) {
-			log.Infof("Skipping unexpected blue work block header %s", blockHash)
-		} else if errors.Is(err, ruleerrors.ErrInvalidAncestorBlock) {
-			log.Infof("Skipping block with invalid ancestor header %s", blockHash)
-		} else if errors.As(err, &ruleerrors.ErrMissingParents{}) {
-			log.Infof("Skipping block with missing parents %s", blockHash)
 		} else {
 			log.Errorf("%s errored: %s", blockHash, err)
 			return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", blockHash)
@@ -714,11 +706,15 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 			}
 			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, updateVirtual, powSkip)
 			if err != nil {
-				if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-					log.Debugf("Skipping IBD Block %s as it has already been added to the DAG", blockHash)
-					continue
+				if !errors.As(err, &ruleerrors.RuleError{}) {
+					return errors.Wrapf(err, "failed to process header %s during IBD", blockHash)
 				}
-				return protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "invalid block %s", blockHash)
+				if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
+					log.Debugf("Skipping block header %s as it is a duplicate", blockHash)
+				} else {
+					log.Infof("Rejected block header %s from %s during IBD: %s", blockHash, flow.peer, err)
+					return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", blockHash)
+				}
 			}
 			err = flow.OnNewBlock(block)
 			if err != nil {
