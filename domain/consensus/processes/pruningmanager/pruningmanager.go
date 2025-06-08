@@ -298,7 +298,7 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 			if constants.BlockVersion < 5 {
 				return nil, nil, err
 			} else {
-				return currentPruningPoint, currentCandidate, nil
+				iterator = &blockIteratorFromOneBlock{hash: lowHash}
 			}
 		}
 	}
@@ -330,7 +330,7 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 			return nil, nil, err
 		}
 		if constants.BlockVersion >= 5 {
-			if ghostdagData.BlueScore()-selectedChildGHOSTDAGData.BlueScore() < pm.pruningDepth*uint64(pm.targetTimePerBlock[constants.BlockVersion-1].Seconds()) {
+			if float64(ghostdagData.BlueScore()-selectedChildGHOSTDAGData.BlueScore()) < float64(pm.pruningDepth)*pm.targetTimePerBlock[constants.BlockVersion-1].Seconds() {
 				break
 			}
 		} else {
@@ -578,7 +578,7 @@ func (pm *pruningManager) IsValidPruningPoint(stagingArea *model.StagingArea, bl
 
 	// A pruning point has to be at depth of at least pm.pruningDepth
 	if constants.BlockVersion >= 5 {
-		if headersSelectedTipGHOSTDAGData.BlueScore()-ghostdagData.BlueScore() < pm.pruningDepth*uint64(pm.targetTimePerBlock[constants.BlockVersion-1].Seconds()) {
+		if float64(headersSelectedTipGHOSTDAGData.BlueScore()-ghostdagData.BlueScore()) < float64(pm.pruningDepth)*pm.targetTimePerBlock[constants.BlockVersion-1].Seconds() {
 			return false, nil
 		}
 	} else {
