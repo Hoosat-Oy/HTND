@@ -302,7 +302,7 @@ func TestValidateDifficulty(t *testing.T) {
 		mocDifficulty := &mocDifficultyManager{genesisDaaScore: consensusConfig.GenesisBlock.Header.DAAScore()}
 		factory.SetTestDifficultyManager(func(_ model.DBReader, _ model.GHOSTDAGManager, _ model.GHOSTDAGDataStore,
 			_ model.BlockHeaderStore, daaBlocksStore model.DAABlocksStore, _ model.DAGTopologyManager,
-			_ model.DAGTraversalManager, _ *big.Int, _ int, _ bool, _ time.Duration,
+			_ model.DAGTraversalManager, _ *big.Int, _ []int, _ bool, _ []time.Duration,
 			_ *externalapi.DomainHash, _ uint32) model.DifficultyManager {
 
 			mocDifficulty.daaBlocksStore = daaBlocksStore

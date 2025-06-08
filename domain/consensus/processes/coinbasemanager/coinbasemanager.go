@@ -24,7 +24,7 @@ type coinbaseManager struct {
 	deflationaryPhaseDaaScore               uint64
 	deflationaryPhaseBaseSubsidy            uint64
 	deflationaryPhaseCurveFactor            float64
-	targetTimePerBlock                      time.Duration
+	targetTimePerBlock                      []time.Duration
 
 	databaseContext     model.DBReader
 	dagTraversalManager model.DAGTraversalManager
@@ -335,7 +335,7 @@ func (c *coinbaseManager) getDeflationaryPeriodBlockSubsidyFromTable(year uint64
 	if year >= uint64(len(subsidyByDeflationaryYearTable)) {
 		year = uint64(len(subsidyByDeflationaryYearTable) - 1)
 	}
-	return uint64(float64(subsidyByDeflationaryYearTable[year]) * c.targetTimePerBlock.Seconds())
+	return uint64(float64(subsidyByDeflationaryYearTable[year]) * c.targetTimePerBlock[constants.BlockVersion-1].Seconds())
 }
 
 func (c *coinbaseManager) calcDeflationaryPeriodBlockSubsidyFloatCalc(year uint64) uint64 {
@@ -388,7 +388,7 @@ func New(
 	deflationaryPhaseDaaScore uint64,
 	deflationaryPhaseBaseSubsidy uint64,
 	defaultdeflationaryPhaseCurveFactor float64,
-	targetTimePerBlock time.Duration,
+	targetTimePerBlock []time.Duration,
 	dagTraversalManager model.DAGTraversalManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	acceptanceDataStore model.AcceptanceDataStore,

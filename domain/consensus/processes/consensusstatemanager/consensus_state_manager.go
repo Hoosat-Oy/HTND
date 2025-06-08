@@ -7,7 +7,7 @@ import (
 
 // consensusStateManager manages the node's consensus state
 type consensusStateManager struct {
-	maxBlockParents   externalapi.KType
+	maxBlockParents   []externalapi.KType
 	mergeSetSizeLimit uint64
 	genesisHash       *externalapi.DomainHash
 	databaseContext   model.DBManager
@@ -41,7 +41,7 @@ type consensusStateManager struct {
 // New instantiates a new ConsensusStateManager
 func New(
 	databaseContext model.DBManager,
-	maxBlockParents externalapi.KType,
+	maxBlockParents []externalapi.KType,
 	mergeSetSizeLimit uint64,
 	genesisHash *externalapi.DomainHash,
 

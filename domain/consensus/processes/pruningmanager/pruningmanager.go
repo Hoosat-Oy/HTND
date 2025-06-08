@@ -45,10 +45,10 @@ type pruningManager struct {
 	finalityInterval                uint64
 	pruningDepth                    uint64
 	shouldSanityCheckPruningUTXOSet bool
-	k                               externalapi.KType
-	difficultyAdjustmentWindowSize  int
+	k                               []externalapi.KType
+	difficultyAdjustmentWindowSize  []int
 
-	targetTimePerBlock time.Duration
+	targetTimePerBlock []time.Duration
 
 	cachedPruningPoint         *externalapi.DomainHash
 	cachedPruningPointAnticone []*externalapi.DomainHash
@@ -82,9 +82,9 @@ func New(
 	finalityInterval uint64,
 	pruningDepth uint64,
 	shouldSanityCheckPruningUTXOSet bool,
-	k externalapi.KType,
-	difficultyAdjustmentWindowSize int,
-	targetTimePerBlock time.Duration,
+	k []externalapi.KType,
+	difficultyAdjustmentWindowSize []int,
+	targetTimePerBlock []time.Duration,
 ) model.PruningManager {
 
 	return &pruningManager{
@@ -330,7 +330,7 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 			return nil, nil, err
 		}
 		if constants.BlockVersion >= 5 {
-			if ghostdagData.BlueScore()-selectedChildGHOSTDAGData.BlueScore() < pm.pruningDepth*uint64(pm.targetTimePerBlock.Seconds()) {
+			if ghostdagData.BlueScore()-selectedChildGHOSTDAGData.BlueScore() < pm.pruningDepth*uint64(pm.targetTimePerBlock[constants.BlockVersion-1].Seconds()) {
 				break
 			}
 		} else {
@@ -433,7 +433,7 @@ func (pm *pruningManager) calculateBlocksToKeep(stagingArea *model.StagingArea,
 	blocksToKeep := make(map[externalapi.DomainHash]struct{})
 	for _, blockHash := range pruningPointAndItsAnticone {
 		blocksToKeep[*blockHash] = struct{}{}
-		blockWindow, err := pm.dagTraversalManager.BlockWindow(stagingArea, blockHash, pm.difficultyAdjustmentWindowSize)
+		blockWindow, err := pm.dagTraversalManager.BlockWindow(stagingArea, blockHash, pm.difficultyAdjustmentWindowSize[constants.BlockVersion-1])
 		if err != nil {
 			return nil, err
 		}
@@ -578,7 +578,7 @@ func (pm *pruningManager) IsValidPruningPoint(stagingArea *model.StagingArea, bl
 
 	// A pruning point has to be at depth of at least pm.pruningDepth
 	if constants.BlockVersion >= 5 {
-		if headersSelectedTipGHOSTDAGData.BlueScore()-ghostdagData.BlueScore() < pm.pruningDepth*uint64(pm.targetTimePerBlock.Seconds()) {
+		if headersSelectedTipGHOSTDAGData.BlueScore()-ghostdagData.BlueScore() < pm.pruningDepth*uint64(pm.targetTimePerBlock[constants.BlockVersion-1].Seconds()) {
 			return false, nil
 		}
 	} else {
@@ -1254,10 +1254,10 @@ func (pm *pruningManager) isPruningPointInPruningDepth(stagingArea *model.Stagin
 }
 
 func (pm *pruningManager) TrustedBlockAssociatedGHOSTDAGDataBlockHashes(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	blockHashes := make([]*externalapi.DomainHash, 0, pm.k)
+	blockHashes := make([]*externalapi.DomainHash, 0, pm.k[constants.BlockVersion-1])
 	current := blockHash
 	isTrustedData := false
-	for i := externalapi.KType(0); i <= pm.k; i++ {
+	for i := externalapi.KType(0); i <= pm.k[constants.BlockVersion-1]; i++ {
 		ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current, isTrustedData)
 		isNotFoundError := database.IsNotFoundError(err)
 		if !isNotFoundError && err != nil {

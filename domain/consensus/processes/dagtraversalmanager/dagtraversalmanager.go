@@ -17,7 +17,7 @@ type dagTraversalManager struct {
 	reachabilityManager            model.ReachabilityManager
 	daaWindowStore                 model.BlocksWithTrustedDataDAAWindowStore
 	genesisHash                    *externalapi.DomainHash
-	difficultyAdjustmentWindowSize int
+	difficultyAdjustmentWindowSize []int
 	windowHeapSliceStore           model.WindowHeapSliceStore
 }
 
@@ -31,7 +31,7 @@ func New(
 	daaWindowStore model.BlocksWithTrustedDataDAAWindowStore,
 	windowHeapSliceStore model.WindowHeapSliceStore,
 	genesisHash *externalapi.DomainHash,
-	difficultyAdjustmentWindowSize int) model.DAGTraversalManager {
+	difficultyAdjustmentWindowSize []int) model.DAGTraversalManager {
 	return &dagTraversalManager{
 		databaseContext:     databaseContext,
 		dagTopologyManager:  dagTopologyManager,

@@ -5,6 +5,7 @@ import (
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/util/difficulty"
 	"github.com/pkg/errors"
 )
@@ -133,11 +134,11 @@ func (gm *ghostdagManager) checkBlueCandidate(stagingArea *model.StagingArea, ne
 
 	// The maximum length of node.blues can be K+1 because
 	// it contains the selected parent.
-	if externalapi.KType(len(newBlockData.MergeSetBlues())) == gm.k+1 {
+	if externalapi.KType(len(newBlockData.MergeSetBlues())) == gm.k[constants.BlockVersion-1]+1 {
 		return false, 0, nil, nil
 	}
 
-	candidateBluesAnticoneSizes = make(map[externalapi.DomainHash]externalapi.KType, gm.k)
+	candidateBluesAnticoneSizes = make(map[externalapi.DomainHash]externalapi.KType, gm.k[constants.BlockVersion-1])
 
 	// Iterate over all blocks in the blue set of newNode that are not in the past
 	// of blueCandidate, and check for each one of them if blueCandidate potentially
@@ -217,12 +218,12 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(stagingArea *model.S
 		}
 		*candidateAnticoneSize++
 
-		if *candidateAnticoneSize > gm.k {
+		if *candidateAnticoneSize > gm.k[constants.BlockVersion-1] {
 			// k-cluster violation: The candidate's blue anticone exceeded k
 			return false, true, nil
 		}
 
-		if candidateBluesAnticoneSizes[*block] == gm.k {
+		if candidateBluesAnticoneSizes[*block] == gm.k[constants.BlockVersion-1] {
 			// k-cluster violation: A block in candidate's blue anticone already
 			// has k blue blocks in its own anticone
 			return false, true, nil
@@ -230,7 +231,7 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(stagingArea *model.S
 
 		// This is a sanity check that validates that a blue
 		// block's blue anticone is not already larger than K.
-		if candidateBluesAnticoneSizes[*block] > gm.k {
+		if candidateBluesAnticoneSizes[*block] > gm.k[constants.BlockVersion-1] {
 			return false, false, errors.New("found blue anticone size larger than k")
 		}
 	}

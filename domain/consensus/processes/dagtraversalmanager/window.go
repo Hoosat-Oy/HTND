@@ -3,11 +3,12 @@ package dagtraversalmanager
 import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
 )
 
 func (dtm *dagTraversalManager) DAABlockWindow(stagingArea *model.StagingArea, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	return dtm.BlockWindow(stagingArea, highHash, dtm.difficultyAdjustmentWindowSize)
+	return dtm.BlockWindow(stagingArea, highHash, dtm.difficultyAdjustmentWindowSize[constants.BlockVersion-1])
 }
 
 // BlockWindow returns a blockWindow of the given size that contains the

@@ -48,7 +48,7 @@ func (v *blockValidator) checkParentsLimit(header externalapi.BlockHeader) error
 		return errors.Wrapf(ruleerrors.ErrNoParents, "block has no parents")
 	}
 
-	if uint64(len(header.DirectParents())) > uint64(v.maxBlockParents) {
+	if uint64(len(header.DirectParents())) > uint64(v.maxBlockParents[constants.BlockVersion-1]) {
 		return errors.Wrapf(ruleerrors.ErrTooManyParents, "block header has %d parents, but the maximum allowed amount "+
 			"is %d", len(header.DirectParents()), v.maxBlockParents)
 	}
@@ -74,7 +74,7 @@ func (v *blockValidator) checkBlockVersion(header externalapi.BlockHeader) error
 func (v *blockValidator) checkBlockTimestampInIsolation(header externalapi.BlockHeader) error {
 	blockTimestamp := header.TimeInMilliseconds()
 	now := mstime.Now().UnixMilliseconds()
-	maxCurrentTime := now + int64(v.timestampDeviationTolerance)*v.targetTimePerBlock.Milliseconds()
+	maxCurrentTime := now + int64(v.timestampDeviationTolerance)*v.targetTimePerBlock[constants.BlockVersion-1].Milliseconds()
 	if blockTimestamp > maxCurrentTime {
 		return errors.Wrapf(
 			ruleerrors.ErrTimeTooMuchInTheFuture, "The block timestamp is in the future.")

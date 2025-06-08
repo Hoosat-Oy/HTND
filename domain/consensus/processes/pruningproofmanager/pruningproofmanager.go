@@ -43,7 +43,7 @@ type pruningProofManager struct {
 	reachabilityDataStore model.ReachabilityDataStore
 
 	genesisHash   *externalapi.DomainHash
-	k             externalapi.KType
+	k             []externalapi.KType
 	pruningProofM uint64
 	maxBlockLevel int
 
@@ -72,7 +72,7 @@ func New(
 	reachabilityDataStore model.ReachabilityDataStore,
 
 	genesisHash *externalapi.DomainHash,
-	k externalapi.KType,
+	k []externalapi.KType,
 	pruningProofM uint64,
 	maxBlockLevel int,
 ) model.PruningProofManager {
@@ -711,7 +711,7 @@ func (ppm *pruningProofManager) populateProofReachabilityAndHeaders(pruningPoint
 	targetReachabilityManager := reachabilitymanager.New(ppm.databaseContext, ghostdagDataStoreForTargetReachabilityManager, targetReachabilityDataStore)
 	blockRelationStoreForTargetReachabilityManager := blockrelationstore.New(bucket, 0, false)
 	dagTopologyManagerForTargetReachabilityManager := dagtopologymanager.New(ppm.databaseContext, targetReachabilityManager, blockRelationStoreForTargetReachabilityManager, nil)
-	ghostdagManagerForTargetReachabilityManager := ghostdagmanager.New(ppm.databaseContext, dagTopologyManagerForTargetReachabilityManager, ghostdagDataStoreForTargetReachabilityManager, ppm.blockHeaderStore, 0, nil)
+	ghostdagManagerForTargetReachabilityManager := ghostdagmanager.New(ppm.databaseContext, dagTopologyManagerForTargetReachabilityManager, ghostdagDataStoreForTargetReachabilityManager, ppm.blockHeaderStore, []externalapi.KType{0}, nil)
 	err := dagTopologyManagerForTargetReachabilityManager.SetParents(stagingArea, model.VirtualGenesisBlockHash, nil)
 	if err != nil {
 		return err
@@ -719,8 +719,8 @@ func (ppm *pruningProofManager) populateProofReachabilityAndHeaders(pruningPoint
 
 	dagTopologyManager := dagtopologymanager.New(ppm.databaseContext, targetReachabilityManager, nil, nil)
 	ghostdagDataStore := ghostdagdatastore.New(bucket, 0, false)
-	tmpGHOSTDAGManager := ghostdagmanager.New(ppm.databaseContext, nil, ghostdagDataStore, nil, 0, nil)
-	dagTraversalManager := dagtraversalmanager.New(ppm.databaseContext, nil, ghostdagDataStore, nil, tmpGHOSTDAGManager, nil, nil, nil, 0)
+	tmpGHOSTDAGManager := ghostdagmanager.New(ppm.databaseContext, nil, ghostdagDataStore, nil, []externalapi.KType{0}, nil)
+	dagTraversalManager := dagtraversalmanager.New(ppm.databaseContext, nil, ghostdagDataStore, nil, tmpGHOSTDAGManager, nil, nil, nil, []int{0})
 	allProofBlocksUpHeap := dagTraversalManager.NewUpHeap(tmpStagingArea)
 	dag := make(map[externalapi.DomainHash]struct {
 		parents hashset.HashSet

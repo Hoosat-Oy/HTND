@@ -12,7 +12,7 @@ type ghostdagManager struct {
 	ghostdagDataStore  model.GHOSTDAGDataStore
 	headerStore        model.BlockHeaderStore
 
-	k           externalapi.KType
+	k           []externalapi.KType
 	genesisHash *externalapi.DomainHash
 }
 
@@ -22,7 +22,7 @@ func New(
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	headerStore model.BlockHeaderStore,
-	k externalapi.KType,
+	k []externalapi.KType,
 	genesisHash *externalapi.DomainHash) model.GHOSTDAGManager {
 	return &ghostdagManager{
 		databaseContext:    databaseContext,

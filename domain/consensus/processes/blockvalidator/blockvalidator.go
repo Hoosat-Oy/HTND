@@ -19,11 +19,11 @@ type blockValidator struct {
 	genesisHash                 *externalapi.DomainHash
 	enableNonNativeSubnetworks  bool
 	powMaxBits                  uint32
-	maxBlockMass                uint64
+	maxBlockMass                []uint64
 	mergeSetSizeLimit           uint64
-	maxBlockParents             externalapi.KType
+	maxBlockParents             []externalapi.KType
 	timestampDeviationTolerance int
-	targetTimePerBlock          time.Duration
+	targetTimePerBlock          []time.Duration
 	POWScores                   []uint64
 	maxBlockLevel               int
 
@@ -59,11 +59,11 @@ func New(powMax *big.Int,
 	skipPoW bool,
 	genesisHash *externalapi.DomainHash,
 	enableNonNativeSubnetworks bool,
-	maxBlockMass uint64,
+	maxBlockMass []uint64,
 	mergeSetSizeLimit uint64,
-	maxBlockParents externalapi.KType,
+	maxBlockParents []externalapi.KType,
 	timestampDeviationTolerance int,
-	targetTimePerBlock time.Duration,
+	targetTimePerBlock []time.Duration,
 	POWScores []uint64,
 	maxBlockLevel int,
 

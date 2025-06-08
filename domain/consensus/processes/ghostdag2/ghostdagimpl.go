@@ -9,10 +9,11 @@ import (
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 )
 
 type ghostdagHelper struct {
-	k                  externalapi.KType
+	k                  []externalapi.KType
 	dataStore          model.GHOSTDAGDataStore
 	dbAccess           model.DBReader
 	dagTopologyManager model.DAGTopologyManager
@@ -25,7 +26,7 @@ func New(
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	headerStore model.BlockHeaderStore,
-	k externalapi.KType,
+	k []externalapi.KType,
 	genesisHash *externalapi.DomainHash) model.GHOSTDAGManager {
 
 	return &ghostdagHelper{
@@ -147,7 +148,7 @@ func (gh *ghostdagHelper) divideBlueRed(stagingArea *model.StagingArea,
 	selectedParent *externalapi.DomainHash, desiredBlock *externalapi.DomainHash,
 	blues *[]*externalapi.DomainHash, reds *[]*externalapi.DomainHash, blueSet *[]*externalapi.DomainHash) error {
 
-	var k = int(gh.k)
+	var k = int(gh.k[constants.BlockVersion-1])
 	counter := 0
 
 	var suspectsBlues = make([]*externalapi.DomainHash, 0)
@@ -222,7 +223,7 @@ func (gh *ghostdagHelper) isAnticone(stagingArea *model.StagingArea, blockA, blo
 func (gh *ghostdagHelper) validateKCluster(stagingArea *model.StagingArea, chain *externalapi.DomainHash,
 	checkedBlock *externalapi.DomainHash, counter *int, blueSet *[]*externalapi.DomainHash) (bool, error) {
 
-	var k = int(gh.k)
+	var k = int(gh.k[constants.BlockVersion-1])
 	isAnticone, err := gh.isAnticone(stagingArea, chain, checkedBlock)
 	if err != nil {
 		return false, err
@@ -276,7 +277,7 @@ func (gh *ghostdagHelper) checkIfDestroy(stagingArea *model.StagingArea, blockBl
 	blueSet *[]*externalapi.DomainHash) (bool, error) {
 
 	// Goal: check that the K-cluster of each block in the blueSet is not destroyed when adding the block to the mergeSet.
-	var k = int(gh.k)
+	var k = int(gh.k[constants.BlockVersion-1])
 	counter := 0
 	for _, blue := range *blueSet {
 		isAnticone, err := gh.isAnticone(stagingArea, blue, blockBlue)

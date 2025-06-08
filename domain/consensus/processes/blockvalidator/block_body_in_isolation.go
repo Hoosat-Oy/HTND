@@ -5,6 +5,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/merkle"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/subnetworks"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/transactionhelper"
@@ -225,7 +226,7 @@ func (v *blockValidator) checkBlockMass(block *externalapi.DomainBlock) error {
 
 		massBefore := mass
 		mass += transaction.Mass
-		if mass > v.maxBlockMass || mass < massBefore {
+		if mass > v.maxBlockMass[constants.BlockVersion-1] || mass < massBefore {
 			return errors.Wrapf(ruleerrors.ErrBlockMassTooHigh, "block exceeded the mass limit of %d",
 				v.maxBlockMass)
 		}

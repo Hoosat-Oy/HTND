@@ -11,6 +11,7 @@ import (
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 )
 
 // DifficultyManager provides a method to resolve the
@@ -25,9 +26,9 @@ type difficultyManager struct {
 	dagTraversalManager            model.DAGTraversalManager
 	genesisHash                    *externalapi.DomainHash
 	powMax                         *big.Int
-	difficultyAdjustmentWindowSize int
+	difficultyAdjustmentWindowSize []int
 	disableDifficultyAdjustment    bool
-	targetTimePerBlock             time.Duration
+	targetTimePerBlock             []time.Duration
 	genesisBits                    uint32
 }
 
@@ -39,10 +40,11 @@ func New(databaseContext model.DBReader,
 	daaBlocksStore model.DAABlocksStore,
 	dagTopologyManager model.DAGTopologyManager,
 	dagTraversalManager model.DAGTraversalManager,
+
 	powMax *big.Int,
-	difficultyAdjustmentWindowSize int,
+	difficultyAdjustmentWindowSize []int,
 	disableDifficultyAdjustment bool,
-	targetTimePerBlock time.Duration,
+	targetTimePerBlock []time.Duration,
 	genesisHash *externalapi.DomainHash,
 	genesisBits uint32) model.DifficultyManager {
 	return &difficultyManager{
@@ -77,7 +79,7 @@ func (dm *difficultyManager) StageDAADataAndReturnRequiredDifficulty(
 	onEnd := logger.LogAndMeasureExecutionTime(log, "StageDAADataAndReturnRequiredDifficulty")
 	defer onEnd()
 
-	targetsWindow, windowHashes, err := dm.blockWindow(stagingArea, blockHash, dm.difficultyAdjustmentWindowSize)
+	targetsWindow, windowHashes, err := dm.blockWindow(stagingArea, blockHash, dm.difficultyAdjustmentWindowSize[constants.BlockVersion-1])
 	if err != nil {
 		return 0, err
 	}
@@ -92,7 +94,7 @@ func (dm *difficultyManager) StageDAADataAndReturnRequiredDifficulty(
 
 // RequiredDifficulty returns the difficulty required for some block
 func (dm *difficultyManager) RequiredDifficulty(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint32, error) {
-	targetsWindow, _, err := dm.blockWindow(stagingArea, blockHash, dm.difficultyAdjustmentWindowSize)
+	targetsWindow, _, err := dm.blockWindow(stagingArea, blockHash, dm.difficultyAdjustmentWindowSize[constants.BlockVersion-1])
 	if err != nil {
 		return 0, err
 	}
@@ -112,7 +114,7 @@ func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(targetsWindow b
 	// We could instead clamp the timestamp difference to `targetTimePerBlock`,
 	// but then everything will cancel out and we'll get the target from the last block, which will be the same as genesis.
 	// We add 64 as a safety margin
-	if len(targetsWindow) < 2 || len(targetsWindow) < dm.difficultyAdjustmentWindowSize {
+	if len(targetsWindow) < 2 || len(targetsWindow) < dm.difficultyAdjustmentWindowSize[constants.BlockVersion-1] {
 		return dm.genesisBits, nil
 	}
 
@@ -129,7 +131,7 @@ func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(targetsWindow b
 	newTarget.
 		// We need to clamp the timestamp difference to 1 so that we'll never get a 0 target.
 		Mul(newTarget, div.SetInt64(math.MaxInt64(windowMaxTimeStamp-windowMinTimestamp, 1))).
-		Div(newTarget, div.SetInt64(dm.targetTimePerBlock.Milliseconds())).
+		Div(newTarget, div.SetInt64(dm.targetTimePerBlock[constants.BlockVersion-1].Milliseconds())).
 		Div(newTarget, div.SetUint64(uint64(len(targetsWindow))))
 	if newTarget.Cmp(dm.powMax) > 0 {
 		return difficulty.BigToCompact(dm.powMax), nil

@@ -217,7 +217,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	transactionValidator := transactionvalidator.New(config.BlockCoinbaseMaturity,
 		config.EnableNonNativeSubnetworks,
 		config.MaxCoinbasePayloadLength,
-		config.K[constants.BlockVersion-1],
+		config.K,
 		config.CoinbasePayloadScriptPublicKeyMaxLength,
 		dbManager,
 		pastMedianTimeManager,
@@ -233,9 +233,9 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		dagTopologyManager,
 		dagTraversalManager,
 		config.PowMax,
-		config.DifficultyAdjustmentWindowSize[constants.BlockVersion-1],
+		config.DifficultyAdjustmentWindowSize,
 		config.DisableDifficultyAdjustment,
-		config.TargetTimePerBlock[constants.BlockVersion-1],
+		config.TargetTimePerBlock,
 		config.GenesisHash,
 		config.GenesisBlock.Header.Bits())
 	coinbaseManager := coinbasemanager.New(
@@ -247,7 +247,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.DeflationaryPhaseDaaScore,
 		config.DeflationaryPhaseBaseSubsidy,
 		config.DeflationaryPhaseCurveFactor,
-		config.TargetTimePerBlock[constants.BlockVersion-1],
+		config.TargetTimePerBlock,
 
 		dagTraversalManager,
 		ghostdagDataStore,
@@ -281,7 +281,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		finalityStore)
 	consensusStateManager, err := consensusstatemanager.New(
 		dbManager,
-		config.MaxBlockParents[constants.BlockVersion-1],
+		config.MaxBlockParents,
 		config.MergeSetSizeLimit,
 		genesisHash,
 
@@ -337,9 +337,9 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.FinalityDepth(),
 		config.PruningDepth(),
 		config.EnableSanityCheckPruningUTXOSet,
-		config.K[constants.BlockVersion-1],
-		config.DifficultyAdjustmentWindowSize[constants.BlockVersion-1],
-		config.TargetTimePerBlock[constants.BlockVersion-1],
+		config.K,
+		config.DifficultyAdjustmentWindowSize,
+		config.TargetTimePerBlock,
 	)
 
 	blockValidator := blockvalidator.New(
@@ -347,11 +347,11 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.SkipProofOfWork,
 		genesisHash,
 		config.EnableNonNativeSubnetworks,
-		config.MaxBlockMass[constants.BlockVersion-1],
+		config.MaxBlockMass,
 		config.MergeSetSizeLimit,
-		config.MaxBlockParents[constants.BlockVersion-1],
+		config.MaxBlockParents,
 		config.TimestampDeviationTolerance,
-		config.TargetTimePerBlock[constants.BlockVersion-1],
+		config.TargetTimePerBlock,
 		config.POWScores,
 		config.MaxBlockLevel,
 
@@ -422,7 +422,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 
 	blockProcessor := blockprocessor.New(
 		genesisHash,
-		config.TargetTimePerBlock[constants.BlockVersion-1],
+		config.TargetTimePerBlock,
 		config.MaxBlockLevel,
 		dbManager,
 		consensusStateManager,
@@ -472,7 +472,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		reachabilityDataStore,
 
 		genesisHash,
-		config.K[constants.BlockVersion-1],
+		config.K,
 		config.PruningProofM,
 		config.MaxBlockLevel,
 	)
@@ -484,8 +484,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		genesisBlock: config.GenesisBlock,
 		genesisHash:  config.GenesisHash,
 
-		expectedDAAWindowDurationInMilliseconds: config.TargetTimePerBlock[constants.BlockVersion-1].Milliseconds() *
-			int64(config.DifficultyAdjustmentWindowSize[constants.BlockVersion-1]),
+		expectedDAAWindowDurationInMilliseconds: config.TargetTimePerBlock[constants.BlockVersion-1].Milliseconds() * int64(config.DifficultyAdjustmentWindowSize[constants.BlockVersion-1]),
 
 		blockProcessor:        blockProcessor,
 		blockBuilder:          blockBuilder,
@@ -728,7 +727,7 @@ func (f *factory) dagProcesses(config *Config,
 			dagTopologyManagers[i],
 			ghostdagDataStores[i],
 			blockHeaderStore,
-			config.K[constants.BlockVersion-1],
+			config.K,
 			config.GenesisHash)
 
 		dagTraversalManagers[i] = dagtraversalmanager.New(
@@ -740,7 +739,7 @@ func (f *factory) dagProcesses(config *Config,
 			daaWindowStore,
 			windowHeapSliceStore,
 			config.GenesisHash,
-			config.DifficultyAdjustmentWindowSize[constants.BlockVersion-1])
+			config.DifficultyAdjustmentWindowSize)
 	}
 
 	return dagTopologyManagers, ghostdagManagers, dagTraversalManagers
