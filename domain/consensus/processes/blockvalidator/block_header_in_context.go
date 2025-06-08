@@ -89,18 +89,18 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 	}
 	v.updateBlockVersion(header)
 
-	// TODO: Enable this on block v5 when finding reason for the issue with the block
 	if !isBlockWithTrustedData {
+		// TODO: Enable these on block v5 after finding reason for the issues with the blocks
 		if constants.BlockVersion < 5 {
 			err = v.checkBlueWork(stagingArea, blockHash, header)
 			if err != nil {
 				return err
 			}
-		}
 
-		err = v.checkHeaderBlueScore(stagingArea, blockHash, header)
-		if err != nil {
-			return err
+			err = v.checkHeaderBlueScore(stagingArea, blockHash, header)
+			if err != nil {
+				return err
+			}
 		}
 
 		err = v.validateHeaderPruningPoint(stagingArea, blockHash)
