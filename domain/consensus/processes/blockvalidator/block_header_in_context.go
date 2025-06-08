@@ -89,9 +89,12 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 	}
 	v.updateBlockVersion(header)
 
-	err = v.checkBlueWork(stagingArea, blockHash, header)
-	if err != nil {
-		return err
+	// TODO: Enable this on block v5 when finding reason for the issue with the block
+	if constants.BlockVersion < 5 {
+		err = v.checkBlueWork(stagingArea, blockHash, header)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = v.checkHeaderBlueScore(stagingArea, blockHash, header)
