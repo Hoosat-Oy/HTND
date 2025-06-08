@@ -5,23 +5,24 @@
 package main
 
 import (
+	"log"
+	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"runtime"
-	"runtime/debug"
 
 	"github.com/Hoosat-Oy/HTND/app"
 )
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU()) // Set the maximum number of CPUs that can be executing simultaneously
-	debug.SetGCPercent(100)              // Run GoGC at 100% of the default rate
-	debug.SetMemoryLimit(8_000_000_000)  // Set memory limit to 8GB
-	//runtime.SetBlockProfileRate(1)       // Set block profile rate to 1 to enable block profiling
-	//runtime.SetMutexProfileFraction(1)   // Set mutex profile fraction to 1 to enable mutex profiling
-	// go func() {
-	// 	log.Println(http.ListenAndServe("localhost:6060", nil))
-	// }()
+	//debug.SetGCPercent(200)              // Run GoGC at 200% for less frequent garbage collection
+	//debug.SetMemoryLimit(16_000_000_000) // Set memory soft limit to 16GB
+	//runtime.SetBlockProfileRate(1)     // Set block profile rate to 1 to enable block profiling
+	//runtime.SetMutexProfileFraction(1) // Set mutex profile fraction to 1 to enable mutex profiling
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 	if err := app.StartApp(); err != nil {
 		os.Exit(1)
 	}
