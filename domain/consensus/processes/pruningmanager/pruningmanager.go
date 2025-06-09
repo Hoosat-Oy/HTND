@@ -184,13 +184,18 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 			if err != nil {
 				return err
 			}
-
-			if pm.finalityScore(newPruningPointGHOSTDAGData.BlueScore()) > pm.finalityScore(currentPruningPointGHOSTDAGData.BlueScore())+1 {
-				return errors.Errorf("cannot advance pruning point by more than one finality interval at once")
+			if constants.BlockVersion >= 5 {
+				if pm.pruningScore(newPruningPointGHOSTDAGData.BlueScore()) > pm.pruningScore(currentPruningPointGHOSTDAGData.BlueScore())+1 {
+					return errors.Errorf("cannot advance pruning point by more than one finality interval at once")
+				}
+			} else {
+				if pm.finalityScore(newPruningPointGHOSTDAGData.BlueScore()) > pm.finalityScore(currentPruningPointGHOSTDAGData.BlueScore())+1 {
+					return errors.Errorf("cannot advance pruning point by more than one finality interval at once")
+				}
 			}
 		}
 
-		log.Debugf("Moving pruning point from %s to %s", currentPruningPoint, newPruningPoint)
+		log.Infof("Moving pruning point from %s to %s", currentPruningPoint, newPruningPoint)
 		err = pm.savePruningPoint(stagingArea, newPruningPoint)
 		if err != nil {
 			return err
@@ -340,9 +345,16 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 
 		// We move the pruning point every time the candidate's finality score is
 		// bigger than the current pruning point finality score.
-		if pm.finalityScore(newCandidateGHOSTDAGData.BlueScore()) > pm.finalityScore(newPruningPointGHOSTDAGData.BlueScore()) {
-			newPruningPoint = newCandidate
-			newPruningPointGHOSTDAGData = newCandidateGHOSTDAGData
+		if constants.BlockVersion >= 5 {
+			if pm.pruningScore(newCandidateGHOSTDAGData.BlueScore()) > pm.pruningScore(newPruningPointGHOSTDAGData.BlueScore()) {
+				newPruningPoint = newCandidate
+				newPruningPointGHOSTDAGData = newCandidateGHOSTDAGData
+			}
+		} else {
+			if pm.finalityScore(newCandidateGHOSTDAGData.BlueScore()) > pm.finalityScore(newPruningPointGHOSTDAGData.BlueScore()) {
+				newPruningPoint = newCandidate
+				newPruningPointGHOSTDAGData = newCandidateGHOSTDAGData
+			}
 		}
 	}
 
@@ -940,7 +952,23 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPointsUsi
 // finalityScore is the number of finality intervals passed since
 // the given block.
 func (pm *pruningManager) finalityScore(blueScore uint64) uint64 {
+	if pm.finalityInterval == 0 {
+		return 0
+	}
+	if constants.BlockVersion >= 5 {
+		return uint64(float64(blueScore) / (float64(pm.finalityInterval) * pm.targetTimePerBlock[constants.BlockVersion-1].Seconds()))
+	}
 	return blueScore / pm.finalityInterval
+}
+
+func (pm *pruningManager) pruningScore(bluescore uint64) uint64 {
+	if pm.pruningDepth == 0 {
+		return 0
+	}
+	if constants.BlockVersion >= 5 {
+		return uint64(float64(bluescore) / (float64(pm.pruningDepth) * pm.targetTimePerBlock[constants.BlockVersion-1].Seconds()))
+	}
+	return bluescore / pm.pruningDepth
 }
 
 func (pm *pruningManager) ClearImportedPruningPointData() error {
@@ -1170,7 +1198,13 @@ func (pm *pruningManager) ExpectedHeaderPruningPoint(stagingArea *model.StagingA
 	// Note: the pruning point from the POV of the current block is the first block in its chain that is in depth of pm.pruningDepth and
 	// its finality score is greater than the previous pruning point. This is why the diff between finalityScore(selectedParent.blueScore + 1) * finalityInterval
 	// and the current block blue score is less than pm.pruningDepth we can know for sure that this block didn't trigger a pruning point change.
-	minRequiredBlueScoreForNextPruningPoint := (pm.finalityScore(selectedParentPruningPointHeader.BlueScore()) + 1) * pm.finalityInterval
+
+	var minRequiredBlueScoreForNextPruningPoint uint64
+	if constants.BlockVersion >= 5 {
+		minRequiredBlueScoreForNextPruningPoint = (pm.pruningScore(selectedParentPruningPointHeader.BlueScore()) + 1) * pm.pruningDepth
+	} else {
+		minRequiredBlueScoreForNextPruningPoint = (pm.finalityScore(selectedParentPruningPointHeader.BlueScore()) + 1) * pm.finalityInterval
+	}
 
 	if hasPruningPointInItsSelectedChain &&
 		minRequiredBlueScoreForNextPruningPoint+pm.pruningDepth <= ghostdagData.BlueScore() {
