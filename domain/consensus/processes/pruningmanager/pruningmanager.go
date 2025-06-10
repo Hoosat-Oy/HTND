@@ -636,12 +636,14 @@ func (pm *pruningManager) ArePruningPointsViolatingFinality(stagingArea *model.S
 func (pm *pruningManager) ArePruningPointsInValidChain(stagingArea *model.StagingArea) (bool, error) {
 	lastPruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
 	if err != nil {
+		log.Errorf("pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea): %s", err)
 		return false, err
 	}
 
 	expectedPruningPoints := make([]*externalapi.DomainHash, 0)
 	headersSelectedTip, err := pm.headerSelectedTipStore.HeadersSelectedTip(pm.databaseContext, stagingArea)
 	if err != nil {
+		log.Errorf("pm.headerSelectedTipStore.HeadersSelectedTip(pm.databaseContext, stagingArea): %s", err)
 		return false, err
 	}
 
@@ -649,17 +651,18 @@ func (pm *pruningManager) ArePruningPointsInValidChain(stagingArea *model.Stagin
 	for !current.Equal(lastPruningPoint) {
 		header, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, current)
 		if err != nil {
+			log.Errorf(" pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, current): %s", err)
 			return false, err
 		}
 
 		if len(expectedPruningPoints) == 0 ||
 			!expectedPruningPoints[len(expectedPruningPoints)-1].Equal(header.PruningPoint()) {
-
 			expectedPruningPoints = append(expectedPruningPoints, header.PruningPoint())
 		}
 
 		currentGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current, false)
 		if err != nil {
+			log.Errorf(" pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, current): %s", err)
 			return false, err
 		}
 
@@ -668,31 +671,37 @@ func (pm *pruningManager) ArePruningPointsInValidChain(stagingArea *model.Stagin
 
 	lastPruningPointIndex, err := pm.pruningStore.CurrentPruningPointIndex(pm.databaseContext, stagingArea)
 	if err != nil {
+		log.Errorf("pm.pruningStore.CurrentPruningPointIndex(pm.databaseContext, stagingArea): %s", err)
 		return false, err
 	}
 
 	for i := lastPruningPointIndex; ; i-- {
 		pruningPoint, err := pm.pruningStore.PruningPointByIndex(pm.databaseContext, stagingArea, i)
 		if err != nil {
+			log.Errorf("pm.pruningStore.PruningPointByIndex(pm.databaseContext, stagingArea, i)): %s", err)
 			return false, err
 		}
 
 		header, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, pruningPoint)
 		if err != nil {
+			log.Errorf("pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, pruningPoint): %s", err)
 			return false, err
 		}
 
 		var expectedPruningPoint *externalapi.DomainHash
 		expectedPruningPoint, expectedPruningPoints = expectedPruningPoints[0], expectedPruningPoints[1:]
 		if !pruningPoint.Equal(expectedPruningPoint) {
+			log.Errorf("Pruning point is not expected pruning point.")
 			return false, nil
 		}
 
 		if i == 0 {
 			if len(expectedPruningPoints) != 0 {
+				log.Errorf("Expected pruning points is empty.")
 				return false, nil
 			}
 			if !pruningPoint.Equal(pm.genesisHash) {
+				log.Errorf("Pruning point is genesis block")
 				return false, nil
 			}
 			break
