@@ -139,7 +139,7 @@ func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(targetsWindow b
 	}
 	// Check that the newTarget is below genesis target.
 	genesisTarget := difficulty.CompactToBig(dm.genesisBits)
-	if newTarget.Cmp(genesisTarget) <= 0 {
+	if newTarget.Cmp(genesisTarget) > 0 {
 		newTarget = genesisTarget
 	}
 	// Finally convert target back to bits.
