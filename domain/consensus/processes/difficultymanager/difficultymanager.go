@@ -133,10 +133,18 @@ func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(targetsWindow b
 		Mul(newTarget, div.SetInt64(math.MaxInt64(windowMaxTimeStamp-windowMinTimestamp, 1))).
 		Div(newTarget, div.SetInt64(dm.targetTimePerBlock[constants.BlockVersion-1].Milliseconds())).
 		Div(newTarget, div.SetUint64(uint64(len(targetsWindow))))
+	// Check that newTarget is not above maximums possible target.
 	if newTarget.Cmp(dm.powMax) > 0 {
 		return difficulty.BigToCompact(dm.powMax), nil
 	}
+	// Check that the newTarget is below genesis target.
+	genesisTarget := difficulty.CompactToBig(dm.genesisBits)
+	if newTarget.Cmp(genesisTarget) <= 0 {
+		newTarget = genesisTarget
+	}
+	// Finally convert target back to bits.
 	newTargetBits := difficulty.BigToCompact(newTarget)
+
 	return newTargetBits, nil
 }
 
