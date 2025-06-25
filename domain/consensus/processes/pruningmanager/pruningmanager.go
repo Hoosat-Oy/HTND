@@ -655,8 +655,7 @@ func (pm *pruningManager) ArePruningPointsInValidChain(stagingArea *model.Stagin
 			return false, err
 		}
 
-		if len(expectedPruningPoints) == 0 ||
-			!expectedPruningPoints[len(expectedPruningPoints)-1].Equal(header.PruningPoint()) {
+		if len(expectedPruningPoints) == 0 || !expectedPruningPoints[len(expectedPruningPoints)-1].Equal(header.PruningPoint()) {
 			expectedPruningPoints = append(expectedPruningPoints, header.PruningPoint())
 		}
 
@@ -688,10 +687,15 @@ func (pm *pruningManager) ArePruningPointsInValidChain(stagingArea *model.Stagin
 			return false, err
 		}
 
+		if len(expectedPruningPoints) == 0 {
+			log.Errorf("Expected pruning points list is empty, can't match against stored pruning points")
+			return false, nil
+		}
 		var expectedPruningPoint *externalapi.DomainHash
 		expectedPruningPoint, expectedPruningPoints = expectedPruningPoints[0], expectedPruningPoints[1:]
 		if !pruningPoint.Equal(expectedPruningPoint) {
-			log.Errorf("Pruning point is not expected pruning point.")
+			log.Errorf("Expected pruning points: %v", expectedPruningPoints)
+			log.Errorf("Pruning point %s is not expected pruning point %s at index %d", pruningPoint.String(), expectedPruningPoint.String(), i)
 			return false, nil
 		}
 
