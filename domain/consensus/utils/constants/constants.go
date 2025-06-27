@@ -19,6 +19,7 @@ const (
 	DevFeeMin     = 1
 	DevFeeAddress = "hoosat:qp4ad2eh72xc8dtjjyz4llxzq9utn6k26uyl644xxw70wskdfl85zsqj9k4vz"
 
+	PruningPointsInDepth uint16 = 24
 	// MaxTransactionVersion is the current latest supported transaction version.
 	MaxTransactionVersion uint16 = 0
 

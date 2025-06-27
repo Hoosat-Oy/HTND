@@ -52,6 +52,7 @@ type pruningManager struct {
 
 	cachedPruningPoint         *externalapi.DomainHash
 	cachedPruningPointAnticone []*externalapi.DomainHash
+	pruningPointsInDepth       uint16
 }
 
 // New instantiates a new PruningManager
@@ -116,6 +117,7 @@ func New(
 		k:                               k,
 		difficultyAdjustmentWindowSize:  difficultyAdjustmentWindowSize,
 		targetTimePerBlock:              targetTimePerBlock,
+		pruningPointsInDepth:            constants.PruningPointsInDepth,
 	}
 }
 
@@ -325,7 +327,7 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 			return nil, nil, err
 		}
 		if constants.BlockVersion >= 5 {
-			if float64(ghostdagData.BlueScore()-selectedChildGHOSTDAGData.BlueScore()) < float64(pm.pruningDepth)*pm.targetTimePerBlock[constants.BlockVersion-1].Seconds() {
+			if ghostdagData.BlueScore()-selectedChildGHOSTDAGData.BlueScore() < pm.pruningDepth/uint64(pm.pruningPointsInDepth) {
 				break
 			}
 		} else {
@@ -339,17 +341,9 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 
 		// We move the pruning point every time the candidate's finality score is
 		// bigger than the current pruning point finality score.
-		if constants.BlockVersion >= 5 {
-			// log.Infof("%d > %d", pm.pruningScore(newCandidateGHOSTDAGData.BlueScore()), pm.pruningScore(newPruningPointGHOSTDAGData.BlueScore()))
-			if pm.pruningScore(newCandidateGHOSTDAGData.BlueScore()) > pm.pruningScore(newPruningPointGHOSTDAGData.BlueScore()) {
-				newPruningPoint = newCandidate
-				newPruningPointGHOSTDAGData = newCandidateGHOSTDAGData
-			}
-		} else {
-			if pm.finalityScore(newCandidateGHOSTDAGData.BlueScore()) > pm.finalityScore(newPruningPointGHOSTDAGData.BlueScore()) {
-				newPruningPoint = newCandidate
-				newPruningPointGHOSTDAGData = newCandidateGHOSTDAGData
-			}
+		if pm.finalityScore(newCandidateGHOSTDAGData.BlueScore()) > pm.finalityScore(newPruningPointGHOSTDAGData.BlueScore()) {
+			newPruningPoint = newCandidate
+			newPruningPointGHOSTDAGData = newCandidateGHOSTDAGData
 		}
 	}
 
@@ -963,21 +957,7 @@ func (pm *pruningManager) finalityScore(blueScore uint64) uint64 {
 	if pm.finalityInterval == 0 {
 		return 0
 	}
-	if constants.BlockVersion >= 5 {
-		return uint64(float64(blueScore) / (float64(pm.finalityInterval) * pm.targetTimePerBlock[constants.BlockVersion-1].Seconds()))
-	}
 	return blueScore / pm.finalityInterval
-}
-
-func (pm *pruningManager) pruningScore(bluescore uint64) uint64 {
-	if pm.pruningDepth == 0 {
-		return 0
-	}
-	if constants.BlockVersion >= 5 {
-		//log.Infof("%d / %d", bluescore, uint64((float64(pm.pruningDepth) * pm.targetTimePerBlock[constants.BlockVersion-1].Seconds())))
-		return bluescore / uint64(float64(pm.pruningDepth)*pm.targetTimePerBlock[constants.BlockVersion-1].Seconds())
-	}
-	return bluescore / pm.pruningDepth
 }
 
 func (pm *pruningManager) ClearImportedPruningPointData() error {
