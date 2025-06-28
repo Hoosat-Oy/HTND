@@ -74,6 +74,9 @@ type Config struct {
 	EnableSanityCheckPruningUTXOSet bool
 
 	SkipAddingGenesis bool
+
+	// DeletionDepth specifies the depth for block deletion during pruning
+	DeletionDepth uint64
 }
 
 // Factory instantiates new Consensuses
@@ -336,6 +339,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		genesisHash,
 		config.FinalityDepth(),
 		config.PruningDepth(),
+		config.DeletionDepth,
 		config.EnableSanityCheckPruningUTXOSet,
 		config.K,
 		config.DifficultyAdjustmentWindowSize,

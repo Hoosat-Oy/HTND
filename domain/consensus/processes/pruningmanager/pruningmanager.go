@@ -44,6 +44,7 @@ type pruningManager struct {
 	genesisHash                     *externalapi.DomainHash
 	finalityInterval                uint64
 	pruningDepth                    uint64
+	deletionDepth                   uint64
 	shouldSanityCheckPruningUTXOSet bool
 	k                               []externalapi.KType
 	difficultyAdjustmentWindowSize  []int
@@ -52,7 +53,6 @@ type pruningManager struct {
 
 	cachedPruningPoint         *externalapi.DomainHash
 	cachedPruningPointAnticone []*externalapi.DomainHash
-	pruningPointsInDepth       uint16
 }
 
 // New instantiates a new PruningManager
@@ -82,6 +82,7 @@ func New(
 	genesisHash *externalapi.DomainHash,
 	finalityInterval uint64,
 	pruningDepth uint64,
+	deletionDepth uint64,
 	shouldSanityCheckPruningUTXOSet bool,
 	k []externalapi.KType,
 	difficultyAdjustmentWindowSize []int,
@@ -112,12 +113,12 @@ func New(
 		isArchivalNode:                  isArchivalNode,
 		genesisHash:                     genesisHash,
 		pruningDepth:                    pruningDepth,
+		deletionDepth:                   deletionDepth,
 		finalityInterval:                finalityInterval,
 		shouldSanityCheckPruningUTXOSet: shouldSanityCheckPruningUTXOSet,
 		k:                               k,
 		difficultyAdjustmentWindowSize:  difficultyAdjustmentWindowSize,
 		targetTimePerBlock:              targetTimePerBlock,
-		pruningPointsInDepth:            constants.PruningPointsInDepth,
 	}
 }
 
@@ -1015,6 +1016,32 @@ func (pm *pruningManager) UpdatePruningPointIfRequired() error {
 	return nil
 }
 
+func (pm *pruningManager) CheckIfShouldDeletePastBlocks(stagingArea *model.StagingArea, pruningPoint *externalapi.DomainHash) (bool, *externalapi.DomainHash, error) {
+	pruningPointIndex, err := pm.pruningStore.CurrentPruningPointIndex(pm.databaseContext, stagingArea)
+	if err != nil {
+		return false, nil, err
+	}
+	if pruningPointIndex < pm.deletionDepth {
+		return false, nil, nil
+	}
+	previousDeletionPoint, err := pm.pruningStore.PruningPointByIndex(pm.databaseContext, stagingArea, pruningPointIndex-pm.deletionDepth)
+	if err != nil {
+		return false, nil, err
+	}
+	previousDeletionPointHeader, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, previousDeletionPoint)
+	if err != nil {
+		return false, nil, err
+	}
+	currentPruningPointHeader, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, pruningPoint)
+	if err != nil {
+		return false, nil, err
+	}
+	if currentPruningPointHeader.BlueScore()-previousDeletionPointHeader.BlueScore() < pm.pruningDepth {
+		return false, nil, nil
+	}
+	return true, previousDeletionPoint, nil
+}
+
 func (pm *pruningManager) updatePruningPoint() error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "updatePruningPoint")
 	defer onEnd()
@@ -1047,6 +1074,23 @@ func (pm *pruningManager) updatePruningPoint() error {
 	}
 	if pm.shouldSanityCheckPruningUTXOSet && !pruningPoint.Equal(pm.genesisHash) {
 		err = pm.validateUTXOSetFitsCommitment(stagingArea, pruningPoint)
+		if err != nil {
+			return err
+		}
+	}
+	if constants.BlockVersion >= 5 {
+		delete, deletionPoint, err := pm.CheckIfShouldDeletePastBlocks(stagingArea, pruningPoint)
+		if err != nil {
+			return err
+		}
+		if delete {
+			err = pm.deletePastBlocks(stagingArea, deletionPoint)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		err = pm.deletePastBlocks(stagingArea, pruningPoint)
 		if err != nil {
 			return err
 		}

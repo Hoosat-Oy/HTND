@@ -82,6 +82,7 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 	consensusConfig := consensus.Config{
 		Params:                          *cfg.ActiveNetParams,
 		IsArchival:                      cfg.IsArchivalNode,
+		DeletionDepth:                   cfg.DeletionDepth,
 		EnableSanityCheckPruningUTXOSet: cfg.EnableSanityCheckPruningUTXOSet,
 	}
 	mempoolConfig := mempool.DefaultConfig(&consensusConfig.Params)
