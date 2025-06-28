@@ -326,14 +326,8 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 		if err != nil {
 			return nil, nil, err
 		}
-		if constants.BlockVersion >= 5 {
-			if ghostdagData.BlueScore()-selectedChildGHOSTDAGData.BlueScore() < pm.pruningDepth/uint64(pm.pruningPointsInDepth) {
-				break
-			}
-		} else {
-			if ghostdagData.BlueScore()-selectedChildGHOSTDAGData.BlueScore() < pm.pruningDepth {
-				break
-			}
+		if ghostdagData.BlueScore()-selectedChildGHOSTDAGData.BlueScore() < pm.pruningDepth {
+			break
 		}
 
 		newCandidate = selectedChild
@@ -1056,10 +1050,6 @@ func (pm *pruningManager) updatePruningPoint() error {
 		if err != nil {
 			return err
 		}
-	}
-	err = pm.deletePastBlocks(stagingArea, pruningPoint)
-	if err != nil {
-		return err
 	}
 
 	err = staging.CommitAllChanges(pm.databaseContext, stagingArea)
