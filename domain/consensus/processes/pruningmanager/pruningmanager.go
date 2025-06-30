@@ -569,14 +569,8 @@ func (pm *pruningManager) IsValidPruningPoint(stagingArea *model.StagingArea, bl
 	}
 
 	// A pruning point has to be at depth of at least pm.pruningDepth
-	if constants.BlockVersion >= 5 {
-		if float64(headersSelectedTipGHOSTDAGData.BlueScore()-ghostdagData.BlueScore()) < float64(pm.pruningDepth)*pm.targetTimePerBlock[constants.BlockVersion-1].Seconds() {
-			return false, nil
-		}
-	} else {
-		if headersSelectedTipGHOSTDAGData.BlueScore()-ghostdagData.BlueScore() < pm.pruningDepth {
-			return false, nil
-		}
+	if headersSelectedTipGHOSTDAGData.BlueScore()-ghostdagData.BlueScore() < pm.pruningDepth {
+		return false, nil
 	}
 
 	return true, nil
