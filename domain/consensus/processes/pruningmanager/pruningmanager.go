@@ -1010,30 +1010,30 @@ func (pm *pruningManager) UpdatePruningPointIfRequired() error {
 	return nil
 }
 
-func (pm *pruningManager) CheckIfShouldDeletePastBlocks(stagingArea *model.StagingArea, pruningPoint *externalapi.DomainHash) (bool, *externalapi.DomainHash, error) {
+func (pm *pruningManager) CheckIfShouldDeletePastBlocks(stagingArea *model.StagingArea, pruningPoint *externalapi.DomainHash) (bool, *externalapi.DomainHash) {
 	pruningPointIndex, err := pm.pruningStore.CurrentPruningPointIndex(pm.databaseContext, stagingArea)
 	if err != nil {
-		return false, nil, err
+		return false, nil
 	}
 	if pruningPointIndex < pm.deletionDepth {
-		return false, nil, nil
+		return false, nil
 	}
 	previousDeletionPoint, err := pm.pruningStore.PruningPointByIndex(pm.databaseContext, stagingArea, pruningPointIndex-pm.deletionDepth)
 	if err != nil {
-		return false, nil, err
+		return false, nil
 	}
 	previousDeletionPointHeader, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, previousDeletionPoint)
 	if err != nil {
-		return false, nil, err
+		return false, nil
 	}
 	currentPruningPointHeader, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, pruningPoint)
 	if err != nil {
-		return false, nil, err
+		return false, nil
 	}
 	if currentPruningPointHeader.BlueScore()-previousDeletionPointHeader.BlueScore() < pm.pruningDepth {
-		return false, nil, nil
+		return false, nil
 	}
-	return true, previousDeletionPoint, nil
+	return true, previousDeletionPoint
 }
 
 func (pm *pruningManager) updatePruningPoint() error {
