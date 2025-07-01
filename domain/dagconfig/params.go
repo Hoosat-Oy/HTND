@@ -227,7 +227,6 @@ func (p *Params) PruningDepth() uint64 {
 	} else {
 		return 2*p.FinalityDepth()*p.PruningMultiplier[constants.BlockVersion-1] + 4*p.MergeSetSizeLimit*uint64(p.K[constants.BlockVersion-1]) + 2*uint64(p.K[constants.BlockVersion-1]) + 2
 	}
-
 }
 
 // MainnetParams defines the network parameters for the main Hoosat network.
@@ -403,11 +402,11 @@ var TestnetParamsB5 = Params{
 	PreDeflationaryPhaseBaseSubsidy: defaultPreDeflationaryPhaseBaseSubsidy,
 	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
 	TargetTimePerBlock:              []time.Duration{defaultTargetTimePerBlock, defaultTargetTimePerBlock, defaultTargetTimePerBlock, defaultTargetTimePerBlock, 200 * time.Millisecond},
-	FinalityDuration:                []time.Duration{defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, 21600 * time.Second},
+	FinalityDuration:                []time.Duration{defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, 14400 * time.Second},
 	DifficultyAdjustmentWindowSize:  []int{defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, 264},
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 	POWScores:                       []uint64{5, 15, 25, 30},
-	PruningMultiplier:               []uint64{0, 0, 0, 0, 8},
+	PruningMultiplier:               []uint64{0, 0, 0, 0, 3},
 	MaxBlockMass:                    []uint64{defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, 2_500_000},
 
 	// Consensus rule change deployments.s

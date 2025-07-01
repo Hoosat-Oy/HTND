@@ -197,6 +197,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 		if err != nil {
 			return err
 		}
+		log.Infof("Moving pruning point finished.")
 	}
 
 	return nil

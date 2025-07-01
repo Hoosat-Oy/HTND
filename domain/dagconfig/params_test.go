@@ -7,6 +7,7 @@ package dagconfig
 import (
 	"math"
 	"testing"
+	"time"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 )
@@ -174,4 +175,33 @@ func TestCalculateK(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFinalityDepth(t *testing.T) {
+	var blockVersion = 5
+	var finalityDuration time.Duration = 14400 * time.Second
+	var targetTimePerBlock time.Duration = 250 * time.Millisecond
+	var finalityDepth uint64
+	if blockVersion < 5 {
+		finalityDepth = uint64(finalityDuration / targetTimePerBlock)
+	} else {
+		finalityDepth = uint64(finalityDuration.Seconds() / targetTimePerBlock.Seconds())
+	}
+	t.Errorf("FinalityDepth %d", finalityDepth)
+}
+
+// PruningDepth returns the pruning duration represented in blocks
+func TestPruningDepth(t *testing.T) {
+	var blockVersion = 5
+	var finalityDepth uint64 = 57600
+	var PruningMultiplier uint64 = 3
+	var K uint64 = 40
+	var MergeSetSizeLimit uint64 = 10 * K
+	var pruningDepth uint64
+	if blockVersion < 5 {
+		pruningDepth = 2*finalityDepth + 4*MergeSetSizeLimit*uint64(K) + 2*uint64(K) + 2
+	} else {
+		pruningDepth = 2*finalityDepth*PruningMultiplier + 4*MergeSetSizeLimit*uint64(K) + 2*uint64(K) + 2
+	}
+	t.Errorf("PruningDepth %d", pruningDepth)
 }
