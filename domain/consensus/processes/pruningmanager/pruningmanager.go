@@ -1073,10 +1073,7 @@ func (pm *pruningManager) updatePruningPoint() error {
 		}
 	}
 	if constants.BlockVersion >= 5 {
-		delete, deletionPoint, err := pm.CheckIfShouldDeletePastBlocks(stagingArea, pruningPoint)
-		if err != nil {
-			return err
-		}
+		delete, deletionPoint, _ := pm.CheckIfShouldDeletePastBlocks(stagingArea, pruningPoint)
 		if delete {
 			err = pm.deletePastBlocks(stagingArea, deletionPoint)
 			if err != nil {
