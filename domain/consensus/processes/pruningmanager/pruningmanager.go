@@ -328,6 +328,7 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 		if err != nil {
 			return nil, nil, err
 		}
+		// log.Infof("ghostdagData.BlueScore()-selectedChildGHOSTDAGData.BlueScore() %d < pm.pruningDepth %d", ghostdagData.BlueScore()-selectedChildGHOSTDAGData.BlueScore(), pm.pruningDepth)
 		if ghostdagData.BlueScore()-selectedChildGHOSTDAGData.BlueScore() < pm.pruningDepth {
 			break
 		}
@@ -337,6 +338,7 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 
 		// We move the pruning point every time the candidate's finality score is
 		// bigger than the current pruning point finality score.
+		// log.Infof("pm.finalityScore(newCandidateGHOSTDAGData.BlueScore()) %d > pm.finalityScore(newPruningPointGHOSTDAGData.BlueScore()) %d", pm.finalityScore(newCandidateGHOSTDAGData.BlueScore()), pm.finalityScore(newPruningPointGHOSTDAGData.BlueScore()))
 		if pm.finalityScore(newCandidateGHOSTDAGData.BlueScore()) > pm.finalityScore(newPruningPointGHOSTDAGData.BlueScore()) {
 			newPruningPoint = newCandidate
 			newPruningPointGHOSTDAGData = newCandidateGHOSTDAGData
@@ -1001,17 +1003,20 @@ func (pm *pruningManager) UpdatePruningPointIfRequired() error {
 		return nil
 	}
 
-	log.Debugf("Pruning point UTXO set update is required")
+	log.Infof("Pruning point UTXO set update is required")
 	err = pm.updatePruningPoint()
 	if err != nil {
 		return err
 	}
-	log.Debugf("Pruning point UTXO set updated")
+	log.Info("Pruning point UTXO set updated")
 
 	return nil
 }
 
 func (pm *pruningManager) CheckIfShouldDeletePastBlocks(stagingArea *model.StagingArea, pruningPoint *externalapi.DomainHash) (bool, *externalapi.DomainHash) {
+	if pm.deletionDepth == 0 {
+		return true, pruningPoint
+	}
 	pruningPointIndex, err := pm.pruningStore.CurrentPruningPointIndex(pm.databaseContext, stagingArea)
 	if err != nil {
 		return false, nil
@@ -1073,19 +1078,19 @@ func (pm *pruningManager) updatePruningPoint() error {
 			return err
 		}
 	}
-	if constants.BlockVersion >= 5 {
-		delete, deletionPoint := pm.CheckIfShouldDeletePastBlocks(stagingArea, pruningPoint)
-		if delete {
-			err = pm.deletePastBlocks(stagingArea, deletionPoint)
-			if err != nil {
-				return err
-			}
-		}
-	} else {
-		err = pm.deletePastBlocks(stagingArea, pruningPoint)
-		if err != nil {
-			return err
-		}
+	log.Infof("Deletion Depth: %d", pm.deletionDepth)
+	// if constants.BlockVersion >= 5 {
+	// 	delete, deletionPoint := pm.CheckIfShouldDeletePastBlocks(stagingArea, pruningPoint)
+	// 	if delete {
+	// 		err = pm.deletePastBlocks(stagingArea, deletionPoint)
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 	}
+	// }
+	err = pm.deletePastBlocks(stagingArea, pruningPoint)
+	if err != nil {
+		return err
 	}
 
 	err = staging.CommitAllChanges(pm.databaseContext, stagingArea)
