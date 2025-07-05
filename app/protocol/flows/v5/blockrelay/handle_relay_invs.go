@@ -126,14 +126,17 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 		if flow.IsIBDRunning() {
-			isNearlySynced, err := flow.IsNearlySynced()
-			if err != nil {
-				return err
-			}
-			if !isNearlySynced {
-				log.Debugf("Got block while in IBD and the node is out of sync. Continuing...")
-				continue
-			}
+			time.Sleep(250 * time.Millisecond)
+			flow.unreadInv(inv)
+			continue
+			// isNearlySynced, err := flow.IsNearlySynced()
+			// if err != nil {
+			// 	return err
+			// }
+			// if !isNearlySynced {
+			// 	log.Debugf("Got block while in IBD and the node is out of sync. Continuing...")
+			// 	continue
+			// }
 		}
 
 		log.Debugf("Got relay inv for block %s", inv.Hash)
@@ -345,6 +348,10 @@ func (flow *handleRelayInvsFlow) readInv() (invRelayBlock, error) {
 		return invRelayBlock{}, protocolerrors.Errorf(true, "unexpected %s message in the block relay handleRelayInvsFlow while expecting an inv message", msg.Command())
 	}
 	return invRelayBlock{Hash: msgInv.Hash, IsOrphanRoot: false}, nil
+}
+
+func (flow *handleRelayInvsFlow) unreadInv(inv invRelayBlock) {
+	flow.invsQueue = append([]invRelayBlock{inv}, flow.invsQueue...)
 }
 
 func (flow *handleRelayInvsFlow) requestBlock(requestHash *externalapi.DomainHash) (*externalapi.DomainBlock, bool, error) {
