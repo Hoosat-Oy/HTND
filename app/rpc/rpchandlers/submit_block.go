@@ -23,6 +23,11 @@ func HandleSubmitBlock(context *rpccontext.Context, _ *router.Router, request ap
 		return nil, fmt.Errorf("invalid request type: expected *appmessage.SubmitBlockRequestMessage")
 	}
 
+	// Check node sync status
+	if err := checkNodeSyncStatus(context); err != nil {
+		return newErrorResponse(err, appmessage.RejectReasonIsInIBD), nil
+	}
+
 	// Validate block version
 	if err := validateBlockVersion(context, submitBlockRequest); err != nil {
 		return newErrorResponse(err, appmessage.RejectReasonBlockInvalid), nil
@@ -31,11 +36,6 @@ func HandleSubmitBlock(context *rpccontext.Context, _ *router.Router, request ap
 	// Validate Proof of Work
 	if err := validatePoW(context, submitBlockRequest); err != nil {
 		return newErrorResponse(err, appmessage.RejectReasonBlockInvalid), nil
-	}
-
-	// Check node sync status
-	if err := checkNodeSyncStatus(context); err != nil {
-		return newErrorResponse(err, appmessage.RejectReasonIsInIBD), nil
 	}
 
 	// Convert and validate block
@@ -100,6 +100,10 @@ func checkNodeSyncStatus(context *rpccontext.Context) error {
 
 	if !context.ProtocolManager.Context().HasPeers() {
 		return fmt.Errorf("node is not synced - no peers connected")
+	}
+
+	if context.ProtocolManager.Context().IsIBDRunning() {
+		return fmt.Errorf("node is not synced - IBD running")
 	}
 
 	isSynced, err := context.ProtocolManager.Context().IsNearlySynced()
