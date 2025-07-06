@@ -1,17 +1,20 @@
 package ldb
 
-import "github.com/syndtr/goleveldb/leveldb/opt"
+import (
+	"github.com/syndtr/goleveldb/leveldb/filter"
+	"github.com/syndtr/goleveldb/leveldb/opt"
+)
 
 // Options returns a leveldb opt.Options struct optimized for Kaspa's high block rate.
 func Options() opt.Options {
 	return opt.Options{
-		Compression:            opt.SnappyCompression, // Use Snappy to reduce I/O
-		NoSync:                 true,                  // Keep for write throughput
-		WriteBuffer:            32 * opt.MiB,          // Smaller buffer for smaller SSTs
-		BlockCacheCapacity:     512 * opt.MiB,         // Keep for read performance
-		OpenFilesCacheCapacity: 512,                   // Reduce slightly to limit open files
-		BlockRestartInterval:   8,                     // Keep for faster read scans
-		CompactionTableSize:    8 * opt.MiB,           // Smaller tables for faster compactions
-		CompactionTotalSize:    1024 * opt.MiB,        // Smaller total size to trigger compactions sooner
+		Compression:            opt.SnappyCompression,     // Good for reducing I/O
+		NoSync:                 true,                      // Boosts write throughput, but risks data loss
+		WriteBuffer:            64 * opt.MiB,              // Larger write buffer for batch writes
+		BlockCacheCapacity:     128 * opt.MiB,             // Cache for read-heavy operations
+		OpenFilesCacheCapacity: 500,                       // Handle many open files
+		CompactionTableSize:    32 * opt.MiB,              // Larger tables reduce compaction frequency
+		CompactionTotalSize:    256 * opt.MiB,             // Delay compaction for larger levels
+		Filter:                 filter.NewBloomFilter(10), // Bloom filter for read efficiency
 	}
 }
