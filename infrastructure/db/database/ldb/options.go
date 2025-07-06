@@ -13,8 +13,8 @@ func Options() opt.Options {
 		WriteBuffer:            64 * opt.MiB,              // Larger write buffer for batch writes
 		BlockCacheCapacity:     128 * opt.MiB,             // Cache for read-heavy operations
 		OpenFilesCacheCapacity: 500,                       // Handle many open files
-		CompactionTableSize:    32 * opt.MiB,              // Larger tables reduce compaction frequency
-		CompactionTotalSize:    256 * opt.MiB,             // Delay compaction for larger levels
+		CompactionTableSize:    16 * opt.MiB,              // Larger tables reduce compaction frequency
+		CompactionTotalSize:    128 * opt.MiB,             // Delay compaction for larger levels
 		Filter:                 filter.NewBloomFilter(10), // Bloom filter for read efficiency
 	}
 }

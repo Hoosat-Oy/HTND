@@ -126,17 +126,14 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 		if flow.IsIBDRunning() {
-			time.Sleep(250 * time.Millisecond)
-			flow.unreadInv(inv)
-			continue
-			// isNearlySynced, err := flow.IsNearlySynced()
-			// if err != nil {
-			// 	return err
-			// }
-			// if !isNearlySynced {
-			// 	log.Debugf("Got block while in IBD and the node is out of sync. Continuing...")
-			// 	continue
-			// }
+			isNearlySynced, err := flow.IsNearlySynced()
+			if err != nil {
+				return err
+			}
+			if !isNearlySynced {
+				log.Debugf("Got block while in IBD and the node is out of sync. Continuing...")
+				continue
+			}
 		}
 
 		log.Debugf("Got relay inv for block %s", inv.Hash)
@@ -312,9 +309,9 @@ func (flow *handleRelayInvsFlow) start() error {
 			}
 		}
 		txslen := len(block.Transactions)
-		log.Infof("Accepted relayed block from node %s", flow.netConnection.Address())
-		log.Infof("Accepted block %s via relay with %d tx", inv.Hash, txslen)
-		log.Infof("Accepted PoW hash %s", block.PoWHash)
+		log.Debugf("Accepted relayed block from node %s", flow.netConnection.Address())
+		log.Debugf("Accepted block %s via relay with %d tx", inv.Hash, txslen)
+		log.Debugf("Accepted PoW hash %s", block.PoWHash)
 		err = flow.OnNewBlock(block)
 		if err != nil {
 			return err
