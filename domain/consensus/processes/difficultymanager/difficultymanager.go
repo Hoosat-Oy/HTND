@@ -137,11 +137,11 @@ func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(targetsWindow b
 	if newTarget.Cmp(dm.powMax) > 0 {
 		return difficulty.BigToCompact(dm.powMax), nil
 	}
-	// Check that the newTarget is below genesis target.
-	genesisTarget := difficulty.CompactToBig(dm.genesisBits)
-	if newTarget.Cmp(genesisTarget) > 0 {
-		newTarget = genesisTarget
-	}
+	// Check that the newTarget is below minimum target.
+	// genesisTarget := difficulty.CompactToBig(dm.genesisBits)
+	// if newTarget.Cmp(genesisTarget) > 0 {
+	// 	newTarget = genesisTarget
+	// }
 	// Finally convert target back to bits.
 	newTargetBits := difficulty.BigToCompact(newTarget)
 
