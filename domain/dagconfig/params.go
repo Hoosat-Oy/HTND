@@ -473,12 +473,12 @@ var TestnetParamsB10 = Params{
 	PreDeflationaryPhaseBaseSubsidy: defaultPreDeflationaryPhaseBaseSubsidy,
 	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
 	TargetTimePerBlock:              []time.Duration{defaultTargetTimePerBlock, defaultTargetTimePerBlock, defaultTargetTimePerBlock, defaultTargetTimePerBlock, 100 * time.Millisecond},
-	FinalityDuration:                []time.Duration{defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, 43200 * time.Second},
-	DifficultyAdjustmentWindowSize:  []int{defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, 264},
+	FinalityDuration:                []time.Duration{defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, 28800 * time.Second},
+	DifficultyAdjustmentWindowSize:  []int{defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize},
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 	POWScores:                       []uint64{5, 15, 25, 30},
-	PruningMultiplier:               []uint64{0, 0, 0, 0, 2},
-	MaxBlockMass:                    []uint64{defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, 5_000_000},
+	PruningMultiplier:               []uint64{0, 0, 0, 0, 3},
+	MaxBlockMass:                    []uint64{defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, 1_000_000},
 
 	// Consensus rule change deployments.
 	//
