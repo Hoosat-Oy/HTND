@@ -126,14 +126,18 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 		if flow.IsIBDRunning() {
-			isNearlySynced, err := flow.IsNearlySynced()
-			if err != nil {
-				return err
-			}
-			if !isNearlySynced {
-				log.Debugf("Got block while in IBD and the node is out of sync. Continuing...")
-				continue
-			}
+			flow.unreadInv(inv)
+			time.Sleep(100 * time.Millisecond)
+			log.Debugf("Unread inv hash, because IBD is in progress, %s.", inv.Hash)
+			continue
+			// isNearlySynced, err := flow.IsNearlySynced()
+			// if err != nil {
+			// 	return err
+			// }
+			// if !isNearlySynced {
+			// 	log.Debugf("Got block while in IBD and the node is out of sync. Continuing...")
+			// 	continue
+			// }
 		}
 
 		log.Debugf("Got relay inv for block %s", inv.Hash)
