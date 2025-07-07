@@ -10,6 +10,7 @@ func Options() opt.Options {
 	return opt.Options{
 		Compression: opt.SnappyCompression,     // Good for reducing I/O
 		NoSync:      true,                      // Boosts write throughput, but risks data loss
+		WriteBuffer: 8 * opt.MiB,               // Double Write buffer
 		Filter:      filter.NewBloomFilter(10), // Bloom filter for read efficiency
 	}
 }
