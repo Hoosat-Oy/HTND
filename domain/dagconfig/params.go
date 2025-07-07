@@ -510,7 +510,7 @@ var TestnetParamsB10 = Params{
 	MassPerTxByte:                           defaultMassPerTxByte,
 	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
 	MassPerSigOp:                            defaultMassPerSigOp,
-	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
+	MergeSetSizeLimit:                       defaultMergeSetSizeLimit * 10,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
