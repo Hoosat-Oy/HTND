@@ -8,13 +8,8 @@ import (
 // Options returns a leveldb opt.Options struct optimized for Kaspa's high block rate.
 func Options() opt.Options {
 	return opt.Options{
-		Compression:            opt.SnappyCompression,     // Good for reducing I/O
-		NoSync:                 true,                      // Boosts write throughput, but risks data loss
-		WriteBuffer:            64 * opt.MiB,              // Larger write buffer for batch writes
-		BlockCacheCapacity:     128 * opt.MiB,             // Cache for read-heavy operations
-		OpenFilesCacheCapacity: 500,                       // Handle many open files
-		CompactionTableSize:    16 * opt.MiB,              // Larger tables reduce compaction frequency
-		CompactionTotalSize:    128 * opt.MiB,             // Delay compaction for larger levels
-		Filter:                 filter.NewBloomFilter(10), // Bloom filter for read efficiency
+		Compression: opt.SnappyCompression,     // Good for reducing I/O
+		NoSync:      true,                      // Boosts write throughput, but risks data loss
+		Filter:      filter.NewBloomFilter(10), // Bloom filter for read efficiency
 	}
 }
