@@ -640,9 +640,6 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		return err
 	}
 	if len(hashes) == 0 {
-		// Blocks can be inserted inside the DAG during IBD if those were requested before IBD started.
-		// In rare cases, all the IBD blocks might be already inserted by the time we reach this point.
-		// In these cases - GetMissingBlockBodyHashes would return an empty array.
 		log.Debugf("No missing block body hashes found.")
 		return nil
 	}
@@ -658,7 +655,9 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 	progressReporter := newIBDProgressReporter(lowBlockHeader.DAAScore(), highBlockHeader.DAAScore(), "blocks")
 	highestProcessedDAAScore := lowBlockHeader.DAAScore()
 
-	// If the IBD is small, we want to update the virtual after each block in order to avoid complications and possible bugs.
+	// Cache to store received blocks
+	receivedBlocks := make(map[externalapi.DomainHash]*externalapi.DomainBlock)
+
 	updateVirtual, err := flow.Domain().Consensus().IsNearlySynced()
 	if err != nil {
 		return err
@@ -672,12 +671,14 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 			hashesToRequest = hashes[offset:]
 		}
 
+		// Request blocks
 		err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDBlocks(hashesToRequest))
 		if err != nil {
 			return err
 		}
 
-		for _, expectedHash := range hashesToRequest {
+		// Dequeue all messages for the requested hashes
+		for i := 0; i < len(hashesToRequest); i++ {
 			message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 			if err != nil {
 				return err
@@ -691,10 +692,18 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 
 			block := appmessage.MsgBlockToDomainBlock(msgIBDBlock.MsgBlock)
 			blockHash := consensushashing.BlockHash(block)
-			if !expectedHash.Equal(blockHash) {
-				return protocolerrors.Errorf(true, "expected block %s but got %s", expectedHash, blockHash)
+			receivedBlocks[*blockHash] = block
+			log.Debugf("Received block %s and stored in cache", blockHash)
+		}
+
+		// Process blocks in the order of expected hashes
+		for _, expectedHash := range hashesToRequest {
+			block, exists := receivedBlocks[*expectedHash]
+			if !exists {
+				return protocolerrors.Errorf(true, "expected block %s not found in received blocks", expectedHash)
 			}
 
+			// Process the block
 			err = flow.banIfBlockIsHeaderOnly(block)
 			if err != nil {
 				return err
@@ -706,13 +715,13 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, updateVirtual, powSkip)
 			if err != nil {
 				if !errors.As(err, &ruleerrors.RuleError{}) {
-					return errors.Wrapf(err, "failed to process header %s during IBD", blockHash)
+					return errors.Wrapf(err, "failed to process header %s during IBD", expectedHash)
 				}
 				if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-					log.Debugf("Skipping block header %s as it is a duplicate", blockHash)
+					log.Debugf("Skipping block header %s as it is a duplicate", expectedHash)
 				} else {
-					log.Infof("Rejected block header %s from %s during IBD: %s", blockHash, flow.peer, err)
-					return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", blockHash)
+					log.Infof("Rejected block header %s from %s during IBD: %s", expectedHash, flow.peer, err)
+					return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", expectedHash)
 				}
 			}
 			err = flow.OnNewBlock(block)
@@ -721,12 +730,12 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 			}
 
 			highestProcessedDAAScore = block.Header.DAAScore()
+			delete(receivedBlocks, *expectedHash) // Clean up cache
 		}
 
 		progressReporter.reportProgress(len(hashesToRequest), highestProcessedDAAScore)
 	}
 
-	// We need to resolve virtual only if it wasn't updated while syncing block bodies
 	if !updateVirtual {
 		err := flow.resolveVirtual(highestProcessedDAAScore)
 		if err != nil {
