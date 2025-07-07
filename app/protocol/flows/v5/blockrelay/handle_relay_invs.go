@@ -126,9 +126,9 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 		if flow.IsIBDRunning() {
-			flow.unreadInv(inv)
+			// flow.unreadInv(inv)
 			time.Sleep(100 * time.Millisecond)
-			log.Debugf("Unread inv hash, because IBD is in progress, %s.", inv.Hash)
+			log.Debugf("Skipping inv hash %s while IBD is in progress.", inv.Hash)
 			continue
 			// isNearlySynced, err := flow.IsNearlySynced()
 			// if err != nil {
