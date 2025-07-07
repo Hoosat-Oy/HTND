@@ -506,7 +506,7 @@ var TestnetParamsB10 = Params{
 	DisableDifficultyAdjustment: false,
 
 	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
-	MaxBlockParents:                         []externalapi.KType{defaultMaxBlockParents, defaultMaxBlockParents, defaultMaxBlockParents, defaultMaxBlockParents, 10},
+	MaxBlockParents:                         []externalapi.KType{defaultMaxBlockParents, defaultMaxBlockParents, defaultMaxBlockParents, defaultMaxBlockParents, 16},
 	MassPerTxByte:                           defaultMassPerTxByte,
 	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
 	MassPerSigOp:                            defaultMassPerSigOp,
@@ -516,7 +516,7 @@ var TestnetParamsB10 = Params{
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 
 	MaxBlockLevel: 250,
-	MergeDepth:    defaultMergeDepth,
+	MergeDepth:    defaultMergeDepth * 10,
 }
 
 // SimnetParams defines the network parameters for the simulation test Hoosat
