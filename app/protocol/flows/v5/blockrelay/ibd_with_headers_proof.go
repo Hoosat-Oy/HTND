@@ -262,7 +262,7 @@ func (flow *handleIBDFlow) syncPruningPointsAndPruningPointAnticone(proofPruning
 
 		// We're using i+2 because we want to check if the next block will belong to the next batch, but we already downloaded
 		// the pruning point outside the loop so we use i+2 instead of i+1.
-		if (i+2)%ibdBatchSize == 0 {
+		if (i+2)%getIBDBatchSize() == 0 {
 			log.Infof("Downloaded %d blocks from the pruning point anticone", i+1)
 			err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestNextPruningPointAndItsAnticoneBlocks())
 			if err != nil {

@@ -80,7 +80,7 @@ func (flow *handleRequestPruningPointUTXOSetFlow) waitForRequestPruningPointUTXO
 
 func (flow *handleRequestPruningPointUTXOSetFlow) sendPruningPointUTXOSet(
 	msgRequestPruningPointUTXOSet *appmessage.MsgRequestPruningPointUTXOSet) error {
-
+	ibdBatchSize := getIBDBatchSize()
 	// Send the UTXO set in `step`-sized chunks
 	const step = 1000
 	var fromOutpoint *externalapi.DomainOutpoint

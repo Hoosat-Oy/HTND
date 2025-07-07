@@ -4,6 +4,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/app/protocol/peer"
 	"github.com/Hoosat-Oy/HTND/app/protocol/protocolerrors"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
 	"github.com/Hoosat-Oy/HTND/domain"
@@ -12,7 +13,12 @@ import (
 
 // This constant must be equal at both syncer and syncee. Therefore, never (!!) change this constant unless a new p2p
 // version is introduced. See `TestIBDBatchSizeLessThanRouteCapacity` as well.
-const ibdBatchSize = 99
+func getIBDBatchSize() int {
+	if constants.BlockVersion == 5 {
+		return 500
+	}
+	return 99
+}
 
 // RequestHeadersContext is the interface for the context needed for the HandleRequestHeaders flow.
 type RequestHeadersContext interface {

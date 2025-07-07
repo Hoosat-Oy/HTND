@@ -134,7 +134,7 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 					return err
 				}
 
-				if (i+1)%ibdBatchSize == 0 {
+				if (i+1)%getIBDBatchSize() == 0 {
 					// No timeout here, as we don't care if the syncee takes its time computing,
 					// since it only blocks this dedicated flow
 					message, err := incomingRoute.Dequeue()

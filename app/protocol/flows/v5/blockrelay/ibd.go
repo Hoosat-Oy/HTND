@@ -605,7 +605,7 @@ func (flow *handleIBDFlow) receiveAndInsertPruningPointUTXOSet(
 			}
 
 			receivedChunkCount++
-			if receivedChunkCount%ibdBatchSize == 0 {
+			if receivedChunkCount%getIBDBatchSize() == 0 {
 				log.Infof("Received %d UTXO set chunks so far, totaling in %d UTXOs",
 					receivedChunkCount, receivedUTXOCount)
 
@@ -663,7 +663,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 	if err != nil {
 		return err
 	}
-
+	ibdBatchSize := getIBDBatchSize()
 	for offset := 0; offset < len(hashes); offset += ibdBatchSize {
 		var hashesToRequest []*externalapi.DomainHash
 		if offset+ibdBatchSize < len(hashes) {
