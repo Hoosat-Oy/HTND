@@ -658,6 +658,8 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 
 	// Cache to store received blocks
 	receivedBlocks := make(map[externalapi.DomainHash]*externalapi.DomainBlock)
+
+	updateVirtual := false
 	ibdBatchSize := getIBDBatchSize()
 	for offset := 0; offset < len(hashes); offset += ibdBatchSize {
 		var hashesToRequest []*externalapi.DomainHash
@@ -700,8 +702,10 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 			if !exists {
 				return protocolerrors.Errorf(true, "expected block %s not found in received blocks", expectedHash)
 			}
-
-			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, false, true)
+			if expectedHash == hashesToRequest[len(hashesToRequest)-1] {
+				updateVirtual = true
+			}
+			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, updateVirtual, true)
 			if err != nil {
 				if !errors.As(err, &ruleerrors.RuleError{}) {
 					return errors.Wrapf(err, "failed to process header %s during IBD", expectedHash)
@@ -723,6 +727,13 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		}
 
 		progressReporter.reportProgress(len(hashesToRequest), highestProcessedDAAScore)
+	}
+
+	if !updateVirtual {
+		err := flow.resolveVirtual(highestProcessedDAAScore)
+		if err != nil {
+			return err
+		}
 	}
 
 	return flow.OnNewBlockTemplate()
