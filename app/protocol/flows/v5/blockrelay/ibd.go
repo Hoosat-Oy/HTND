@@ -318,7 +318,7 @@ func (flow *handleIBDFlow) logIBDFinished(isFinishedSuccessfully bool, err error
 		if err != nil {
 			successString = fmt.Sprintf("(interrupted: %s)", err)
 		} else {
-			successString = fmt.Sprintf("(interrupted)")
+			successString = "(interrupted)"
 		}
 	}
 	log.Infof("IBD with peer %s finished %s", flow.peer, successString)
@@ -658,11 +658,6 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 
 	// Cache to store received blocks
 	receivedBlocks := make(map[externalapi.DomainHash]*externalapi.DomainBlock)
-
-	updateVirtual, err := flow.Domain().Consensus().IsNearlySynced()
-	if err != nil {
-		return err
-	}
 	ibdBatchSize := getIBDBatchSize()
 	for offset := 0; offset < len(hashes); offset += ibdBatchSize {
 		var hashesToRequest []*externalapi.DomainHash
@@ -706,12 +701,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 				return protocolerrors.Errorf(true, "expected block %s not found in received blocks", expectedHash)
 			}
 
-			// Process the block
-			err = flow.banIfBlockIsHeaderOnly(block)
-			if err != nil {
-				return err
-			}
-			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, updateVirtual, true)
+			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, false, true)
 			if err != nil {
 				if !errors.As(err, &ruleerrors.RuleError{}) {
 					return errors.Wrapf(err, "failed to process header %s during IBD", expectedHash)
