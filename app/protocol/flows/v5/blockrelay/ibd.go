@@ -659,6 +659,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 	// Cache to store received blocks
 	receivedBlocks := make(map[externalapi.DomainHash]*externalapi.DomainBlock)
 
+	updateVirtual := false
 	ibdBatchSize := getIBDBatchSize()
 	for offset := 0; offset < len(hashes); offset += ibdBatchSize {
 		var hashesToRequest []*externalapi.DomainHash
@@ -673,7 +674,6 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		if err != nil {
 			return err
 		}
-
 		// Dequeue all messages for the requested hashes
 		for i := 0; i < len(hashesToRequest); i++ {
 			message, err := flow.incomingRoute.DequeueWithTimeout(120 * time.Second)
@@ -725,7 +725,12 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		progressReporter.reportProgress(len(hashesToRequest), highestProcessedDAAScore)
 	}
 	log.Infof("Resolving virtual")
-	// Remove the redundant resolveVirtual call since updateVirtual handles it for the last block
+	if !updateVirtual {
+		err := flow.resolveVirtual(highestProcessedDAAScore)
+		if err != nil {
+			return err
+		}
+	}
 	log.Infof("Virtual resolved")
 
 	return flow.OnNewBlockTemplate()
