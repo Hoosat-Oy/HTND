@@ -10,7 +10,7 @@ func Options() opt.Options {
 	return opt.Options{
 		Compression:        opt.SnappyCompression,     // Good for reducing I/O
 		NoSync:             true,                      // Boosts write throughput, but risks data loss
-		WriteBuffer:        256 * opt.MiB,             // Larger write buffer for batch writes
+		WriteBuffer:        8 * opt.MiB,               // Larger write buffer for batch writes
 		BlockCacheCapacity: 1024 * opt.MiB,            // Cache for read-heavy operations
 		Filter:             filter.NewBloomFilter(10), // Bloom filter for read efficiency
 	}
