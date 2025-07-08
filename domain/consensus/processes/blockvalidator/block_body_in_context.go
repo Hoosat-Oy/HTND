@@ -177,7 +177,7 @@ func (v *blockValidator) checkCoinbaseSubsidy(stagingArea *model.StagingArea, bl
 
 	if expectedSubsidy != subsidy {
 		return errors.Wrapf(ruleerrors.ErrWrongCoinbaseSubsidy, "the subsidy specified on the coinbase of %s is "+
-			"wrong: expected %d but got %d", blockHash, expectedSubsidy, subsidy)
+			"wrong: expected %d but got %d, blocks version %d", blockHash, expectedSubsidy, subsidy, block.Header.Version())
 	}
 
 	return nil

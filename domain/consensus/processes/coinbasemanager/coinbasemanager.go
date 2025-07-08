@@ -110,7 +110,7 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 		}
 	}
 
-	subsidy, err := c.CalcBlockSubsidy(stagingArea, blockHash, constants.BlockVersion-1)
+	subsidy, err := c.CalcBlockSubsidy(stagingArea, blockHash, constants.BlockVersion)
 	if err != nil {
 		return nil, false, err
 	}
