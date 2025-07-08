@@ -659,7 +659,6 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 	// Cache to store received blocks
 	receivedBlocks := make(map[externalapi.DomainHash]*externalapi.DomainBlock)
 
-	updateVirtual := false
 	ibdBatchSize := getIBDBatchSize()
 	for offset := 0; offset < len(hashes); offset += ibdBatchSize {
 		var hashesToRequest []*externalapi.DomainHash
@@ -694,14 +693,13 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		}
 
 		// Process blocks in the order of expected hashes
-		for index, expectedHash := range hashesToRequest {
+		for _, expectedHash := range hashesToRequest {
 			block, exists := receivedBlocks[*expectedHash]
 			if !exists {
 				return protocolerrors.Errorf(true, "expected block %s not found in received blocks", expectedHash)
 			}
 			// Set updateVirtual to true only for the last block in the entire hashes list
-			updateVirtual := (offset + index) == len(hashes)-1
-			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, updateVirtual, true)
+			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, false, true)
 			if err != nil {
 				if !errors.As(err, &ruleerrors.RuleError{}) {
 					return errors.Wrapf(err, "failed to process header %s during IBD", expectedHash)
@@ -724,11 +722,9 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 
 		progressReporter.reportProgress(len(hashesToRequest), highestProcessedDAAScore)
 	}
-	if !updateVirtual {
-		err := flow.resolveVirtual(highestProcessedDAAScore)
-		if err != nil {
-			return err
-		}
+	err = flow.resolveVirtual(highestProcessedDAAScore)
+	if err != nil {
+		return err
 	}
 
 	return flow.OnNewBlockTemplate()
