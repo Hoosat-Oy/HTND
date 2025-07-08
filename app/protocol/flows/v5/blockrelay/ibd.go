@@ -724,14 +724,12 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 
 		progressReporter.reportProgress(len(hashesToRequest), highestProcessedDAAScore)
 	}
-	log.Infof("Resolving virtual")
 	if !updateVirtual {
 		err := flow.resolveVirtual(highestProcessedDAAScore)
 		if err != nil {
 			return err
 		}
 	}
-	log.Infof("Virtual resolved")
 
 	return flow.OnNewBlockTemplate()
 }
