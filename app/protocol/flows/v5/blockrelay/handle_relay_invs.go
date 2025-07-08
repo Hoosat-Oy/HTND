@@ -462,14 +462,12 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock) e
 				return nil
 			}
 		}
-		log.Infof("Block %s is within orphan resolution range, adding it to the orphan set", blockHash)
 		flow.AddOrphan(block)
 		log.Debugf("Requesting block %s missing ancestors", blockHash)
 		return flow.AddOrphanRootsToQueue(blockHash)
 	}
 
 	// Start IBD unless we already are in IBD
-	log.Infof("Block %s is out of orphan resolution range. Attempting to start IBD against it.", blockHash)
 
 	// Send the block to IBD flow via the IBDRequestChannel.
 	// Note that this is a non-blocking send, since if IBD is already running, there is no need to trigger it

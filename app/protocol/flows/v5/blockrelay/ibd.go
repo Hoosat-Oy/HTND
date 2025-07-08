@@ -678,7 +678,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 
 		// Dequeue all messages for the requested hashes
 		for i := 0; i < len(hashesToRequest); i++ {
-			message, err := flow.incomingRoute.Dequeue()
+			message, err := flow.incomingRoute.DequeueWithTimeout(120 * time.Second)
 			if err != nil {
 				return err
 			}
@@ -728,13 +728,14 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 
 		progressReporter.reportProgress(len(hashesToRequest), highestProcessedDAAScore)
 	}
-
+	log.Infof("Resolving virtual")
 	if !updateVirtual {
 		err := flow.resolveVirtual(highestProcessedDAAScore)
 		if err != nil {
 			return err
 		}
 	}
+	log.Infof("Virtual resolved")
 
 	return flow.OnNewBlockTemplate()
 }
