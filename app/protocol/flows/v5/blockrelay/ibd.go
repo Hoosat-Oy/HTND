@@ -158,7 +158,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 		}
 	}
 
-	log.Debugf("Finished syncing blocks up to %s", relayBlockHash)
+	log.Infof("Finished syncing blocks up to %s", relayBlockHash)
 	isFinishedSuccessfully = true
 	return nil
 }
@@ -636,6 +636,7 @@ func (flow *handleIBDFlow) receiveAndInsertPruningPointUTXOSet(
 
 func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHash) error {
 	hashes, err := flow.Domain().Consensus().GetMissingBlockBodyHashes(highHash)
+	log.Infof("Found %d missing block bodies to sync.", len(hashes))
 	if err != nil {
 		return err
 	}
@@ -670,6 +671,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		} else {
 			hashesToRequest = hashes[offset:]
 		}
+		log.Infof("%d hashes to request.", len(hashesToRequest))
 
 		// Request blocks
 		err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDBlocks(hashesToRequest))
@@ -679,7 +681,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 
 		// Dequeue all messages for the requested hashes
 		for i := 0; i < len(hashesToRequest); i++ {
-			message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+			message, err := flow.incomingRoute.Dequeue()
 			if err != nil {
 				return err
 			}
@@ -695,6 +697,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 			receivedBlocks[*blockHash] = block
 			log.Debugf("Received block %s and stored in cache", blockHash)
 		}
+		log.Infof("Received requested hashes %d", len(receivedBlocks))
 
 		// Process blocks in the order of expected hashes
 		for _, expectedHash := range hashesToRequest {
@@ -708,17 +711,13 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 			if err != nil {
 				return err
 			}
-			powSkip := true
-			if block.Header.Version() >= constants.PoWIntegrityMinVersion {
-				powSkip = false
-			}
-			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, updateVirtual, powSkip)
+			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, updateVirtual, true)
 			if err != nil {
 				if !errors.As(err, &ruleerrors.RuleError{}) {
 					return errors.Wrapf(err, "failed to process header %s during IBD", expectedHash)
 				}
 				if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-					log.Debugf("Skipping block header %s as it is a duplicate", expectedHash)
+					log.Infof("Skipping block header %s as it is a duplicate", expectedHash)
 				} else {
 					log.Infof("Rejected block header %s from %s during IBD: %s", expectedHash, flow.peer, err)
 					return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", expectedHash)

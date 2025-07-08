@@ -32,7 +32,6 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 		for i := 0; i < len(getRelayBlocksMessage.Hashes); i++ {
 			hash := getRelayBlocksMessage.Hashes[i]
 			go func(hash *externalapi.DomainHash) {
-
 				block, found, err := context.Domain().Consensus().GetBlock(hash)
 				if err != nil {
 					log.Warnf("unable to fetch requested block hash %s: %s", hash, err)
