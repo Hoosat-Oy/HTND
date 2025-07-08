@@ -435,17 +435,17 @@ var TestnetParamsB5 = Params{
 	DisableDifficultyAdjustment: false,
 
 	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
-	MaxBlockParents:                         []externalapi.KType{defaultMaxBlockParents, defaultMaxBlockParents, defaultMaxBlockParents, defaultMaxBlockParents, 10},
+	MaxBlockParents:                         []externalapi.KType{defaultMaxBlockParents, defaultMaxBlockParents, defaultMaxBlockParents, defaultMaxBlockParents, 12},
 	MassPerTxByte:                           defaultMassPerTxByte,
 	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
 	MassPerSigOp:                            defaultMassPerSigOp,
-	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
+	MergeSetSizeLimit:                       defaultMergeSetSizeLimit * 5,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 
 	MaxBlockLevel: 250,
-	MergeDepth:    defaultMergeDepth,
+	MergeDepth:    defaultMergeDepth * 5,
 }
 
 var TestnetParamsB10 = Params{
