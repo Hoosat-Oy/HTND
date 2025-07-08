@@ -659,7 +659,6 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 	// Cache to store received blocks
 	receivedBlocks := make(map[externalapi.DomainHash]*externalapi.DomainBlock)
 
-	updateVirtual := false
 	ibdBatchSize := getIBDBatchSize()
 	for offset := 0; offset < len(hashes); offset += ibdBatchSize {
 		var hashesToRequest []*externalapi.DomainHash
@@ -668,7 +667,6 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		} else {
 			hashesToRequest = hashes[offset:]
 		}
-		// log.Infof("%d hashes to request.", len(hashesToRequest))
 
 		// Request blocks
 		err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDBlocks(hashesToRequest))
@@ -694,17 +692,15 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 			receivedBlocks[*blockHash] = block
 			log.Debugf("Received block %s and stored in cache", blockHash)
 		}
-		// log.Infof("Received requested hashes %d", len(receivedBlocks))
 
 		// Process blocks in the order of expected hashes
-		for _, expectedHash := range hashesToRequest {
+		for index, expectedHash := range hashesToRequest {
 			block, exists := receivedBlocks[*expectedHash]
 			if !exists {
 				return protocolerrors.Errorf(true, "expected block %s not found in received blocks", expectedHash)
 			}
-			if expectedHash == hashesToRequest[len(hashesToRequest)-1] {
-				updateVirtual = true
-			}
+			// Set updateVirtual to true only for the last block in the entire hashes list
+			updateVirtual := (offset + index) == len(hashes)-1
 			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, updateVirtual, true)
 			if err != nil {
 				if !errors.As(err, &ruleerrors.RuleError{}) {
@@ -729,12 +725,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		progressReporter.reportProgress(len(hashesToRequest), highestProcessedDAAScore)
 	}
 	log.Infof("Resolving virtual")
-	if !updateVirtual {
-		err := flow.resolveVirtual(highestProcessedDAAScore)
-		if err != nil {
-			return err
-		}
-	}
+	// Remove the redundant resolveVirtual call since updateVirtual handles it for the last block
 	log.Infof("Virtual resolved")
 
 	return flow.OnNewBlockTemplate()
