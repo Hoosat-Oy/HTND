@@ -110,7 +110,7 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 		}
 	}
 
-	subsidy, err := c.CalcBlockSubsidy(stagingArea, blockHash)
+	subsidy, err := c.CalcBlockSubsidy(stagingArea, blockHash, constants.BlockVersion-1)
 	if err != nil {
 		return nil, false, err
 	}
@@ -292,7 +292,7 @@ func acceptanceDataFromArrayToMap(acceptanceData externalapi.AcceptanceData) map
 // should have. This is mainly used for determining how much the coinbase for
 // newly generated blocks awards as well as validating the coinbase for blocks
 // has the expected value.
-func (c *coinbaseManager) CalcBlockSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint64, error) {
+func (c *coinbaseManager) CalcBlockSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, blockVersion uint16) (uint64, error) {
 	if blockHash.Equal(c.genesisHash) {
 		return c.subsidyGenesisReward, nil
 	}
@@ -304,11 +304,11 @@ func (c *coinbaseManager) CalcBlockSubsidy(stagingArea *model.StagingArea, block
 		return c.preDeflationaryPhaseBaseSubsidy, nil
 	}
 
-	blockSubsidy := c.calcDeflationaryPeriodBlockSubsidy(blockDaaScore)
+	blockSubsidy := c.calcDeflationaryPeriodBlockSubsidy(blockDaaScore, blockVersion)
 	return blockSubsidy, nil
 }
 
-func (c *coinbaseManager) calcDeflationaryPeriodBlockSubsidy(blockDaaScore uint64) uint64 {
+func (c *coinbaseManager) calcDeflationaryPeriodBlockSubsidy(blockDaaScore uint64, blockVersion uint16) uint64 {
 	// We define a year as 365.25 days and a month as 365.25 / 12 = 30.4375
 	// secondsPerMonth = 30.4375 * 24 * 60 * 60 = 2629800
 	// secondsPerYear = 2629800 * 12 = 31557600
@@ -316,7 +316,7 @@ func (c *coinbaseManager) calcDeflationaryPeriodBlockSubsidy(blockDaaScore uint6
 	// Note that this calculation implicitly assumes that block per second = 1 (by assuming daa score diff is in second units).
 	yearsSinceDeflationStarted := (blockDaaScore - c.deflationaryPhaseDaaScore) / secondsPerYear
 	// Return the pre-calculated value from subsidy-per-month table
-	return c.getDeflationaryPeriodBlockSubsidyFromTable(yearsSinceDeflationStarted)
+	return c.getDeflationaryPeriodBlockSubsidyFromTable(yearsSinceDeflationStarted, blockVersion)
 }
 
 /*
@@ -331,11 +331,11 @@ var subsidyByDeflationaryYearTable = []uint64{
 	15, 12, 10, 8, 6, 5, 4, 3, 3, 2, 2, 1, 1, 1, 0,
 }
 
-func (c *coinbaseManager) getDeflationaryPeriodBlockSubsidyFromTable(year uint64) uint64 {
+func (c *coinbaseManager) getDeflationaryPeriodBlockSubsidyFromTable(year uint64, blockVersion uint16) uint64 {
 	if year >= uint64(len(subsidyByDeflationaryYearTable)) {
 		year = uint64(len(subsidyByDeflationaryYearTable) - 1)
 	}
-	return uint64(float64(subsidyByDeflationaryYearTable[year]) * c.targetTimePerBlock[constants.BlockVersion-1].Seconds())
+	return uint64(float64(subsidyByDeflationaryYearTable[year]) * c.targetTimePerBlock[blockVersion].Seconds())
 }
 
 func (c *coinbaseManager) calcDeflationaryPeriodBlockSubsidyFloatCalc(year uint64) uint64 {

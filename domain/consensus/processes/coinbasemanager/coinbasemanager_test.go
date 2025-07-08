@@ -77,7 +77,7 @@ func TestCalcDeflationaryPeriodBlockSubsidy(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		blockSubsidy := coinbaseManagerInstance.calcDeflationaryPeriodBlockSubsidy(test.blockDaaScore)
+		blockSubsidy := coinbaseManagerInstance.calcDeflationaryPeriodBlockSubsidy(test.blockDaaScore, 0)
 		if blockSubsidy != test.expectedBlockSubsidy {
 			t.Errorf("TestCalcDeflationaryPeriodBlockSubsidy: test '%s' failed. Want: %d, got: %d",
 				test.name, test.expectedBlockSubsidy, blockSubsidy)

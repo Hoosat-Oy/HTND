@@ -159,14 +159,13 @@ func (v *blockValidator) checkBlockTransactions(
 	return nil
 }
 
-func (v *blockValidator) checkCoinbaseSubsidy(
-	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
+func (v *blockValidator) checkCoinbaseSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
 	block, err := v.blockStore.Block(v.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
 
-	expectedSubsidy, err := v.coinbaseManager.CalcBlockSubsidy(stagingArea, blockHash)
+	expectedSubsidy, err := v.coinbaseManager.CalcBlockSubsidy(stagingArea, blockHash, block.Header.Version())
 	if err != nil {
 		return err
 	}
@@ -213,7 +212,7 @@ func (v *blockValidator) checkDevFee(stagingArea *model.StagingArea, blockHash *
 		return nil
 	}
 
-	reward, _ := v.coinbaseManager.CalcBlockSubsidy(stagingArea, blockHash)
+	reward, _ := v.coinbaseManager.CalcBlockSubsidy(stagingArea, blockHash, block.Header.Version())
 	hasDevFee := false
 	for _, transaction := range block.Transactions {
 		for _, output := range transaction.Outputs {
