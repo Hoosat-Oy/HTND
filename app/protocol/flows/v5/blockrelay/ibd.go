@@ -671,7 +671,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		} else {
 			hashesToRequest = hashes[offset:]
 		}
-		log.Infof("%d hashes to request.", len(hashesToRequest))
+		// log.Infof("%d hashes to request.", len(hashesToRequest))
 
 		// Request blocks
 		err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDBlocks(hashesToRequest))
@@ -697,7 +697,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 			receivedBlocks[*blockHash] = block
 			log.Debugf("Received block %s and stored in cache", blockHash)
 		}
-		log.Infof("Received requested hashes %d", len(receivedBlocks))
+		// log.Infof("Received requested hashes %d", len(receivedBlocks))
 
 		// Process blocks in the order of expected hashes
 		for _, expectedHash := range hashesToRequest {
