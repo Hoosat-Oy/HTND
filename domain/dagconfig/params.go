@@ -403,7 +403,7 @@ var TestnetParamsB5 = Params{
 	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
 	TargetTimePerBlock:              []time.Duration{defaultTargetTimePerBlock, defaultTargetTimePerBlock, defaultTargetTimePerBlock, defaultTargetTimePerBlock, 200 * time.Millisecond},
 	FinalityDuration:                []time.Duration{defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, 14400 * time.Second},
-	DifficultyAdjustmentWindowSize:  []int{defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, 264},
+	DifficultyAdjustmentWindowSize:  []int{defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize},
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 	POWScores:                       []uint64{5, 15, 25, 30},
 	PruningMultiplier:               []uint64{0, 0, 0, 0, 3},
