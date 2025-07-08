@@ -335,7 +335,7 @@ func (c *coinbaseManager) getDeflationaryPeriodBlockSubsidyFromTable(year uint64
 	if year >= uint64(len(subsidyByDeflationaryYearTable)) {
 		year = uint64(len(subsidyByDeflationaryYearTable) - 1)
 	}
-	return uint64(float64(subsidyByDeflationaryYearTable[year]) * c.targetTimePerBlock[blockVersion].Seconds())
+	return uint64(float64(subsidyByDeflationaryYearTable[year]) * c.targetTimePerBlock[blockVersion-1].Seconds())
 }
 
 func (c *coinbaseManager) calcDeflationaryPeriodBlockSubsidyFloatCalc(year uint64) uint64 {
