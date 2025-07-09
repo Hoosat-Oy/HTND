@@ -7,26 +7,73 @@ import (
 
 // Options returns a pebble.Options struct optimized for Kaspa's high block rate (33 blocks/s, 10,000 tx/block).
 func Options() *pebble.Options {
-	// Define a Bloom filter with 8 bits per key for space efficiency
+	// Use a Bloom filter with 10 bits per key for efficient reads
 	bloomFilter := bloom.FilterPolicy(10)
 
-	opts := &pebble.Options{
-		// Cache: Improve read performance for state queries
-		Cache: pebble.NewCache(2 * 1024 * 1024 * 1024), // 2 GB block cache
+	// Define MemTable size
+	memTableSize := int64(64 * 1024 * 1024) // 64 MB
 
-		// LSM tree tuning: Optimize for write-heavy workload
+	opts := &pebble.Options{
+		// Large block cache to optimize read performance
+		Cache: pebble.NewCache(256 * 1024 * 1024), // 256 MB cache
+
+		// Write-heavy workload optimizations
+		MemTableSize:                uint64(memTableSize),
+		MemTableStopWritesThreshold: 8,                       // Limit in-memory tables to prevent overload
+		L0CompactionThreshold:       8,                       // Start compacting after 8 L0 files
+		L0StopWritesThreshold:       16,                      // Apply backpressure after 16 L0 files
+		MaxConcurrentCompactions:    func() int { return 8 }, // Allow more compactions in parallel
+		DisableAutomaticCompactions: false,
+
+		// Configure LSM levels
 		Levels: []pebble.LevelOptions{
-			// Level 0: Frequent flushes from MemTable
-			{TargetFileSize: 8 * 1024 * 1024, BlockSize: 32 * 1024, Compression: pebble.NoCompression, FilterPolicy: bloomFilter},
-			// Level 1-5: Intermediate levels with increasing sizes
-			{TargetFileSize: 16 * 1024 * 1024, BlockSize: 32 * 1024, Compression: pebble.SnappyCompression, FilterPolicy: bloomFilter},
-			{TargetFileSize: 32 * 1024 * 1024, BlockSize: 32 * 1024, Compression: pebble.SnappyCompression, FilterPolicy: bloomFilter},
-			{TargetFileSize: 64 * 1024 * 1024, BlockSize: 32 * 1024, Compression: pebble.SnappyCompression, FilterPolicy: bloomFilter},
-			{TargetFileSize: 128 * 1024 * 1024, BlockSize: 32 * 1024, Compression: pebble.SnappyCompression, FilterPolicy: bloomFilter},
-			{TargetFileSize: 256 * 1024 * 1024, BlockSize: 32 * 1024, Compression: pebble.SnappyCompression, FilterPolicy: bloomFilter},
-			// Level 6: Largest level, optimize for storage
-			{TargetFileSize: 512 * 1024 * 1024, BlockSize: 32 * 1024, Compression: pebble.ZstdCompression, FilterPolicy: bloomFilter},
+			// Level 0: Match file size to MemTable to avoid fragmentation
+			{
+				TargetFileSize: memTableSize,
+				BlockSize:      32 * 1024,
+				Compression:    pebble.NoCompression,
+				FilterPolicy:   bloomFilter,
+			},
+			// Level 1 to 5: Progressive scaling with Snappy compression
+			{
+				TargetFileSize: memTableSize * 2,
+				BlockSize:      32 * 1024,
+				Compression:    pebble.SnappyCompression,
+				FilterPolicy:   bloomFilter,
+			},
+			{
+				TargetFileSize: memTableSize * 4,
+				BlockSize:      32 * 1024,
+				Compression:    pebble.SnappyCompression,
+				FilterPolicy:   bloomFilter,
+			},
+			{
+				TargetFileSize: memTableSize * 8,
+				BlockSize:      32 * 1024,
+				Compression:    pebble.SnappyCompression,
+				FilterPolicy:   bloomFilter,
+			},
+			{
+				TargetFileSize: memTableSize * 16,
+				BlockSize:      32 * 1024,
+				Compression:    pebble.SnappyCompression,
+				FilterPolicy:   bloomFilter,
+			},
+			{
+				TargetFileSize: memTableSize * 32,
+				BlockSize:      32 * 1024,
+				Compression:    pebble.SnappyCompression,
+				FilterPolicy:   bloomFilter,
+			},
+			// Level 6: Cold data with high compression
+			{
+				TargetFileSize: 2048 * 1024 * 1024,
+				BlockSize:      32 * 1024,
+				Compression:    pebble.ZstdCompression,
+				FilterPolicy:   bloomFilter,
+			},
 		},
 	}
+
 	return opts
 }
