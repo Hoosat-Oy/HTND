@@ -10,7 +10,6 @@ import (
 	peerpkg "github.com/Hoosat-Oy/HTND/app/protocol/peer"
 	"github.com/Hoosat-Oy/HTND/app/protocol/protocolerrors"
 	"github.com/Hoosat-Oy/HTND/domain"
-	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
@@ -253,10 +252,6 @@ func (flow *handleRelayInvsFlow) start() error {
 			}
 			if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 				log.Infof("Ignoring duplicate block %s", inv.Hash)
-				continue
-			}
-			if errors.Is(err, database.ErrNotFound) {
-				log.Infof("Inoring block because key not found error %s", inv.Hash)
 				continue
 			}
 			if errors.Is(err, ruleerrors.ErrInvalidPoW) {
