@@ -267,8 +267,7 @@ func (flow *handleRelayInvsFlow) start() error {
 				}
 				continue
 			}
-			log.Infof("Inoring block %s, as it errors: %s", inv.Hash, err)
-			continue
+			return err
 		}
 		if len(missingParents) > 0 {
 			err := flow.processOrphan(block)
