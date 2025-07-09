@@ -14,7 +14,7 @@ func Options() opt.Options {
 		BlockCacheCapacity:     1024 * opt.MiB,            // Larger cache for frequent reads
 		Filter:                 filter.NewBloomFilter(10), // Bloom filter for efficient key lookups
 		OpenFilesCacheCapacity: 500,                       // Higher file handle cache for concurrent access
-		CompactionTableSize:    16 * opt.MiB,              // Larger SST files to reduce compaction frequency
-		CompactionTotalSize:    256 * opt.MiB,             // Larger total size before compaction to reduce I/O
+		CompactionTableSize:    64 * opt.MiB,              // Larger SST files to reduce compaction frequency
+		CompactionTotalSize:    1024 * opt.MiB,            // Larger total size before compaction to reduce I/O
 	}
 }
