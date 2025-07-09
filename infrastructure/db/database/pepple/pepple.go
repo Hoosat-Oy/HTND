@@ -19,7 +19,19 @@ func NewPeppleDB(path string, cacheSizeMiB int) (*PeppleDB, error) {
 	options.MemTableSize = uint64((cacheSizeMiB * 1024 * 1024) / 2)
 	db, err := pebble.Open(path, options)
 
-	// If the database cannot be opened, return the error as-is.
+	// If the database is corrupted, attempt to recover.
+	if errors.Is(err, pebble.ErrCorruption) {
+		log.Warnf("Pebble corruption detected for path %s: %s", path, err)
+		log.Warnf("Starting to recover Pebble for path %s", path)
+		var recoverErr error
+		db, recoverErr = pebble.Open(path, &pebble.Options{ErrorIfExists: false})
+		if recoverErr != nil {
+			return nil, errors.Wrapf(err, "failed recovering from database corruption: %s", recoverErr)
+		}
+		log.Warnf("Pebble recovered from corruption for path %s", path)
+	}
+
+	// If the database cannot be opened for any other reason, return the error as-is.
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -32,7 +44,6 @@ func NewPeppleDB(path string, cacheSizeMiB int) (*PeppleDB, error) {
 
 // Compact compacts the Pebble instance.
 func (db *PeppleDB) Compact() error {
-	// Use a large end key to compact the entire database
 	err := db.db.Compact(nil, []byte{0xff, 0xff, 0xff, 0xff}, false)
 	return errors.WithStack(err)
 }
@@ -59,7 +70,6 @@ func (db *PeppleDB) Get(key *database.Key) ([]byte, error) {
 		return nil, errors.WithStack(err)
 	}
 	defer closer.Close()
-	// Create a copy of the data to ensure it’s not modified externally
 	dataCopy := make([]byte, len(data))
 	copy(dataCopy, data)
 	return dataCopy, nil
