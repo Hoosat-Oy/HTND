@@ -255,7 +255,7 @@ func (flow *handleRelayInvsFlow) start() error {
 				log.Infof("Ignoring duplicate block %s", inv.Hash)
 				continue
 			}
-			if errors.As(err, database.ErrNotFound) {
+			if errors.Is(err, database.ErrNotFound) {
 				log.Infof("Inoring block because key not found error %s", inv.Hash)
 				continue
 			}
