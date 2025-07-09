@@ -14,15 +14,9 @@ type PeppleDBCursor struct {
 	bucket   *database.Bucket
 	isClosed bool
 }
-type Range struct {
-	// Start of the key range, include in the range.
-	Start []byte
 
-	// Limit of the key range, not include in the range.
-	Limit []byte
-}
-
-func BytesPrefix(prefix []byte) *Range {
+// BytesPrefix returns iterator options for keys with the given prefix, with a computed upper bound.
+func BytesPrefix(prefix []byte) *pebble.IterOptions {
 	var limit []byte
 	for i := len(prefix) - 1; i >= 0; i-- {
 		c := prefix[i]
@@ -33,26 +27,32 @@ func BytesPrefix(prefix []byte) *Range {
 			break
 		}
 	}
-	return &Range{prefix, limit}
+
+	// if limit != nil && 32 > 0 {
+	// 	extension := bytes.Repeat([]byte{0xFF}, 32)
+	// 	limit = append(limit, extension...)
+	// }
+	log.Infof("BytesPrefix: prefix=%x, limit=%x", prefix, limit)
+	return &pebble.IterOptions{
+		LowerBound: prefix,
+		UpperBound: limit,
+	}
 }
 
 // Cursor begins a new cursor over the given prefix.
 func (db *PeppleDB) Cursor(bucket *database.Bucket) (database.Cursor, error) {
-	// Calculate the upper bound as the prefix plus the highest possible byte
-	prefix := BytesPrefix(bucket.Path())
-
-	iterator, err := db.db.NewIter(&pebble.IterOptions{
-		LowerBound: prefix.Start,
-		UpperBound: prefix.Limit,
-	})
+	log.Infof("Bucket path = %x", bucket.Path())
+	iterator, err := db.db.NewIter(BytesPrefix(bucket.Path()))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create iterator")
 	}
-	return &PeppleDBCursor{
+	cursor := &PeppleDBCursor{
 		iterator: iterator,
 		bucket:   bucket,
 		isClosed: false,
-	}, nil
+	}
+	cursor.First()
+	return cursor, nil
 }
 
 // Next moves the iterator to the next key/value pair. It returns whether the iterator is exhausted.
@@ -61,7 +61,10 @@ func (c *PeppleDBCursor) Next() bool {
 	if c.isClosed {
 		panic("cannot call next on a closed cursor")
 	}
-	return c.iterator.Next()
+	// log.Infof("Before Next: valid=%v, key=%x", c.iterator.Valid(), c.iterator.Key())
+	hasNext := c.iterator.Next()
+	// log.Infof("After Next: hasNext=%v, valid=%v, key=%x", hasNext, c.iterator.Valid(), c.iterator.Key())
+	return hasNext
 }
 
 // First moves the iterator to the first key/value pair. It returns false if such a pair does not exist.
@@ -70,7 +73,9 @@ func (c *PeppleDBCursor) First() bool {
 	if c.isClosed {
 		panic("cannot call First on a closed cursor")
 	}
-	return c.iterator.First()
+	hasFirst := c.iterator.First()
+	// log.Infof("First: hasFirst=%v, currentKey=%x", hasFirst, c.iterator.Key())
+	return hasFirst
 }
 
 // Seek moves the iterator to the first key/value pair whose key is greater
@@ -79,12 +84,14 @@ func (c *PeppleDBCursor) Seek(key *database.Key) error {
 	if c.isClosed {
 		return errors.New("cannot seek a closed cursor")
 	}
-	fullKey := append(c.bucket.Path(), key.Bytes()...)
-	if !c.iterator.SeekGE(fullKey) {
+	// Use key.Bytes() directly, like LevelDB, for compatibility with UTXO iterator
+	found := c.iterator.SeekGE(key.Bytes())
+	// log.Infof("Seek: key=%x, found=%v, currentKey=%x", key.Bytes(), found, c.iterator.Key())
+	if !found {
 		return errors.Wrapf(database.ErrNotFound, "key %s not found", key)
 	}
 	currentKey := c.iterator.Key()
-	if currentKey == nil || !bytes.Equal(currentKey, fullKey) {
+	if currentKey == nil || !bytes.Equal(currentKey, key.Bytes()) {
 		return errors.Wrapf(database.ErrNotFound, "key %s not found", key)
 	}
 	return nil
@@ -102,6 +109,7 @@ func (c *PeppleDBCursor) Key() (*database.Key, error) {
 		return nil, errors.Wrapf(database.ErrNotFound, "cannot get the key of an exhausted cursor")
 	}
 	suffix := bytes.TrimPrefix(fullKeyPath, c.bucket.Path())
+	// log.Infof("Key: fullKeyPath=%x, suffix=%x", fullKeyPath, suffix)
 	return c.bucket.Key(suffix), nil
 }
 
@@ -115,6 +123,7 @@ func (c *PeppleDBCursor) Value() ([]byte, error) {
 	if value == nil {
 		return nil, errors.Wrapf(database.ErrNotFound, "cannot get the value of an exhausted cursor")
 	}
+	// log.Infof("Value: value=%x", value)
 	return value, nil
 }
 

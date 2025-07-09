@@ -70,9 +70,7 @@ func (db *PeppleDB) Get(key *database.Key) ([]byte, error) {
 		return nil, errors.WithStack(err)
 	}
 	defer closer.Close()
-	dataCopy := make([]byte, len(data))
-	copy(dataCopy, data)
-	return dataCopy, nil
+	return data, nil
 }
 
 // Has returns true if the database contains the given key.
@@ -84,7 +82,7 @@ func (db *PeppleDB) Has(key *database.Key) (bool, error) {
 		}
 		return false, errors.WithStack(err)
 	}
-	closer.Close()
+	defer closer.Close()
 	return true, nil
 }
 

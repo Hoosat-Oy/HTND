@@ -25,7 +25,6 @@ func (db *PeppleDB) Begin() (database.Transaction, error) {
 	transaction := &PeppleDBTransaction{
 		db:       db,
 		batch:    batch,
-		cursors:  make([]database.Cursor, 0),
 		isClosed: false,
 	}
 	return transaction, nil
@@ -37,15 +36,7 @@ func (tx *PeppleDBTransaction) Commit() error {
 		return errors.New("cannot commit a closed transaction")
 	}
 	tx.isClosed = true
-	// Close all cursors before committing
-	for _, cursor := range tx.cursors {
-		if err := cursor.Close(); err != nil {
-			return errors.Wrap(err, "failed to close cursor during commit")
-		}
-	}
-	tx.cursors = nil
-	err := tx.batch.Commit(pebble.Sync)
-	return errors.WithStack(err)
+	return errors.WithStack(tx.batch.Commit(pebble.Sync))
 }
 
 // Rollback rolls back whatever changes were made to the database within this transaction.
@@ -54,13 +45,6 @@ func (tx *PeppleDBTransaction) Rollback() error {
 		return errors.New("cannot rollback a closed transaction")
 	}
 	tx.isClosed = true
-	// Close all cursors before rolling back
-	for _, cursor := range tx.cursors {
-		if err := cursor.Close(); err != nil {
-			return errors.Wrap(err, "failed to close cursor during rollback")
-		}
-	}
-	tx.cursors = nil
 	err := tx.batch.Close()
 	return errors.WithStack(err)
 }
