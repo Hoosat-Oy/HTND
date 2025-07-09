@@ -10,6 +10,7 @@ import (
 	peerpkg "github.com/Hoosat-Oy/HTND/app/protocol/peer"
 	"github.com/Hoosat-Oy/HTND/app/protocol/protocolerrors"
 	"github.com/Hoosat-Oy/HTND/domain"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
@@ -254,6 +255,10 @@ func (flow *handleRelayInvsFlow) start() error {
 				log.Infof("Ignoring duplicate block %s", inv.Hash)
 				continue
 			}
+			if errors.As(err, database.ErrNotFound) {
+				log.Infof("Inoring block because key not found error %s", inv.Hash)
+				continue
+			}
 			if errors.Is(err, ruleerrors.ErrInvalidPoW) {
 				if block.PoWHash != "" {
 					log.Infof(fmt.Sprintf("Ignoring invalid PoW %s, consider banning: %s", block.PoWHash, flow.netConnection.NetAddress().String()))
@@ -262,7 +267,8 @@ func (flow *handleRelayInvsFlow) start() error {
 				}
 				continue
 			}
-			return err
+			log.Infof("Inoring block %s, as it errors: %s", inv.Hash, err)
+			continue
 		}
 		if len(missingParents) > 0 {
 			err := flow.processOrphan(block)
