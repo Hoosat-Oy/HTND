@@ -15,16 +15,17 @@ import (
 type PeppleDBTransaction struct {
 	db       *PeppleDB
 	batch    *pebble.Batch
+	cursors  []database.Cursor
 	isClosed bool
 }
 
 // Begin begins a new transaction.
 func (db *PeppleDB) Begin() (database.Transaction, error) {
 	batch := db.db.NewBatch()
-
 	transaction := &PeppleDBTransaction{
 		db:       db,
 		batch:    batch,
+		cursors:  make([]database.Cursor, 0),
 		isClosed: false,
 	}
 	return transaction, nil
@@ -35,8 +36,14 @@ func (tx *PeppleDBTransaction) Commit() error {
 	if tx.isClosed {
 		return errors.New("cannot commit a closed transaction")
 	}
-
 	tx.isClosed = true
+	// Close all cursors before committing
+	for _, cursor := range tx.cursors {
+		if err := cursor.Close(); err != nil {
+			return errors.Wrap(err, "failed to close cursor during commit")
+		}
+	}
+	tx.cursors = nil
 	err := tx.batch.Commit(pebble.Sync)
 	return errors.WithStack(err)
 }
@@ -46,8 +53,14 @@ func (tx *PeppleDBTransaction) Rollback() error {
 	if tx.isClosed {
 		return errors.New("cannot rollback a closed transaction")
 	}
-
 	tx.isClosed = true
+	// Close all cursors before rolling back
+	for _, cursor := range tx.cursors {
+		if err := cursor.Close(); err != nil {
+			return errors.Wrap(err, "failed to close cursor during rollback")
+		}
+	}
+	tx.cursors = nil
 	err := tx.batch.Close()
 	return errors.WithStack(err)
 }
@@ -66,7 +79,6 @@ func (tx *PeppleDBTransaction) Put(key *database.Key, value []byte) error {
 	if tx.isClosed {
 		return errors.New("cannot put into a closed transaction")
 	}
-
 	err := tx.batch.Set(key.Bytes(), value, nil)
 	return errors.WithStack(err)
 }
@@ -92,7 +104,6 @@ func (tx *PeppleDBTransaction) Delete(key *database.Key) error {
 	if tx.isClosed {
 		return errors.New("cannot delete from a closed transaction")
 	}
-
 	err := tx.batch.Delete(key.Bytes(), nil)
 	return errors.WithStack(err)
 }
@@ -102,6 +113,10 @@ func (tx *PeppleDBTransaction) Cursor(bucket *database.Bucket) (database.Cursor,
 	if tx.isClosed {
 		return nil, errors.New("cannot open a cursor from a closed transaction")
 	}
-
-	return tx.db.Cursor(bucket)
+	cursor, err := tx.db.Cursor(bucket)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	tx.cursors = append(tx.cursors, cursor)
+	return cursor, nil
 }
