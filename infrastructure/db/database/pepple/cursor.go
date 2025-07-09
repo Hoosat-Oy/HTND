@@ -15,21 +15,6 @@ type PeppleDBCursor struct {
 	isClosed bool
 }
 
-func nextPrefix(path []byte) []byte {
-	next := make([]byte, len(path))
-	copy(next, path)
-	// Increment the last byte, handling overflow
-	for i := len(next) - 1; i >= 0; i-- {
-		if next[i] < 0xff {
-			next[i]++
-			return next
-		}
-		next[i] = 0
-	}
-	// If all bytes are 0xff, append a 0x00 to ensure a valid upper bound
-	return append(next, 0x00)
-}
-
 // Cursor begins a new cursor over the given prefix.
 func (db *PeppleDB) Cursor(bucket *database.Bucket) (database.Cursor, error) {
 	// log.Infof("Bucket path = %x", bucket.Path())
@@ -44,24 +29,6 @@ func (db *PeppleDB) Cursor(bucket *database.Bucket) (database.Cursor, error) {
 	}, err
 }
 
-// First moves the iterator to the first key/value pair. It returns false if such a pair does not exist.
-// Panics if the cursor is closed.
-func (c *PeppleDBCursor) First() bool {
-	if c.isClosed {
-		panic("cannot call First on a closed cursor")
-	}
-	if !c.iterator.First() {
-		return false
-	}
-	currentKey := c.iterator.Key()
-	if currentKey == nil || !bytes.HasPrefix(currentKey, c.bucket.Path()) {
-		// log.Infof("First key %x does not match bucket prefix %x", currentKey, c.bucket.Path())
-		return false
-	}
-	// log.Infof("First key: %x", currentKey)
-	return true
-}
-
 // Next moves the iterator to the next key/value pair. It returns whether the iterator is exhausted.
 // Panics if the cursor is closed.
 func (c *PeppleDBCursor) Next() bool {
@@ -73,10 +40,28 @@ func (c *PeppleDBCursor) Next() bool {
 	}
 	currentKey := c.iterator.Key()
 	if currentKey == nil || !bytes.HasPrefix(currentKey, c.bucket.Path()) {
-		// log.Infof("Next key %x does not match bucket prefix %x", currentKey, c.bucket.Path())
+		log.Infof("Next key %x does not match bucket prefix %x", currentKey, c.bucket.Path())
 		return false
 	}
-	// log.Infof("Next key: %x", currentKey)
+	log.Infof("Next key: %x", currentKey)
+	return true
+}
+
+// First moves the iterator to the first key/value pair. It returns false if such a pair does not exist.
+// Panics if the cursor is closed.
+func (c *PeppleDBCursor) First() bool {
+	if c.isClosed {
+		panic("cannot call First on a closed cursor")
+	}
+	if !c.iterator.First() {
+		return false
+	}
+	currentKey := c.iterator.Key()
+	if currentKey == nil || !bytes.HasPrefix(currentKey, c.bucket.Path()) {
+		log.Infof("First key %x does not match bucket prefix %x", currentKey, c.bucket.Path())
+		return false
+	}
+	log.Infof("First key: %x", currentKey)
 	return true
 }
 
@@ -87,18 +72,18 @@ func (c *PeppleDBCursor) Seek(key *database.Key) error {
 		return errors.New("cannot seek a closed cursor")
 	}
 	fullKey := append(c.bucket.Path(), key.Bytes()...)
-	// log.Infof("Seeking key: %x (bucket: %x, suffix: %x)", fullKey, c.bucket.Path(), key.Bytes())
+	log.Infof("Seeking key: %x (bucket: %x, suffix: %x)", fullKey, c.bucket.Path(), key.Bytes())
 	found := c.iterator.SeekGE(fullKey)
 	if !found {
-		// log.Infof("Seek failed: key %x not found", fullKey)
+		log.Infof("Seek failed: key %x not found", fullKey)
 		return errors.Wrapf(database.ErrNotFound, "key %s not found", key)
 	}
 	currentKey := c.iterator.Key()
 	if currentKey == nil || !bytes.HasPrefix(currentKey, c.bucket.Path()) || !bytes.Equal(currentKey, fullKey) {
-		// log.Infof("Seek mismatch: current key %x, expected %x", currentKey, fullKey)
+		log.Infof("Seek mismatch: current key %x, expected %x", currentKey, fullKey)
 		return errors.Wrapf(database.ErrNotFound, "key %s not found", key)
 	}
-	// log.Infof("Seek successful: key %x", currentKey)
+	log.Infof("Seek successful: key %x", currentKey)
 	return nil
 }
 
@@ -114,11 +99,11 @@ func (c *PeppleDBCursor) Key() (*database.Key, error) {
 		return nil, errors.Wrapf(database.ErrNotFound, "cannot get the key of an exhausted cursor")
 	}
 	if !bytes.HasPrefix(fullKeyPath, c.bucket.Path()) {
-		// log.Infof("Key %x does not match bucket prefix %x", fullKeyPath, c.bucket.Path())
+		log.Infof("Key %x does not match bucket prefix %x", fullKeyPath, c.bucket.Path())
 		return nil, errors.Wrapf(database.ErrNotFound, "key does not match bucket prefix")
 	}
 	suffix := bytes.TrimPrefix(fullKeyPath, c.bucket.Path())
-	// log.Infof("Full key: %x, Bucket path: %x, Suffix: %x", fullKeyPath, c.bucket.Path(), suffix)
+	log.Infof("Full key: %x, Bucket path: %x, Suffix: %x", fullKeyPath, c.bucket.Path(), suffix)
 	return c.bucket.Key(suffix), nil
 }
 
