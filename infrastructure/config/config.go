@@ -42,7 +42,7 @@ const (
 	//DefaultMaxRPCClients is the default max number of RPC clients
 	DefaultMaxRPCClients         = 500
 	defaultMaxRPCWebsockets      = 250
-	defaultMaxRPCConcurrentReqs  = 1000
+	defaultMaxRPCConcurrentReqs  = 10000
 	defaultBlockMaxMass          = 10_000_000
 	blockMaxMassMin              = 1000
 	blockMaxMassMax              = 10_000_000
