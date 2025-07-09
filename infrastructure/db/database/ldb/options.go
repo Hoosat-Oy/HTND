@@ -8,7 +8,7 @@ import (
 // Options returns a leveldb opt.Options struct optimized for Kaspa's high block rate (33 blocks/s, 1000 tx/block).
 func Options() opt.Options {
 	return opt.Options{
-		Compression:            opt.NoCompression,         // Balances speed and storage efficiency
+		Compression:            opt.SnappyCompression,     // Balances speed and storage efficiency
 		NoSync:                 false,                     // Ensures data integrity for high-value blockchain data
 		WriteBuffer:            64 * opt.MiB,              // Larger buffer to handle bursty writes
 		BlockCacheCapacity:     1024 * opt.MiB,            // Larger cache for frequent reads
