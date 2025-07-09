@@ -37,20 +37,11 @@ func (db *PeppleDB) Cursor(bucket *database.Bucket) (database.Cursor, error) {
 		LowerBound: bucket.Path(),
 		// No UpperBound; rely on HasPrefix checks
 	})
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	// Log whether keys exist for the bucket prefix
-	if !iterator.SeekGE(bucket.Path()) {
-		log.Errorf("No keys found for bucket prefix %x", bucket.Path())
-	}
-
 	return &PeppleDBCursor{
 		iterator: iterator,
 		bucket:   bucket,
 		isClosed: false,
-	}, nil
+	}, err
 }
 
 // First moves the iterator to the first key/value pair. It returns false if such a pair does not exist.
