@@ -6,9 +6,8 @@ import (
 
 	"github.com/Hoosat-Oy/HTND/domain/dagconfig"
 
-	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/ldb"
-
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
+	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/pepple"
 
 	"github.com/Hoosat-Oy/HTND/app"
 	"github.com/Hoosat-Oy/HTND/infrastructure/config"
@@ -136,5 +135,5 @@ func setDatabaseContext(t *testing.T, harness *appHarness) {
 
 func openDB(cfg *config.Config) (database.Database, error) {
 	dbPath := filepath.Join(cfg.AppDir, "db")
-	return ldb.NewLevelDB(dbPath, 8)
+	return pepple.NewPeppleDB(dbPath, 8)
 }

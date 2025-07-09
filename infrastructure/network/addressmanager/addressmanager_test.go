@@ -11,7 +11,7 @@ import (
 
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
 	"github.com/Hoosat-Oy/HTND/infrastructure/config"
-	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/ldb"
+	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/pepple"
 	"github.com/Hoosat-Oy/HTND/util/mstime"
 )
 
@@ -19,7 +19,7 @@ func newAddressManagerForTest(t *testing.T, testName string) (addressManager *Ad
 	cfg := config.DefaultConfig()
 
 	datadir := t.TempDir()
-	database, err := ldb.NewLevelDB(datadir, 8)
+	database, err := pepple.NewPeppleDB(datadir, 8)
 	if err != nil {
 		t.Fatalf("%s: could not create a database: %s", testName, err)
 	}
@@ -233,7 +233,7 @@ func TestRestoreAddressManager(t *testing.T) {
 
 	// Create an empty database
 	datadir := t.TempDir()
-	database, err := ldb.NewLevelDB(datadir, 8)
+	database, err := pepple.NewPeppleDB(datadir, 8)
 	if err != nil {
 		t.Fatalf("Could not create a database: %s", err)
 	}
@@ -270,7 +270,7 @@ func TestRestoreAddressManager(t *testing.T) {
 	}
 
 	// Reopen the database
-	database, err = ldb.NewLevelDB(datadir, 8)
+	database, err = pepple.NewPeppleDB(datadir, 8)
 	if err != nil {
 		t.Fatalf("Could not create a database: %s", err)
 	}

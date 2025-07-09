@@ -10,7 +10,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/infrastructure/config"
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
-	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/ldb"
+	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/pepple"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
 	"github.com/Hoosat-Oy/HTND/infrastructure/os/execenv"
 	"github.com/Hoosat-Oy/HTND/infrastructure/os/limits"
@@ -186,7 +186,7 @@ func openDB(cfg *config.Config) (database.Database, error) {
 	}
 
 	log.Infof("Loading database from '%s'", dbPath)
-	db, err := ldb.NewLevelDB(dbPath, leveldbCacheSizeMiB)
+	db, err := pepple.NewPeppleDB(dbPath, leveldbCacheSizeMiB)
 	if err != nil {
 		return nil, err
 	}

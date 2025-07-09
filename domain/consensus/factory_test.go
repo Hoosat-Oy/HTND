@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/Hoosat-Oy/HTND/domain/prefixmanager/prefix"
+	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/pepple"
 
 	"github.com/Hoosat-Oy/HTND/domain/dagconfig"
-	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/ldb"
 )
 
 func TestNewConsensus(t *testing.T) {
@@ -20,7 +20,7 @@ func TestNewConsensus(t *testing.T) {
 		return
 	}
 
-	db, err := ldb.NewLevelDB(tmpDir, 8)
+	db, err := pepple.NewPeppleDB(tmpDir, 8)
 	if err != nil {
 		t.Fatalf("error in NewLevelDB: %s", err)
 	}

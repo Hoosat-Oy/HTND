@@ -4,7 +4,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
-	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/ldb"
+	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/pepple"
 	"github.com/Hoosat-Oy/HTND/stability-tests/common"
 	"github.com/Hoosat-Oy/HTND/stability-tests/common/mine"
 	"github.com/pkg/errors"
@@ -18,7 +18,7 @@ func prepareBlocks() (blocks []*externalapi.DomainBlock, topBlock *externalapi.D
 	if err != nil {
 		return nil, nil, err
 	}
-	db, err := ldb.NewLevelDB(testDatabaseDir, leveldbCacheSizeMiB)
+	db, err := pepple.NewPeppleDB(testDatabaseDir, leveldbCacheSizeMiB)
 	if err != nil {
 		return nil, nil, err
 	}
