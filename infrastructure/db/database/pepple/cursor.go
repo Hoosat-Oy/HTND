@@ -32,7 +32,7 @@ func BytesPrefix(prefix []byte) *pebble.IterOptions {
 	// 	extension := bytes.Repeat([]byte{0xFF}, 32)
 	// 	limit = append(limit, extension...)
 	// }
-	log.Infof("BytesPrefix: prefix=%x, limit=%x", prefix, limit)
+	// log.Infof("BytesPrefix: prefix=%x, limit=%x", prefix, limit)
 	return &pebble.IterOptions{
 		LowerBound: prefix,
 		UpperBound: limit,
@@ -41,7 +41,7 @@ func BytesPrefix(prefix []byte) *pebble.IterOptions {
 
 // Cursor begins a new cursor over the given prefix.
 func (db *PeppleDB) Cursor(bucket *database.Bucket) (database.Cursor, error) {
-	log.Infof("Bucket path = %x", bucket.Path())
+	// log.Infof("Bucket path = %x", bucket.Path())
 	iterator, err := db.db.NewIter(BytesPrefix(bucket.Path()))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create iterator")
