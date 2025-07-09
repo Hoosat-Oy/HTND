@@ -15,8 +15,6 @@ type PeppleDB struct {
 func NewPeppleDB(path string, cacheSizeMiB int) (*PeppleDB, error) {
 	// Open Pebble database. If it doesn't exist, create it.
 	options := Options()
-	options.Cache = pebble.NewCache(int64(cacheSizeMiB) * 1024 * 1024)
-	options.MemTableSize = uint64((cacheSizeMiB * 1024 * 1024) / 2)
 	db, err := pebble.Open(path, options)
 
 	// If the database is corrupted, attempt to recover.
