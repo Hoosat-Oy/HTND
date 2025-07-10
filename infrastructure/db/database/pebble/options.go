@@ -1,11 +1,14 @@
 package pebble
 
 import (
+	"time"
+
 	"github.com/cockroachdb/pebble"
 	"github.com/cockroachdb/pebble/bloom"
 )
 
-// Options returns a pebble.Options struct optimized for Kaspa's high block rate (33 blocks/s, 10,000 tx/block).
+// Options returns a pebble.Options struct optimized for Kaspa's block rate (10 blocks/s, 10,000 tx/block)
+// with WAL syncs reduced to once per second to improve write throughput.
 func Options() *pebble.Options {
 	// Use a Bloom filter with 10 bits per key for efficient reads
 	bloomFilter := bloom.FilterPolicy(10)
@@ -20,10 +23,16 @@ func Options() *pebble.Options {
 		// Write-heavy workload optimizations
 		MemTableSize:                uint64(memTableSize),
 		MemTableStopWritesThreshold: 8,                       // Limit in-memory tables to prevent overload
-		L0CompactionThreshold:       8,                       // Start compacting after 8 L0 files
-		L0StopWritesThreshold:       16,                      // Apply backpressure after 16 L0 files
+		L0CompactionThreshold:       32,                      // Start compacting after 32 L0 files
+		L0StopWritesThreshold:       64,                      // Apply backpressure after 64 L0 files
 		MaxConcurrentCompactions:    func() int { return 8 }, // Allow more compactions in parallel
 		DisableAutomaticCompactions: false,
+
+		// Reduce WAL sync frequency
+		WALMinSyncInterval: func() time.Duration {
+			return 100 * time.Millisecond // Sync WAL at most every 100 millisecond
+		},
+		FlushSplitBytes: memTableSize / 2, // Split flushes to reduce WAL sync pressure
 
 		// Configure LSM levels
 		Levels: []pebble.LevelOptions{
