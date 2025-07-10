@@ -5,69 +5,68 @@ import (
 	"github.com/cockroachdb/pebble/bloom"
 )
 
-// Options returns a pebble.Options struct optimized for Kaspa's block rate (10 blocks/s, 10,000 tx/block)
-// with WAL syncs reduced to once per second to improve write throughput.
+// Options returns a pebble.Options struct optimized for Kaspa's block rate (10 blocks/s, 10,000 tx/block).
 func Options() *pebble.Options {
-	// Use a Bloom filter with 10 bits per key for efficient reads
+	// Use a Bloom filter with 10 bits per key
 	bloomFilter := bloom.FilterPolicy(10)
 
 	// Define MemTable size
-	memTableSize := int64(512 * 1024 * 1024) // 512 MB
+	memTableSize := int64(256 * 1024 * 1024) // 256 MB (reduced to increase flush frequency)
 
 	opts := &pebble.Options{
-		// Large block cache to optimize read performance
-		Cache: pebble.NewCache(1024 * 1024 * 1024), // 1024 MB cache
+		// Increase cache size for better read performance
+		Cache: pebble.NewCache(4 * 1024 * 1024 * 1024), // 4 GB cache
 
 		// Write-heavy workload optimizations
 		MemTableSize:                uint64(memTableSize),
-		MemTableStopWritesThreshold: 8,                       // Limit in-memory tables to prevent overload
-		L0CompactionThreshold:       32,                      // Start compacting after 32 L0 files 16 Gb
-		L0StopWritesThreshold:       64,                      // Apply backpressure after 64 L0 files 32 Gb
-		MaxConcurrentCompactions:    func() int { return 8 }, // Allow more compactions in parallel
+		MemTableStopWritesThreshold: 12,                      // Allow more MemTables to avoid stalls
+		L0CompactionThreshold:       16,                      // Compact earlier to reduce read amplification
+		L0StopWritesThreshold:       32,                      // Apply backpressure earlier to control L0 growth
+		MaxConcurrentCompactions:    func() int { return 4 }, // Reduce to balance I/O and CPU usage
 
 		// Configure LSM levels
 		Levels: []pebble.LevelOptions{
-			// Level 0: Match file size to MemTable to avoid fragmentation
+			// Level 0: Smaller file size, Snappy for faster flushes
 			{
-				TargetFileSize: memTableSize,
+				TargetFileSize: memTableSize / 2, // 128 MB
 				BlockSize:      32 * 1024,
-				Compression:    pebble.NoCompression,
+				Compression:    pebble.SnappyCompression, // Use Snappy to reduce write amplification
 				FilterPolicy:   bloomFilter,
 			},
-			// Level 1 to 5: Progressive scaling with Snappy compression
+			// Level 1 to 5: Adjusted scaling
 			{
-				TargetFileSize: memTableSize * 2,
-				BlockSize:      32 * 1024,
-				Compression:    pebble.SnappyCompression,
-				FilterPolicy:   bloomFilter,
-			},
-			{
-				TargetFileSize: memTableSize * 4,
+				TargetFileSize: memTableSize, // 256 MB
 				BlockSize:      32 * 1024,
 				Compression:    pebble.SnappyCompression,
 				FilterPolicy:   bloomFilter,
 			},
 			{
-				TargetFileSize: memTableSize * 8,
+				TargetFileSize: memTableSize * 2, // 512 MB
 				BlockSize:      32 * 1024,
 				Compression:    pebble.SnappyCompression,
 				FilterPolicy:   bloomFilter,
 			},
 			{
-				TargetFileSize: memTableSize * 16,
+				TargetFileSize: memTableSize * 4, // 1 GB
 				BlockSize:      32 * 1024,
 				Compression:    pebble.SnappyCompression,
 				FilterPolicy:   bloomFilter,
 			},
 			{
-				TargetFileSize: memTableSize * 32,
+				TargetFileSize: memTableSize * 8, // 2 GB
 				BlockSize:      32 * 1024,
 				Compression:    pebble.SnappyCompression,
 				FilterPolicy:   bloomFilter,
 			},
-			// Level 6: Cold data with high compression
 			{
-				TargetFileSize: 2048 * 1024 * 1024,
+				TargetFileSize: memTableSize * 16, // 4 GB
+				BlockSize:      32 * 1024,
+				Compression:    pebble.SnappyCompression,
+				FilterPolicy:   bloomFilter,
+			},
+			// Level 6: Cold data with Zstd
+			{
+				TargetFileSize: 1024 * 1024 * 1024, // 1 GB
 				BlockSize:      32 * 1024,
 				Compression:    pebble.ZstdCompression,
 				FilterPolicy:   bloomFilter,
@@ -75,5 +74,7 @@ func Options() *pebble.Options {
 		},
 	}
 
+	// Ensure cache is properly referenced
+	opts.EnsureDefaults()
 	return opts
 }
