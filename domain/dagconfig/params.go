@@ -302,7 +302,7 @@ var MainnetParams = Params{
 	// This is technically 255, but we clamped it at 256 - block level of mainnet genesis
 	// This means that any block that has a level lower or equal to genesis will be level 0.
 	MaxBlockLevel: 225,
-	MergeDepth:    []uint64{defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, defaultMergeDepth},
+	MergeDepth:    []uint64{defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, 3600, 3600},
 }
 
 // TestnetParams defines the network parameters for the test Hoosat network.
@@ -445,7 +445,7 @@ var TestnetParamsB5 = Params{
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 
 	MaxBlockLevel: 250,
-	MergeDepth:    []uint64{defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, defaultMergeDepth * 5},
+	MergeDepth:    []uint64{defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, 3600, 3600},
 }
 
 var TestnetParamsB10 = Params{
@@ -516,7 +516,7 @@ var TestnetParamsB10 = Params{
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 
 	MaxBlockLevel: 250,
-	MergeDepth:    []uint64{defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, defaultMergeDepth * 10},
+	MergeDepth:    []uint64{defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, 3600, 3600},
 }
 
 // SimnetParams defines the network parameters for the simulation test Hoosat
