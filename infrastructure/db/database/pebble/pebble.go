@@ -105,7 +105,7 @@ func (db *PebbleDB) Has(key *database.Key) (bool, error) {
 
 // Delete deletes the value for the given key. Will not return an error if the key doesn't exist.
 func (db *PebbleDB) Delete(key *database.Key) error {
-	err := db.db.Delete(key.Bytes(), pebble.Sync)
+	err := db.db.Delete(key.Bytes(), pebble.NoSync)
 	return errors.WithStack(err)
 }
 
