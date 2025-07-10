@@ -11,14 +11,14 @@ func Options() *pebble.Options {
 	bloomFilter := bloom.FilterPolicy(10)
 
 	// Define MemTable size
-	memTableSize := int64(64 * 1024 * 1024) // 128 Mb
+	memTableSize := int64(8 * 1024 * 1024) // 128 Mb
 	opts := &pebble.Options{
 		// Increase cache size for better read performance
 		Cache: pebble.NewCache(2 * 1024 * 1024 * 1024), // 1 GB
 
 		// Write-heavy workload optimizations
-		MemTableSize:                uint64(memTableSize), // 64 Mb
-		MemTableStopWritesThreshold: 6,                    // 384 Mb
+		MemTableSize:                uint64(memTableSize), // 8 Mb
+		MemTableStopWritesThreshold: 16,                   // 128 Mb
 		L0CompactionThreshold:       8,
 		L0StopWritesThreshold:       16,
 		MaxConcurrentCompactions:    func() int { return 8 },
