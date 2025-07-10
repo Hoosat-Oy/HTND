@@ -1,6 +1,8 @@
 package pepple
 
 import (
+	"os"
+
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
 	"github.com/cockroachdb/pebble"
 	"github.com/pkg/errors"
@@ -13,25 +15,28 @@ type PeppleDB struct {
 
 // NewPeppleDB opens a Pebble instance defined by the given path.
 func NewPeppleDB(path string, cacheSizeMiB int) (*PeppleDB, error) {
-	// Open Pebble database. If it doesn't exist, create it.
 	options := Options()
+
 	db, err := pebble.Open(path, options)
-
-	// If the database is corrupted, attempt to recover.
-	if errors.Is(err, pebble.ErrCorruption) {
-		log.Warnf("Pebble corruption detected for path %s: %s", path, err)
-		log.Warnf("Starting to recover Pebble for path %s", path)
-		var recoverErr error
-		db, recoverErr = pebble.Open(path, &pebble.Options{ErrorIfExists: false})
-		if recoverErr != nil {
-			return nil, errors.Wrapf(err, "failed recovering from database corruption: %s", recoverErr)
-		}
-		log.Warnf("Pebble recovered from corruption for path %s", path)
-	}
-
-	// If the database cannot be opened for any other reason, return the error as-is.
 	if err != nil {
-		return nil, errors.WithStack(err)
+		if errors.Is(err, pebble.ErrCorruption) {
+			log.Warnf("Pebble corruption detected at %s: %v", path, err)
+
+			// Remove the corrupted DB
+			log.Warnf("Removing corrupted DB at %s", path)
+			if rmErr := os.RemoveAll(path); rmErr != nil {
+				return nil, errors.Wrap(rmErr, "failed to remove corrupted DB")
+			}
+
+			// Attempt to create a fresh DB
+			db, err = pebble.Open(path, options)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to create fresh DB after corruption")
+			}
+			log.Warnf("Created fresh Pebble DB at %s", path)
+		} else {
+			return nil, errors.WithStack(err)
+		}
 	}
 
 	dbInstance := &PeppleDB{
