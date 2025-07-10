@@ -1,8 +1,6 @@
 package pebble
 
 import (
-	"time"
-
 	"github.com/cockroachdb/pebble"
 	"github.com/cockroachdb/pebble/bloom"
 )
@@ -14,25 +12,18 @@ func Options() *pebble.Options {
 	bloomFilter := bloom.FilterPolicy(10)
 
 	// Define MemTable size
-	memTableSize := int64(64 * 1024 * 1024) // 64 MB
+	memTableSize := int64(512 * 1024 * 1024) // 512 MB
 
 	opts := &pebble.Options{
 		// Large block cache to optimize read performance
-		Cache: pebble.NewCache(256 * 1024 * 1024), // 256 MB cache
+		Cache: pebble.NewCache(1024 * 1024 * 1024), // 1024 MB cache
 
 		// Write-heavy workload optimizations
 		MemTableSize:                uint64(memTableSize),
 		MemTableStopWritesThreshold: 8,                       // Limit in-memory tables to prevent overload
-		L0CompactionThreshold:       32,                      // Start compacting after 32 L0 files
-		L0StopWritesThreshold:       64,                      // Apply backpressure after 64 L0 files
+		L0CompactionThreshold:       32,                      // Start compacting after 32 L0 files 16 Gb
+		L0StopWritesThreshold:       64,                      // Apply backpressure after 64 L0 files 32 Gb
 		MaxConcurrentCompactions:    func() int { return 8 }, // Allow more compactions in parallel
-		DisableAutomaticCompactions: false,
-
-		// Reduce WAL sync frequency
-		WALMinSyncInterval: func() time.Duration {
-			return 100 * time.Millisecond // Sync WAL at most every 100 millisecond
-		},
-		FlushSplitBytes: memTableSize / 2, // Split flushes to reduce WAL sync pressure
 
 		// Configure LSM levels
 		Levels: []pebble.LevelOptions{
