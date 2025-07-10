@@ -28,10 +28,10 @@ func BytesPrefix(prefix []byte) *pebble.IterOptions {
 		}
 	}
 
-	// if limit != nil && 32 > 0 {
-	// 	extension := bytes.Repeat([]byte{0xFF}, 32)
-	// 	limit = append(limit, extension...)
-	// }
+	if limit != nil && 32 > 0 {
+		extension := bytes.Repeat([]byte{0xFF}, 32)
+		limit = append(limit, extension...)
+	}
 	// log.Infof("BytesPrefix: prefix=%x, limit=%x", prefix, limit)
 	return &pebble.IterOptions{
 		LowerBound: prefix,
