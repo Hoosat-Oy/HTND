@@ -1,4 +1,4 @@
-package pepple
+package pebble
 
 import (
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"

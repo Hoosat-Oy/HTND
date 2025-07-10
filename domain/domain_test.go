@@ -16,7 +16,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/testutils"
 	"github.com/Hoosat-Oy/HTND/domain/miningmanager/mempool"
-	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/pepple"
+	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/pebble"
 )
 
 func TestCreateStagingConsensus(t *testing.T) {
@@ -27,7 +27,7 @@ func TestCreateStagingConsensus(t *testing.T) {
 		}
 		defer os.RemoveAll(dataDir)
 
-		db, err := pepple.NewPeppleDB(dataDir, 8)
+		db, err := pebble.NewPebbleDB(dataDir, 8)
 		if err != nil {
 			t.Fatalf("NewLevelDB: %+v", err)
 		}

@@ -1,4 +1,4 @@
-package pepple
+package pebble
 
 import (
 	"bytes"
@@ -8,8 +8,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-// PeppleDBCursor is a thin wrapper around Pebble iterators.
-type PeppleDBCursor struct {
+// PebbleDBCursor is a thin wrapper around Pebble iterators.
+type PebbleDBCursor struct {
+	db       *PebbleDB
 	iterator *pebble.Iterator
 	bucket   *database.Bucket
 	isClosed bool
@@ -40,24 +41,26 @@ func BytesPrefix(prefix []byte) *pebble.IterOptions {
 }
 
 // Cursor begins a new cursor over the given prefix.
-func (db *PeppleDB) Cursor(bucket *database.Bucket) (database.Cursor, error) {
+func (db *PebbleDB) Cursor(bucket *database.Bucket) (database.Cursor, error) {
 	// log.Infof("Bucket path = %x", bucket.Path())
 	iterator, err := db.db.NewIter(BytesPrefix(bucket.Path()))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create iterator")
 	}
-	cursor := &PeppleDBCursor{
+	cursor := &PebbleDBCursor{
+		db:       db,
 		iterator: iterator,
 		bucket:   bucket,
 		isClosed: false,
 	}
+	db.registerCursor(cursor) // Register cursor with database
 	cursor.First()
 	return cursor, nil
 }
 
 // Next moves the iterator to the next key/value pair. It returns whether the iterator is exhausted.
 // Panics if the cursor is closed.
-func (c *PeppleDBCursor) Next() bool {
+func (c *PebbleDBCursor) Next() bool {
 	if c.isClosed {
 		panic("cannot call next on a closed cursor")
 	}
@@ -69,7 +72,7 @@ func (c *PeppleDBCursor) Next() bool {
 
 // First moves the iterator to the first key/value pair. It returns false if such a pair does not exist.
 // Panics if the cursor is closed.
-func (c *PeppleDBCursor) First() bool {
+func (c *PebbleDBCursor) First() bool {
 	if c.isClosed {
 		panic("cannot call First on a closed cursor")
 	}
@@ -80,11 +83,11 @@ func (c *PeppleDBCursor) First() bool {
 
 // Seek moves the iterator to the first key/value pair whose key is greater
 // than or equal to the given key. It returns ErrNotFound if such pair does not exist.
-func (c *PeppleDBCursor) Seek(key *database.Key) error {
+func (c *PebbleDBCursor) Seek(key *database.Key) error {
 	if c.isClosed {
 		return errors.New("cannot seek a closed cursor")
 	}
-	// Use key.Bytes() directly, like LevelDB, for compatibility with UTXO iterator
+	// Use key directly, like LevelDB, for compatibility with UTXO iterator
 	found := c.iterator.SeekGE(key.Bytes())
 	// log.Infof("Seek: key=%x, found=%v, currentKey=%x", key.Bytes(), found, c.iterator.Key())
 	if !found {
@@ -99,8 +102,9 @@ func (c *PeppleDBCursor) Seek(key *database.Key) error {
 
 // Key returns the key of the current key/value pair, or ErrNotFound if done.
 // Note that the key is trimmed to not include the prefix the cursor was opened with.
-// The caller should not modify the contents of the returned slice, and its contents may change on the next call to Next.
-func (c *PeppleDBCursor) Key() (*database.Key, error) {
+// The caller should not modify the contents of the returned slice, and its contents may change
+// on the next call to Next.
+func (c *PebbleDBCursor) Key() (*database.Key, error) {
 	if c.isClosed {
 		return nil, errors.New("cannot get the key of a closed cursor")
 	}
@@ -114,8 +118,9 @@ func (c *PeppleDBCursor) Key() (*database.Key, error) {
 }
 
 // Value returns the value of the current key/value pair, or ErrNotFound if done.
-// The caller should not modify the contents of the returned slice, and its contents may change on the next call to Next.
-func (c *PeppleDBCursor) Value() ([]byte, error) {
+// The caller should not modify the contents of the returned slice, and its contents may change
+// on the next call to Next.
+func (c *PebbleDBCursor) Value() ([]byte, error) {
 	if c.isClosed {
 		return nil, errors.New("cannot get the value of a closed cursor")
 	}
@@ -128,11 +133,12 @@ func (c *PeppleDBCursor) Value() ([]byte, error) {
 }
 
 // Close releases associated resources.
-func (c *PeppleDBCursor) Close() error {
+func (c *PebbleDBCursor) Close() error {
 	if c.isClosed {
 		return errors.New("cannot close an already closed cursor")
 	}
 	c.isClosed = true
+	c.db.deregisterCursor(c) // Deregister from database
 	err := c.iterator.Close()
 	c.iterator = nil
 	c.bucket = nil

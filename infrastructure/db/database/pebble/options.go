@@ -1,4 +1,4 @@
-package pepple
+package pebble
 
 import (
 	"github.com/cockroachdb/pebble"

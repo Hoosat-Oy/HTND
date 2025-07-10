@@ -56,7 +56,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/transactionvalidator"
 	"github.com/Hoosat-Oy/HTND/domain/dagconfig"
 	infrastructuredatabase "github.com/Hoosat-Oy/HTND/infrastructure/db/database"
-	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/pepple"
+	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/pebble"
 )
 
 const (
@@ -591,7 +591,7 @@ func (f *factory) NewTestConsensus(config *Config, testName string) (
 	if f.preallocateCaches == nil {
 		f.SetTestPreAllocateCache(defaultTestPreallocateCaches)
 	}
-	db, err := pepple.NewPeppleDB(datadir, cacheSizeMiB)
+	db, err := pebble.NewPebbleDB(datadir, cacheSizeMiB)
 	if err != nil {
 		return nil, nil, err
 	}
