@@ -191,7 +191,7 @@ type Params struct {
 	// MaxBlockLevel is the maximum possible block level.
 	MaxBlockLevel int
 
-	MergeDepth uint64
+	MergeDepth []uint64
 
 	POWScores []uint64
 }
@@ -302,7 +302,7 @@ var MainnetParams = Params{
 	// This is technically 255, but we clamped it at 256 - block level of mainnet genesis
 	// This means that any block that has a level lower or equal to genesis will be level 0.
 	MaxBlockLevel: 225,
-	MergeDepth:    defaultMergeDepth,
+	MergeDepth:    []uint64{defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, defaultMergeDepth},
 }
 
 // TestnetParams defines the network parameters for the test Hoosat network.
@@ -374,7 +374,7 @@ var TestnetParams = Params{
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 
 	MaxBlockLevel: 250,
-	MergeDepth:    defaultMergeDepth,
+	MergeDepth:    []uint64{defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, defaultMergeDepth},
 }
 
 var TestnetParamsB5 = Params{
@@ -445,7 +445,7 @@ var TestnetParamsB5 = Params{
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 
 	MaxBlockLevel: 250,
-	MergeDepth:    defaultMergeDepth * 5,
+	MergeDepth:    []uint64{defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, defaultMergeDepth * 5},
 }
 
 var TestnetParamsB10 = Params{
@@ -516,7 +516,7 @@ var TestnetParamsB10 = Params{
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 
 	MaxBlockLevel: 250,
-	MergeDepth:    defaultMergeDepth * 10,
+	MergeDepth:    []uint64{defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, defaultMergeDepth * 10},
 }
 
 // SimnetParams defines the network parameters for the simulation test Hoosat
@@ -584,7 +584,7 @@ var SimnetParams = Params{
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 
 	MaxBlockLevel: 250,
-	MergeDepth:    defaultMergeDepth,
+	MergeDepth:    []uint64{defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, defaultMergeDepth},
 }
 
 // DevnetParams defines the network parameters for the development Hoosat network.
@@ -648,7 +648,7 @@ var DevnetParams = Params{
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 
 	MaxBlockLevel: 250,
-	MergeDepth:    defaultMergeDepth,
+	MergeDepth:    []uint64{defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, defaultMergeDepth},
 }
 
 // ErrDuplicateNet describes an error where the parameters for a Hoosat

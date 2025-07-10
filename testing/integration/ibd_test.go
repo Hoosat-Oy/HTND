@@ -244,7 +244,7 @@ func mineNextBlockWithMockTimestamps(t *testing.T, harness *appHarness, rd *rand
 func TestBoundedMergeDepth(t *testing.T) {
 	overrideDAGParams := dagconfig.SimnetParams
 
-	overrideDAGParams.MergeDepth = 50
+	overrideDAGParams.MergeDepth = []uint64{50}
 
 	harnesses, teardown := setupHarnesses(t, []*harnessParams{
 		{
@@ -314,10 +314,10 @@ func TestBoundedMergeDepth(t *testing.T) {
 	}
 
 	t.Run("mergeDepth", func(t *testing.T) {
-		test(harnesses[0], harnesses[1], overrideDAGParams.MergeDepth, false)
+		test(harnesses[0], harnesses[1], overrideDAGParams.MergeDepth[constants.BlockVersion-1], false)
 	})
 
 	t.Run("mergeDepth-1", func(t *testing.T) {
-		test(harnesses[2], harnesses[3], overrideDAGParams.MergeDepth-1, true)
+		test(harnesses[2], harnesses[3], overrideDAGParams.MergeDepth[constants.BlockVersion-1]-1, true)
 	})
 }

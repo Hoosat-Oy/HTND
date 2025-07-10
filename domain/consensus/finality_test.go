@@ -186,14 +186,14 @@ func TestBoundedMergeDepth(t *testing.T) {
 		rd := rand.New(rand.NewSource(0))
 		// Set finalityInterval to 50 blocks, so that test runs quickly
 		consensusConfig.K[constants.BlockVersion-1] = 5
-		consensusConfig.MergeDepth = 7
+		consensusConfig.MergeDepth = []uint64{7}
 		consensusConfig.FinalityDuration = []time.Duration{20 * consensusConfig.TargetTimePerBlock[constants.BlockVersion-1]}
 
 		if uint64(consensusConfig.K[constants.BlockVersion-1]) >= consensusConfig.FinalityDepth() {
 			t.Fatal("K must be smaller than finality duration for this test to run")
 		}
 
-		if uint64(consensusConfig.K[constants.BlockVersion-1]) >= consensusConfig.MergeDepth {
+		if uint64(consensusConfig.K[constants.BlockVersion-1]) >= consensusConfig.MergeDepth[constants.BlockVersion-1] {
 			t.Fatal("K must be smaller than merge depth for this test to run")
 		}
 
@@ -487,7 +487,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 			}
 		}
 
-		test(consensusConfig.MergeDepth, consensusConfig.GenesisHash, true, true)
+		test(consensusConfig.MergeDepth[constants.BlockVersion-1], consensusConfig.GenesisHash, true, true)
 	})
 }
 

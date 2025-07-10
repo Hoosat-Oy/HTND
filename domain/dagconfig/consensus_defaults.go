@@ -82,5 +82,5 @@ const (
 	// We define a day in seconds for premine = 60 * 60 = 3600
 	defaultDeflationaryPhaseDaaScore = 360
 
-	defaultMergeDepth = 3600
+	defaultMergeDepth = 360
 )
