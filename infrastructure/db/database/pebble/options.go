@@ -19,10 +19,10 @@ func Options() *pebble.Options {
 
 		// Write-heavy workload optimizations
 		MemTableSize:                uint64(memTableSize),
-		MemTableStopWritesThreshold: 12,                      // Allow more MemTables to avoid stalls
-		L0CompactionThreshold:       16,                      // Compact earlier to reduce read amplification
-		L0StopWritesThreshold:       32,                      // Apply backpressure earlier to control L0 growth
-		MaxConcurrentCompactions:    func() int { return 4 }, // Reduce to balance I/O and CPU usage
+		MemTableStopWritesThreshold: 12,                       // Allow more MemTables to avoid stalls
+		L0CompactionThreshold:       32,                       // Compact earlier to reduce read amplification
+		L0StopWritesThreshold:       64,                       // Apply backpressure earlier to control L0 growth
+		MaxConcurrentCompactions:    func() int { return 12 }, // Reduce to balance I/O and CPU usage
 
 		// Configure LSM levels
 		Levels: []pebble.LevelOptions{
@@ -30,7 +30,7 @@ func Options() *pebble.Options {
 			{
 				TargetFileSize: memTableSize / 2, // 128 MB
 				BlockSize:      32 * 1024,
-				Compression:    pebble.SnappyCompression, // Use Snappy to reduce write amplification
+				Compression:    pebble.NoCompression, // Use Snappy to reduce write amplification
 				FilterPolicy:   bloomFilter,
 			},
 			// Level 1 to 5: Adjusted scaling
@@ -66,7 +66,7 @@ func Options() *pebble.Options {
 			},
 			// Level 6: Cold data with Zstd
 			{
-				TargetFileSize: 1024 * 1024 * 1024, // 1 GB
+				TargetFileSize: memTableSize * 16, // 4 GB
 				BlockSize:      32 * 1024,
 				Compression:    pebble.ZstdCompression,
 				FilterPolicy:   bloomFilter,
