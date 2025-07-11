@@ -73,7 +73,7 @@ func (db *PebbleDB) Close() error {
 
 // Put sets the value for the given key. It overwrites any previous value for that key.
 func (db *PebbleDB) Put(key *database.Key, value []byte) error {
-	err := db.db.Set(key.Bytes(), value, pebble.Sync)
+	err := db.db.Set(key.Bytes(), value, pebble.NoSync)
 	return errors.WithStack(err)
 }
 
