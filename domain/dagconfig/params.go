@@ -402,11 +402,11 @@ var TestnetParamsB5 = Params{
 	PreDeflationaryPhaseBaseSubsidy: defaultPreDeflationaryPhaseBaseSubsidy,
 	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
 	TargetTimePerBlock:              []time.Duration{defaultTargetTimePerBlock, defaultTargetTimePerBlock, defaultTargetTimePerBlock, defaultTargetTimePerBlock, 200 * time.Millisecond},
-	FinalityDuration:                []time.Duration{defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, 14400 * time.Second},
+	FinalityDuration:                []time.Duration{defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, 10800 * time.Second},
 	DifficultyAdjustmentWindowSize:  []int{defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize},
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 	POWScores:                       []uint64{5, 15, 25, 30},
-	PruningMultiplier:               []uint64{0, 0, 0, 0, 3},
+	PruningMultiplier:               []uint64{0, 0, 0, 0, 1},
 	MaxBlockMass:                    []uint64{defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, 1_000_000},
 
 	// Consensus rule change deployments.s
@@ -444,7 +444,7 @@ var TestnetParamsB5 = Params{
 	PruningProofM:                           defaultPruningProofM,
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 
-	MaxBlockLevel: 250,
+	MaxBlockLevel: 225,
 	MergeDepth:    []uint64{defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, 3600, 3600},
 }
 
