@@ -11,62 +11,62 @@ func Options() *pebble.Options {
 	bloomFilter := bloom.FilterPolicy(10)
 
 	// Define MemTable size
-	memTableSize := int64(64 * 1024 * 1024) // 512 Mb
+	memTableSize := int64(32 * 1024 * 1024) // 512 Mb
 	opts := &pebble.Options{
 		// Increase cache size for better read performance
 		Cache: pebble.NewCache(1 * 1024 * 1024 * 1024), // 1 GB
 
 		// Write-heavy workload optimizations
-		MemTableSize:                uint64(memTableSize), // 64 Mb
-		MemTableStopWritesThreshold: 8,                    // 512 Gb
+		MemTableSize:                uint64(memTableSize), // 32 Mb
+		MemTableStopWritesThreshold: 8,                    // 256 Mb
 		L0CompactionThreshold:       8,
 		L0StopWritesThreshold:       32,
-		MaxConcurrentCompactions:    func() int { return 8 },
+		MaxConcurrentCompactions:    func() int { return 4 },
 
 		// Configure LSM levels
 		Levels: []pebble.LevelOptions{
 			// Level 0: Smaller file size, Snappy for faster flushes
 			{
 				TargetFileSize: memTableSize, // 512 MB
-				BlockSize:      8 * 1024,
+				BlockSize:      4 * 1024,
 				Compression:    pebble.NoCompression, // Use Snappy to reduce write amplification
 				FilterPolicy:   bloomFilter,
 			},
 			// Level 1 to 5: Adjusted scaling
 			{
 				TargetFileSize: memTableSize, // 512 MB
-				BlockSize:      8 * 1024,
+				BlockSize:      4 * 1024,
 				Compression:    pebble.SnappyCompression,
 				FilterPolicy:   bloomFilter,
 			},
 			{
 				TargetFileSize: memTableSize, // 512 MB
-				BlockSize:      8 * 1024,
+				BlockSize:      4 * 1024,
 				Compression:    pebble.SnappyCompression,
 				FilterPolicy:   bloomFilter,
 			},
 			{
 				TargetFileSize: memTableSize * 2, // 1 GB
-				BlockSize:      8 * 1024,
+				BlockSize:      4 * 1024,
 				Compression:    pebble.SnappyCompression,
 				FilterPolicy:   bloomFilter,
 			},
 			{
 				TargetFileSize: memTableSize * 4, // 2 GB
-				BlockSize:      8 * 1024,
+				BlockSize:      4 * 1024,
 				Compression:    pebble.SnappyCompression,
 				FilterPolicy:   bloomFilter,
 			},
 			{
 				TargetFileSize: memTableSize * 6, // 4 GB
-				BlockSize:      8 * 1024,
+				BlockSize:      4 * 1024,
 				Compression:    pebble.SnappyCompression,
 				FilterPolicy:   bloomFilter,
 			},
 			// Level 6: Cold data with Zstd
 			{
 				TargetFileSize: memTableSize * 12, // 8 GB
-				BlockSize:      8 * 1024,
+				BlockSize:      4 * 1024,
 				Compression:    pebble.ZstdCompression,
 				FilterPolicy:   bloomFilter,
 			},
