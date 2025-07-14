@@ -1,6 +1,7 @@
 package pebble
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
@@ -130,5 +131,81 @@ func TestTransactionCloseErrors(t *testing.T) {
 				}
 			}
 		}()
+	}
+}
+func TestTransactionHasBatchIsolation(t *testing.T) {
+	ldb, teardownFunc := prepareDatabaseForTest(t, "TestTransactionHasBatchIsolation")
+	defer teardownFunc()
+
+	// Begin a new transaction
+	tx, err := ldb.Begin()
+	if err != nil {
+		t.Fatalf("TestTransactionHasBatchIsolation: Begin failed: %s", err)
+	}
+	defer tx.RollbackUnlessClosed()
+
+	// Put a UTXO-like key-value pair
+	key := database.MakeBucket([]byte("utxo")).Key([]byte("txid:0"))
+	value := []byte("1000:somscript")
+	err = tx.Put(key, value)
+	if err != nil {
+		t.Fatalf("TestTransactionHasBatchIsolation: Put failed: %s", err)
+	}
+
+	// Check if key exists in transaction
+	exists, err := tx.Has(key)
+	if err != nil {
+		t.Fatalf("TestTransactionHasBatchIsolation: Has failed: %s", err)
+	}
+	if !exists {
+		t.Fatalf("TestTransactionHasBatchIsolation: Has returned false for key in batch")
+	}
+
+	// Verify key doesn't exist in database before commit
+	exists, err = ldb.Has(key)
+	if err != nil {
+		t.Fatalf("TestTransactionHasBatchIsolation: DB Has failed: %s", err)
+	}
+	if exists {
+		t.Fatalf("TestTransactionHasBatchIsolation: Key found in database before commit")
+	}
+
+	// Get the value from the transaction
+	data, err := tx.Get(key)
+	if err != nil {
+		t.Fatalf("TestTransactionHasBatchIsolation: Get failed: %s", err)
+	}
+	if !reflect.DeepEqual(data, value) {
+		t.Fatalf("TestTransactionHasBatchIsolation: Get returned wrong value. Want: %s, Got: %s", value, data)
+	}
+
+	// Delete the key in the transaction
+	err = tx.Delete(key)
+	if err != nil {
+		t.Fatalf("TestTransactionHasBatchIsolation: Delete failed: %s", err)
+	}
+
+	// Check if key is marked as deleted in transaction
+	exists, err = tx.Has(key)
+	if err != nil {
+		t.Fatalf("TestTransactionHasBatchIsolation: Has after Delete failed: %s", err)
+	}
+	if exists {
+		t.Fatalf("TestTransactionHasBatchIsolation: Has returned true for deleted key")
+	}
+
+	// Commit the transaction
+	err = tx.Commit()
+	if err != nil {
+		t.Fatalf("TestTransactionHasBatchIsolation: Commit failed: %s", err)
+	}
+
+	// Verify key doesn't exist in database after commit
+	exists, err = ldb.Has(key)
+	if err != nil {
+		t.Fatalf("TestTransactionHasBatchIsolation: DB Has after commit failed: %s", err)
+	}
+	if exists {
+		t.Fatalf("TestTransactionHasBatchIsolation: Key found in database after delete commit")
 	}
 }

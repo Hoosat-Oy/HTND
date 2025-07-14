@@ -228,3 +228,84 @@ func TestCursorCloseFirstAndNext(t *testing.T) {
 		cursor.Next()
 	}()
 }
+
+func TestCursorUTXOIteration(t *testing.T) {
+	ldb, teardownFunc := prepareDatabaseForTest(t, "TestCursorUTXOIteration")
+	defer teardownFunc()
+
+	bucket := database.MakeBucket([]byte("utxo"))
+	for i := 0; i < 10; i++ {
+		key := bucket.Key([]byte(fmt.Sprintf("txid:%d", i)))
+		value := []byte(fmt.Sprintf("amount:%d", i))
+		if err := ldb.Put(key, value); err != nil {
+			t.Fatalf("TestCursorUTXOIteration: Put failed: %s", err)
+		}
+	}
+
+	cursor, err := ldb.Cursor(bucket)
+	if err != nil {
+		t.Fatalf("TestCursorUTXOIteration: Cursor failed: %s", err)
+	}
+	defer cursor.Close()
+
+	i := 0
+	for ok := cursor.First(); ok; ok = cursor.Next() {
+		if i >= 10 {
+			t.Fatalf("TestCursorUTXOIteration: Cursor iterated beyond expected  Ascending: %d", i)
+		}
+		expectedKey := bucket.Key([]byte(fmt.Sprintf("txid:%d", i)))
+		expectedValue := []byte(fmt.Sprintf("amount:%d", i))
+		validateCurrentCursorKeyAndValue(t, "TestCursorUTXOIteration", cursor, expectedKey, expectedValue)
+		i++
+	}
+
+	if i != 10 {
+		t.Fatalf("TestCursorUTXOIteration: Expected 10 iterations, got %d", i)
+	}
+}
+
+func TestCursorUTXOEmptyAndNonSequential(t *testing.T) {
+	ldb, teardownFunc := prepareDatabaseForTest(t, "TestCursorUTXOEmptyAndNonSequential")
+	defer teardownFunc()
+
+	// Test empty bucket
+	bucket := database.MakeBucket([]byte("utxo"))
+	cursor, err := ldb.Cursor(bucket)
+	if err != nil {
+		t.Fatalf("TestCursorUTXOEmptyAndNonSequential: Cursor failed: %s", err)
+	}
+	defer cursor.Close()
+	if cursor.First() {
+		t.Fatalf("TestCursorUTXOEmptyAndNonSequential: First returned true for empty bucket")
+	}
+
+	// Test non-sequential keys
+	keys := []string{"txid:0", "txid:2", "txid:5"}
+	for i, k := range keys {
+		key := bucket.Key([]byte(k))
+		value := []byte(fmt.Sprintf("amount:%d", i))
+		if err := ldb.Put(key, value); err != nil {
+			t.Fatalf("TestCursorUTXOEmptyAndNonSequential: Put failed: %s", err)
+		}
+	}
+
+	cursor, err = ldb.Cursor(bucket)
+	if err != nil {
+		t.Fatalf("TestCursorUTXOEmptyAndNonSequential: Cursor failed: %s", err)
+	}
+	defer cursor.Close()
+
+	i := 0
+	for ok := cursor.First(); ok; ok = cursor.Next() {
+		if i >= len(keys) {
+			t.Fatalf("TestCursorUTXOEmptyAndNonSequential: Cursor iterated beyond expected %d keys", len(keys))
+		}
+		expectedKey := bucket.Key([]byte(keys[i]))
+		expectedValue := []byte(fmt.Sprintf("amount:%d", i))
+		validateCurrentCursorKeyAndValue(t, "TestCursorUTXOEmptyAndNonSequential", cursor, expectedKey, expectedValue)
+		i++
+	}
+	if i != len(keys) {
+		t.Fatalf("TestCursorUTXOEmptyAndNonSequential: Expected %d iterations, got %d", len(keys), i)
+	}
+}

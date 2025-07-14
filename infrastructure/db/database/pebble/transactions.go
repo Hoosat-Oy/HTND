@@ -8,24 +8,23 @@ import (
 
 // PebbleDBTransaction is a thin wrapper around Pebble batches.
 // It supports both get and put.
-// Note that reads are done from the Database directly, so if another transaction changed the data,
-// you will read the new data, and not the one from the time the transaction was opened.
-// Note: As it's currently implemented, if one puts data into the transaction
-// then it will not be available to get within the same transaction.
+// Tracks modified keys to support Has within the transaction.
 type PebbleDBTransaction struct {
-	db       *PebbleDB
-	batch    *pebble.Batch
-	cursors  []database.Cursor
-	isClosed bool
+	db               *PebbleDB
+	batch            *pebble.Batch
+	cursors          []database.Cursor
+	isClosed         bool
+	keyModifications map[string]bool
 }
 
 // Begin begins a new transaction.
 func (db *PebbleDB) Begin() (database.Transaction, error) {
-	batch := db.db.NewBatch()
+	batch := db.db.NewIndexedBatch() // Use indexed batch for read support
 	transaction := &PebbleDBTransaction{
-		db:       db,
-		batch:    batch,
-		isClosed: false,
+		db:               db,
+		batch:            batch,
+		isClosed:         false,
+		keyModifications: make(map[string]bool),
 	}
 	return transaction, nil
 }
@@ -43,6 +42,7 @@ func (tx *PebbleDBTransaction) Commit() error {
 	}
 	tx.cursors = nil
 	tx.isClosed = true
+	tx.keyModifications = nil // Clear key tracking
 	return errors.WithStack(tx.batch.Commit(pebble.Sync))
 }
 
@@ -59,6 +59,7 @@ func (tx *PebbleDBTransaction) Rollback() error {
 	}
 	tx.cursors = nil
 	tx.isClosed = true
+	tx.keyModifications = nil // Clear key tracking
 	err := tx.batch.Close()
 	return errors.WithStack(err)
 }
@@ -78,6 +79,9 @@ func (tx *PebbleDBTransaction) Put(key *database.Key, value []byte) error {
 		return errors.New("cannot put into a closed transaction")
 	}
 	err := tx.batch.Set(key.Bytes(), value, nil)
+	if err == nil {
+		tx.keyModifications[string(key.Bytes())] = true // Track key as present
+	}
 	return errors.WithStack(err)
 }
 
@@ -86,14 +90,34 @@ func (tx *PebbleDBTransaction) Get(key *database.Key) ([]byte, error) {
 	if tx.isClosed {
 		return nil, errors.New("cannot get from a closed transaction")
 	}
+	// Check batch modifications first
+	if exists, ok := tx.keyModifications[string(key.Bytes())]; ok {
+		if !exists {
+			return nil, errors.Wrapf(database.ErrNotFound, "key %s was deleted in transaction", key)
+		}
+		data, closer, err := tx.batch.Get(key.Bytes())
+		if err == nil {
+			defer closer.Close()
+			return data, nil
+		}
+		if !errors.Is(err, pebble.ErrNotFound) {
+			return nil, errors.WithStack(err)
+		}
+	}
+	// Fall back to the database
 	return tx.db.Get(key)
 }
 
-// Has returns true if the database contains the given key.
+// Has returns true if the database or batch contains the given key.
 func (tx *PebbleDBTransaction) Has(key *database.Key) (bool, error) {
 	if tx.isClosed {
 		return false, errors.New("cannot has from a closed transaction")
 	}
+	// Check batch modifications first
+	if exists, ok := tx.keyModifications[string(key.Bytes())]; ok {
+		return exists, nil // Return true if key was Put, false if Deleted
+	}
+	// Fall back to the database
 	return tx.db.Has(key)
 }
 
@@ -103,6 +127,9 @@ func (tx *PebbleDBTransaction) Delete(key *database.Key) error {
 		return errors.New("cannot delete from a closed transaction")
 	}
 	err := tx.batch.Delete(key.Bytes(), nil)
+	if err == nil {
+		tx.keyModifications[string(key.Bytes())] = false // Track key as deleted
+	}
 	return errors.WithStack(err)
 }
 

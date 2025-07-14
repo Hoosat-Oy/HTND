@@ -82,15 +82,10 @@ func (c *PebbleDBCursor) Seek(key *database.Key) error {
 	if c.isClosed {
 		return errors.New("cannot seek a closed cursor")
 	}
-	// Use key directly, like LevelDB, for compatibility with UTXO iterator
 	found := c.iterator.SeekGE(key.Bytes())
-	// log.Infof("Seek: key=%x, found=%v, currentKey=%x", key.Bytes(), found, c.iterator.Key())
+	// log.Infof("Seek %s, found: %t", key.Bytes(), found)
 	if !found {
-		return errors.Wrapf(database.ErrNotFound, "key %s not found", key)
-	}
-	currentKey := c.iterator.Key()
-	if currentKey == nil || !bytes.Equal(currentKey, key.Bytes()) {
-		return errors.Wrapf(database.ErrNotFound, "key %s not found", key)
+		return errors.Wrapf(database.ErrNotFound, "no key found for seek %s", key)
 	}
 	return nil
 }
