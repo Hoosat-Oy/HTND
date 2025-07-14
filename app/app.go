@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/infrastructure/config"
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/ldb"
