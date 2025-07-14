@@ -5,11 +5,13 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/infrastructure/config"
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
+	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/ldb"
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/pebble"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
 	"github.com/Hoosat-Oy/HTND/infrastructure/os/execenv"
@@ -185,11 +187,21 @@ func openDB(cfg *config.Config) (database.Database, error) {
 		return nil, err
 	}
 
-	log.Infof("Loading database from '%s'", dbPath)
-	db, err := pebble.NewPebbleDB(dbPath, leveldbCacheSizeMiB)
-	if err != nil {
-		return nil, err
+	log.Infof("Loading database %s from '%s'", cfg.DbType, dbPath)
+	if strings.EqualFold(cfg.DbType, "pebble") {
+		log.Infof("Loading %s database from '%s'", cfg.DbType, dbPath)
+		db, err := pebble.NewPebbleDB(dbPath, leveldbCacheSizeMiB)
+		if err != nil {
+			return nil, err
+		}
+		return db, nil
+	} else {
+		log.Infof("Loading LevelDB database  from '%s'", dbPath)
+		db, err := ldb.NewLevelDB(dbPath, leveldbCacheSizeMiB)
+		if err != nil {
+			return nil, err
+		}
+		return db, nil
 	}
 
-	return db, nil
 }
