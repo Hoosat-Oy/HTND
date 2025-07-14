@@ -187,7 +187,6 @@ func openDB(cfg *config.Config) (database.Database, error) {
 		return nil, err
 	}
 
-	log.Infof("Loading database %s from '%s'", cfg.DbType, dbPath)
 	if strings.EqualFold(cfg.DbType, "pebble") {
 		log.Infof("Loading %s database from '%s'", cfg.DbType, dbPath)
 		db, err := pebble.NewPebbleDB(dbPath, leveldbCacheSizeMiB)
