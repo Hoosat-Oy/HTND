@@ -10,10 +10,11 @@ import (
 
 // PebbleDBCursor is a thin wrapper around Pebble iterators.
 type PebbleDBCursor struct {
-	db       *PebbleDB
-	iterator *pebble.Iterator
-	bucket   *database.Bucket
-	isClosed bool
+	db          *PebbleDB
+	iterator    *pebble.Iterator
+	firstCalled bool
+	bucket      *database.Bucket
+	isClosed    bool
 }
 
 // BytesPrefix returns iterator options for keys with the given prefix, with a computed upper bound.
@@ -38,18 +39,19 @@ func BytesPrefix(prefix []byte) *pebble.IterOptions {
 // Cursor begins a new cursor over the given prefix.
 func (db *PebbleDB) Cursor(bucket *database.Bucket) (database.Cursor, error) {
 	// log.Infof("Bucket path = %x", bucket.Path())
+	// log.Infof("Opening cursor for bucket path: %x", bucket.Path())
 	iterator, err := db.db.NewIter(BytesPrefix(bucket.Path()))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create iterator")
 	}
 	cursor := &PebbleDBCursor{
-		db:       db,
-		iterator: iterator,
-		bucket:   bucket,
-		isClosed: false,
+		db:          db,
+		iterator:    iterator,
+		bucket:      bucket,
+		isClosed:    false,
+		firstCalled: false,
 	}
 	db.registerCursor(cursor) // Register cursor with database
-	cursor.First()
 	return cursor, nil
 }
 
@@ -58,6 +60,12 @@ func (db *PebbleDB) Cursor(bucket *database.Bucket) (database.Cursor, error) {
 func (c *PebbleDBCursor) Next() bool {
 	if c.isClosed {
 		panic("cannot call next on a closed cursor")
+	}
+	if !c.firstCalled {
+		hasNext := c.iterator.First()
+		// log.Infof("First: hasNext=%v, valid=%v, key=%x", hasNext, c.iterator.Valid(), c.iterator.Key())
+		c.firstCalled = true
+		return hasNext
 	}
 	// log.Infof("Before Next: valid=%v, key=%x", c.iterator.Valid(), c.iterator.Key())
 	hasNext := c.iterator.Next()
@@ -72,6 +80,7 @@ func (c *PebbleDBCursor) First() bool {
 		panic("cannot call First on a closed cursor")
 	}
 	hasFirst := c.iterator.First()
+	c.firstCalled = true
 	// log.Infof("First: hasFirst=%v, currentKey=%x", hasFirst, c.iterator.Key())
 	return hasFirst
 }
@@ -83,6 +92,7 @@ func (c *PebbleDBCursor) Seek(key *database.Key) error {
 		return errors.New("cannot seek a closed cursor")
 	}
 	found := c.iterator.SeekGE(key.Bytes())
+	c.firstCalled = true
 	// log.Infof("Seek %s, found: %t", key.Bytes(), found)
 	if !found {
 		return errors.Wrapf(database.ErrNotFound, "no key found for seek %s", key)
@@ -127,6 +137,7 @@ func (c *PebbleDBCursor) Close() error {
 	if c.isClosed {
 		return errors.New("cannot close an already closed cursor")
 	}
+	c.firstCalled = false
 	c.isClosed = true
 	c.db.deregisterCursor(c) // Deregister from database
 	err := c.iterator.Close()

@@ -43,7 +43,7 @@ func (tx *PebbleDBTransaction) Commit() error {
 	tx.cursors = nil
 	tx.isClosed = true
 	tx.keyModifications = nil // Clear key tracking
-	return errors.WithStack(tx.batch.Commit(pebble.Sync))
+	return errors.WithStack(tx.batch.Commit(pebble.NoSync))
 }
 
 // Rollback rolls back whatever changes were made to the database within this transaction.
@@ -83,6 +83,15 @@ func (tx *PebbleDBTransaction) Put(key *database.Key, value []byte) error {
 		tx.keyModifications[string(key.Bytes())] = true // Track key as present
 	}
 	return errors.WithStack(err)
+}
+
+func (tx *PebbleDBTransaction) BatchPut(pairs map[*database.Key][]byte) error {
+	for key, value := range pairs {
+		if err := tx.batch.Set(key.Bytes(), value, pebble.NoSync); err != nil {
+			return errors.Wrapf(err, "failed to set key %s in batch", key)
+		}
+	}
+	return nil
 }
 
 // Get gets the value for the given key. It returns ErrNotFound if the given key does not exist.

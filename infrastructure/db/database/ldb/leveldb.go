@@ -68,6 +68,20 @@ func (db *LevelDB) Put(key *database.Key, value []byte) error {
 	return errors.WithStack(err)
 }
 
+func (db *LevelDB) BatchPut(pairs map[*database.Key][]byte) error {
+	batch := new(leveldb.Batch)
+	defer batch.Reset()
+
+	for key, value := range pairs {
+		batch.Put(key.Bytes(), value)
+	}
+
+	if err := db.ldb.Write(batch, nil); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
 // Get gets the value for the given key. It returns
 // ErrNotFound if the given key does not exist.
 func (db *LevelDB) Get(key *database.Key) ([]byte, error) {

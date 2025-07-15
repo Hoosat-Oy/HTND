@@ -2,6 +2,7 @@ package pebble
 
 import (
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
@@ -75,7 +76,24 @@ func (db *PebbleDB) Close() error {
 func (db *PebbleDB) Put(key *database.Key, value []byte) error {
 	// log.Infof("Put key: %s, value %x", key, value)
 	err := db.db.Set(key.Bytes(), value, pebble.NoSync)
+	// if strings.Contains(string(key.Bytes()), "utxo-index") {
+	// 	log.Infof("Pebble Put, key: %x, value: %x", key.Bytes(), value)
+	// }
 	return errors.WithStack(err)
+}
+
+func (db *PebbleDB) BatchPut(pairs map[*database.Key][]byte) error {
+	batch := db.db.NewBatch()
+	defer batch.Close()
+	for key, value := range pairs {
+		if err := batch.Set(key.Bytes(), value, pebble.NoSync); err != nil {
+			return errors.Wrapf(err, "failed to set key %s in batch", key)
+		}
+	}
+	if err := batch.Commit(pebble.NoSync); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }
 
 // Get gets the value for the given key. It returns ErrNotFound if the given key does not exist.
@@ -87,7 +105,9 @@ func (db *PebbleDB) Get(key *database.Key) ([]byte, error) {
 		}
 		return nil, errors.WithStack(err)
 	}
-	log.Infof("Pebble Get, key: %s, data: %x", key.Bytes(), data)
+	// if strings.Contains(string(key.Bytes()), "utxo-index") {
+	// 	log.Infof("Pebble Get, key: %x, data: %x", key.Bytes(), data)
+	// }
 	defer closer.Close()
 	return data, nil
 }
@@ -100,6 +120,9 @@ func (db *PebbleDB) Has(key *database.Key) (bool, error) {
 			return false, nil
 		}
 		return false, errors.WithStack(err)
+	}
+	if strings.Contains(string(key.Bytes()), "utxo-index") {
+		log.Infof("Pebble Has, key: %s true", key.Bytes())
 	}
 	defer closer.Close()
 	return true, nil

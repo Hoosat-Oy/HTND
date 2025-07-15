@@ -7,6 +7,8 @@ type DataAccessor interface {
 	// any previous value for that key.
 	Put(key *Key, value []byte) error
 
+	BatchPut(pairs map[*Key][]byte) error
+
 	// Get gets the value for the given key. It returns
 	// ErrNotFound if the given key does not exist.
 	Get(key *Key) ([]byte, error)

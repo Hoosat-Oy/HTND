@@ -76,6 +76,13 @@ func (tx *LevelDBTransaction) Put(key *database.Key, value []byte) error {
 	return nil
 }
 
+func (tx *LevelDBTransaction) BatchPut(pairs map[*database.Key][]byte) error {
+	for key, value := range pairs {
+		tx.batch.Put(key.Bytes(), value)
+	}
+	return nil
+}
+
 // Get gets the value for the given key. It returns
 // ErrNotFound if the given key does not exist.
 func (tx *LevelDBTransaction) Get(key *database.Key) ([]byte, error) {

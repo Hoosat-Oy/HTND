@@ -2,6 +2,7 @@ package utxoindex
 
 import (
 	"encoding/binary"
+	"sync"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/database/binaryserialization"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
@@ -180,32 +181,60 @@ func (uis *utxoIndexStore) commit() error {
 }
 
 func (uis *utxoIndexStore) addAndCommitOutpointsWithoutTransaction(utxoPairs []*externalapi.OutpointAndUTXOEntryPair) error {
-	toAddSompiSupply := uint64(0)
+	var (
+		wg         sync.WaitGroup
+		errChan    = make(chan error, len(utxoPairs))
+		amountChan = make(chan uint64, len(utxoPairs))
+	)
+
 	for _, pair := range utxoPairs {
-		bucket := uis.bucketForScriptPublicKey(pair.UTXOEntry.ScriptPublicKey())
-		key, err := uis.convertOutpointToKey(bucket, pair.Outpoint)
-		if err != nil {
-			return err
-		}
+		wg.Add(1)
+		go func(pair *externalapi.OutpointAndUTXOEntryPair) {
+			defer wg.Done()
 
-		serializedUTXOEntry, err := serializeUTXOEntry(pair.UTXOEntry)
-		if err != nil {
-			return err
-		}
+			bucket := uis.bucketForScriptPublicKey(pair.UTXOEntry.ScriptPublicKey())
+			key, err := uis.convertOutpointToKey(bucket, pair.Outpoint)
+			if err != nil {
+				errChan <- err
+				return
+			}
 
-		err = uis.database.Put(key, serializedUTXOEntry)
-		if err != nil {
-			return err
-		}
-		toAddSompiSupply = toAddSompiSupply + pair.UTXOEntry.Amount()
+			serializedUTXOEntry, err := serializeUTXOEntry(pair.UTXOEntry)
+			if err != nil {
+				errChan <- err
+				return
+			}
+
+			err = uis.database.Put(key, serializedUTXOEntry)
+			if err != nil {
+				errChan <- err
+				return
+			}
+
+			amountChan <- pair.UTXOEntry.Amount()
+		}(pair)
 	}
 
-	err := uis.updateCirculatingSompiSupplyWithoutTransaction(toAddSompiSupply, uint64(0))
-	if err != nil {
-		return err
+	// Wait for all goroutines to finish
+	wg.Wait()
+	close(errChan)
+	close(amountChan)
+
+	// Check for any errors
+	for err := range errChan {
+		if err != nil {
+			return err
+		}
 	}
 
-	return nil
+	// Sum all amounts
+	toAddSompiSupply := uint64(0)
+	for amount := range amountChan {
+		toAddSompiSupply += amount
+	}
+
+	// Final update
+	return uis.updateCirculatingSompiSupplyWithoutTransaction(toAddSompiSupply, 0)
 }
 
 func (uis *utxoIndexStore) updateAndCommitVirtualParentsWithoutTransaction(virtualParents []*externalapi.DomainHash) error {
