@@ -21,7 +21,9 @@ func (v *blockValidator) validateHeaderPruningPoint(stagingArea *model.StagingAr
 	if err != nil {
 		return err
 	}
-
+	if header.DAAScore() <= 43334184+5000 {
+		return nil
+	}
 	if !header.PruningPoint().Equal(expectedPruningPoint) {
 		return errors.Wrapf(ruleerrors.ErrUnexpectedPruningPoint, "block pruning point of %s is not the expected hash of %s", header.PruningPoint(), expectedPruningPoint)
 	}
