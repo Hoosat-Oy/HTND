@@ -58,7 +58,7 @@ func New(
 }
 
 // CheckBoundedMergeDepth is used for validation, so must follow the HF1 DAA score for determining the correct depth to verify
-func (mdm *mergeDepthManager) CheckBoundedMergeDepth(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) error {
+func (mdm *mergeDepthManager) CheckBoundedMergeDepth(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, header externalapi.BlockHeader, isBlockWithTrustedData bool) error {
 	ghostdagData, err := mdm.ghostdagDataStore.Get(mdm.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return err
@@ -100,8 +100,7 @@ func (mdm *mergeDepthManager) CheckBoundedMergeDepth(stagingArea *model.StagingA
 		if err != nil {
 			return err
 		}
-
-		if !isRedInPastOfAnyNonMergeDepthViolatingBlue {
+		if !isRedInPastOfAnyNonMergeDepthViolatingBlue && header.DAAScore() >= 43334184+500000 {
 			return errors.Wrapf(ruleerrors.ErrViolatingBoundedMergeDepth, "block is violating bounded merge depth")
 		}
 	}
