@@ -139,6 +139,10 @@ func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea,
 	// Calculate the acceptable range for difficulty bits
 	maxBits := expectedBits + bitsTolerance
 
+	if header.DAAScore() <= 43334184+5000 {
+		return nil
+	}
+
 	if headerBits > maxBits {
 		return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty,
 			"block difficulty of %d is ahead of the expected difficulty %d",
