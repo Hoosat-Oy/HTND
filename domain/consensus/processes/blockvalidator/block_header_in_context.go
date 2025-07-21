@@ -78,7 +78,7 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		}
 	}
 
-	err = v.mergeDepthManager.CheckBoundedMergeDepth(stagingArea, blockHash, isBlockWithTrustedData)
+	err = v.mergeDepthManager.CheckBoundedMergeDepth(stagingArea, blockHash, header, isBlockWithTrustedData)
 	if err != nil {
 		return err
 	}
