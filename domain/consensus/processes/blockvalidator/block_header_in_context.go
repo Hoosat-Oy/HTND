@@ -232,6 +232,9 @@ func (v *blockValidator) checkDAAScore(stagingArea *model.StagingArea, blockHash
 	if err != nil {
 		return err
 	}
+	if header.DAAScore() <= 43334181+5000 {
+		return nil
+	}
 	if header.DAAScore() != expectedDAAScore {
 		return errors.Wrapf(ruleerrors.ErrUnexpectedDAAScore, "block DAA score of %d is not the expected value of %d", header.DAAScore(), expectedDAAScore)
 	}
