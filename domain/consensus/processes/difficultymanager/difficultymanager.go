@@ -138,13 +138,13 @@ func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(targetsWindow b
 		return difficulty.BigToCompact(dm.powMax), nil
 	}
 	// difficulty bombs
-	if constants.BlockVersion >= 5 {
-		stagingArea := model.NewStagingArea()
-		daaScore, _ := dm.daaBlocksStore.DAAScore(dm.databaseContext, stagingArea, blockHash)
-		if daaScore >= 43334187 && daaScore <= 43335187 {
-			newTarget = difficulty.CompactToBig(dm.genesisBits)
-		}
-	}
+	// if constants.BlockVersion >= 5 {
+	// 	stagingArea := model.NewStagingArea()
+	// 	daaScore, _ := dm.daaBlocksStore.DAAScore(dm.databaseContext, stagingArea, blockHash)
+	// 	if daaScore >= 43334187 && daaScore <= 43335187 {
+	// 		newTarget = difficulty.CompactToBig(dm.genesisBits)
+	// 	}
+	// }
 	newTargetBits := difficulty.BigToCompact(newTarget)
 
 	return newTargetBits, nil
