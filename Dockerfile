@@ -16,7 +16,10 @@ COPY . .
 
 # Build the binary with CGO disabled for static linking to ensure Alpine compatibility
 RUN go build -o HTND .
-
+RUN go build -o htnwallet ./cmd/htnwallet
+RUN go build -o htnminer ./cmd/htnminer
+RUN go build -o htnctl ./cmd/htnctl
+RUN go build -o genkeypair ./cmd/genkeypair
 
 # --- multistage docker build: stage #2: runtime image
 FROM ubuntu:24.04
@@ -28,9 +31,17 @@ RUN apt-get update && \
 
 # Copy the binary from the build stage
 COPY --from=build /go/src/github.com/Hoosat-Oy/HTND/HTND /app/HTND
+COPY --from=build /go/src/github.com/Hoosat-Oy/HTND/htnwallet /app/htnwallet
+COPY --from=build /go/src/github.com/Hoosat-Oy/HTND/htnctl /app/htnctl
+COPY --from=build /go/src/github.com/Hoosat-Oy/HTND/htnminer /app/htnminer
+COPY --from=build /go/src/github.com/Hoosat-Oy/HTND/genkeypair /app/genkeypair
+
+RUN mkdir -p /.htnd && chown nobody:nogroup /.htnd && chmod 700 /.htnd
 
 # Set ownership and permissions for the binary
-RUN chmod +x /app/HTND
+RUN chown nobody:nogroup /app/* && chmod +x /app/*
 
+
+USER nobody
 ENTRYPOINT ["/app/HTND"]
 CMD ["--utxoindex", "--saferpc"]
