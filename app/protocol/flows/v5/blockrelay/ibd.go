@@ -675,7 +675,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		}
 		// Dequeue all messages for the requested hashes
 		for i := 0; i < len(hashesToRequest); i++ {
-			message, err := flow.incomingRoute.DequeueWithTimeout(120 * time.Second)
+			message, err := flow.incomingRoute.DequeueWithTimeout(600 * time.Second)
 			if err != nil {
 				return err
 			}
