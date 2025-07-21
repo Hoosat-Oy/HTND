@@ -232,7 +232,7 @@ func (v *blockValidator) checkDAAScore(stagingArea *model.StagingArea, blockHash
 	if err != nil {
 		return err
 	}
-	if header.DAAScore() <= 43334181+5000 {
+	if header.DAAScore() <= 43334181+10000 {
 		return nil
 	}
 	if header.DAAScore() != expectedDAAScore {
