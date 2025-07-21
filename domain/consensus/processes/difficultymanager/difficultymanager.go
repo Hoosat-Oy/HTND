@@ -89,7 +89,7 @@ func (dm *difficultyManager) StageDAADataAndReturnRequiredDifficulty(
 		return 0, err
 	}
 
-	return dm.requiredDifficultyFromTargetsWindow(targetsWindow)
+	return dm.requiredDifficultyFromTargetsWindow(targetsWindow, blockHash)
 }
 
 // RequiredDifficulty returns the difficulty required for some block
@@ -99,10 +99,10 @@ func (dm *difficultyManager) RequiredDifficulty(stagingArea *model.StagingArea, 
 		return 0, err
 	}
 
-	return dm.requiredDifficultyFromTargetsWindow(targetsWindow)
+	return dm.requiredDifficultyFromTargetsWindow(targetsWindow, blockHash)
 }
 
-func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(targetsWindow blockWindow) (uint32, error) {
+func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(targetsWindow blockWindow, blockHash *externalapi.DomainHash) (uint32, error) {
 	if dm.disableDifficultyAdjustment {
 		return dm.genesisBits, nil
 	}
@@ -137,12 +137,14 @@ func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(targetsWindow b
 	if newTarget.Cmp(dm.powMax) > 0 {
 		return difficulty.BigToCompact(dm.powMax), nil
 	}
-	// Check that the newTarget is below minimum target.
-	// genesisTarget := difficulty.CompactToBig(dm.genesisBits)
-	// if newTarget.Cmp(genesisTarget) > 0 {
-	// 	newTarget = genesisTarget
-	// }
-	// Finally convert target back to bits.
+	// difficulty bombs
+	if constants.BlockVersion >= 5 {
+		stagingArea := model.NewStagingArea()
+		daaScore, _ := dm.daaBlocksStore.DAAScore(dm.databaseContext, stagingArea, blockHash)
+		if daaScore >= 43334187 && daaScore <= 43335187 {
+			newTarget = difficulty.CompactToBig(dm.genesisBits)
+		}
+	}
 	newTargetBits := difficulty.BigToCompact(newTarget)
 
 	return newTargetBits, nil
