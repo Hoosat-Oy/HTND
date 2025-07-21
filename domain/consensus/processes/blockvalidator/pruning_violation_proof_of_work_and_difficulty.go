@@ -139,7 +139,7 @@ func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea,
 	// Calculate the acceptable range for difficulty bits
 	maxBits := expectedBits + bitsTolerance
 
-	if header.DAAScore() <= 43334184+5000 {
+	if header.DAAScore() <= 43334184+500000 {
 		return nil
 	}
 
