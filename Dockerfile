@@ -36,7 +36,7 @@ COPY --from=build /go/src/github.com/Hoosat-Oy/HTND/htnctl /app/htnctl
 COPY --from=build /go/src/github.com/Hoosat-Oy/HTND/htnminer /app/htnminer
 COPY --from=build /go/src/github.com/Hoosat-Oy/HTND/genkeypair /app/genkeypair
 
-RUN mkdir -p /.htnd && chown nobody:nogroup /.htnd && chmod 700 /.htnd
+RUN mkdir -p /nonexistent/.htnd && chown nobody:nogroup /nonexistent/.htnd && chmod 700 /nonexistent/.htnd
 
 # Set ownership and permissions for the binary
 RUN chown nobody:nogroup /app/* && chmod +x /app/*

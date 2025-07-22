@@ -253,7 +253,7 @@ func LoadConfig() (*Config, error) {
 		if _, err := os.Stat(preCfg.ConfigFile); os.IsNotExist(err) {
 			err := createDefaultConfigFile(preCfg.ConfigFile)
 			if err != nil {
-				return nil, errors.Wrap(err, "Error creating a default config file")
+				return nil, errors.Wrap(err, fmt.Sprintf("Error creating a default config file, %s", preCfg.ConfigFile))
 			}
 		}
 
