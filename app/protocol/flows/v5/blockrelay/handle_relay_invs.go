@@ -258,6 +258,10 @@ func (flow *handleRelayInvsFlow) start() error {
 				log.Infof("Ignoring block %s with invalid version", inv.Hash)
 				continue
 			}
+			if errors.Is(err, ruleerrors.ErrCoinbaseTooManyOutputs) {
+				log.Infof("Ignoring block %s with with too many coinbase outputs", inv.Hash)
+				continue
+			}
 			if errors.Is(err, ruleerrors.ErrInvalidPoW) {
 				if block.PoWHash != "" {
 					log.Infof(fmt.Sprintf("Ignoring invalid PoW %s, consider banning: %s", block.PoWHash, flow.netConnection.NetAddress().String()))
