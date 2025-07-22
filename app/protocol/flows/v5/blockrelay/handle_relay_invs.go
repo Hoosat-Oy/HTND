@@ -254,6 +254,10 @@ func (flow *handleRelayInvsFlow) start() error {
 				log.Infof("Ignoring duplicate block %s", inv.Hash)
 				continue
 			}
+			if errors.Is(err, ruleerrors.ErrWrongBlockVersion) {
+				log.Infof("Ignoring block %s with invalid version", inv.Hash)
+				continue
+			}
 			if errors.Is(err, ruleerrors.ErrInvalidPoW) {
 				if block.PoWHash != "" {
 					log.Infof(fmt.Sprintf("Ignoring invalid PoW %s, consider banning: %s", block.PoWHash, flow.netConnection.NetAddress().String()))
