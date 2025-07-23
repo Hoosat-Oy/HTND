@@ -110,7 +110,7 @@ func registerBlockRelayFlows(m protocolManager, netConnection *netadapter.NetCon
 		m.RegisterFlow("HandleIBDBlockRequests", router,
 			[]appmessage.MessageCommand{appmessage.CmdRequestIBDBlocks}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandleIBDBlockRequests(m.Context(), incomingRoute, outgoingRoute)
+				return blockrelay.HandleIBDBlockRequests(m.Context(), incomingRoute, outgoingRoute, peer)
 			},
 		),
 

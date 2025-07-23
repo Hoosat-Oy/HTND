@@ -2,6 +2,7 @@ package blockrelay
 
 import (
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
+	peerpkg "github.com/Hoosat-Oy/HTND/app/protocol/peer"
 	"github.com/Hoosat-Oy/HTND/domain"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
@@ -15,7 +16,7 @@ type HandleIBDBlockRequestsContext interface {
 // HandleIBDBlockRequests listens to appmessage.MsgRequestRelayBlocks messages and sends
 // their corresponding blocks to the requesting peer.
 func HandleIBDBlockRequests(context HandleIBDBlockRequestsContext, incomingRoute *router.Route,
-	outgoingRoute *router.Route) error {
+	outgoingRoute *router.Route, peer *peerpkg.Peer) error {
 
 	for {
 		message, err := incomingRoute.Dequeue()
@@ -41,6 +42,7 @@ func HandleIBDBlockRequests(context HandleIBDBlockRequestsContext, incomingRoute
 
 				// TODO (Partial nodes): Convert block to partial block if needed
 
+				log.Infof("Relaying block %s through IBD to peer %s", hash, peer.Address())
 				blockMessage := appmessage.DomainBlockToMsgBlock(block)
 				ibdBlockMessage := appmessage.NewMsgIBDBlock(blockMessage)
 				err = outgoingRoute.Enqueue(ibdBlockMessage)
@@ -48,7 +50,6 @@ func HandleIBDBlockRequests(context HandleIBDBlockRequestsContext, incomingRoute
 					log.Warnf("failed to enqueue block %s: %s", hash, err)
 					return
 				}
-				log.Debugf("sent %d out of %d", i+1, len(msgRequestIBDBlocks.Hashes))
 			}(hash)
 		}
 	}

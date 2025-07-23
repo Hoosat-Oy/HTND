@@ -97,6 +97,7 @@ func (flow *handleRequestHeadersFlow) start() error {
 				blockHeaders[i] = appmessage.DomainBlockHeaderToBlockHeader(blockHeader)
 			}
 
+			log.Infof("Relaying %d headers through IBD to peer %s", len(blockHeaders), flow.peer.Address())
 			blockHeadersMessage := appmessage.NewBlockHeadersMessage(blockHeaders)
 			err = flow.outgoingRoute.Enqueue(blockHeadersMessage)
 			if err != nil {
@@ -115,7 +116,6 @@ func (flow *handleRequestHeadersFlow) start() error {
 			// The next lowHash is the last element in blockHashes
 			lowHash = blockHashes[len(blockHashes)-1]
 		}
-
 		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgDoneHeaders())
 		if err != nil {
 			return err
