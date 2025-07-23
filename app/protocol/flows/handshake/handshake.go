@@ -2,6 +2,7 @@ package handshake
 
 import (
 	"sync/atomic"
+	"time"
 
 	"github.com/Hoosat-Oy/HTND/domain"
 
@@ -43,44 +44,53 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 	// errChan.
 	doneCount := int32(2)
 	doneChan := make(chan struct{})
-
 	isStopping := uint32(0)
-	errChan := make(chan error)
+	errChan := make(chan error, 1) // Buffered channel to avoid blocking
 
 	peer := peerpkg.New(netConnection)
-
 	var peerAddress *appmessage.NetAddress
+
 	spawn("HandleHandshake-ReceiveVersion", func() {
+		defer func() {
+			if atomic.AddInt32(&doneCount, -1) == 0 {
+				close(doneChan)
+			}
+		}()
+		log.Infof("Starting ReceiveVersion for peer %v", peer)
 		address, err := ReceiveVersion(context, receiveVersionRoute, outgoingRoute, peer)
 		if err != nil {
+			log.Infof("ReceiveVersion error for peer %v: %v", peer, err)
 			handleError(err, "ReceiveVersion", &isStopping, errChan)
 			return
 		}
 		peerAddress = address
-		if atomic.AddInt32(&doneCount, -1) == 0 {
-			close(doneChan)
-		}
+		log.Infof("ReceiveVersion completed for peer %v", peer)
 	})
 
 	spawn("HandleHandshake-SendVersion", func() {
+		defer func() {
+			if atomic.AddInt32(&doneCount, -1) == 0 {
+				close(doneChan)
+			}
+		}()
+		log.Infof("Starting SendVersion for peer %v", peer)
 		err := SendVersion(context, sendVersionRoute, outgoingRoute, peer)
 		if err != nil {
+			log.Infof("SendVersion error for peer %v: %v", peer, err)
 			handleError(err, "SendVersion", &isStopping, errChan)
 			return
 		}
-		if atomic.AddInt32(&doneCount, -1) == 0 {
-			close(doneChan)
-		}
+		log.Infof("SendVersion completed for peer %v", peer)
 	})
 
 	select {
 	case err := <-errChan:
-		if err != nil {
-			return nil, err
-		}
-		return nil, nil
+		return nil, err
 	case <-doneChan:
+	case <-time.After(time.Second * 30):
+		return nil, errors.New("handshake timed out")
 	}
+
 	err := context.AddToPeers(peer)
 	if err != nil {
 		if errors.Is(err, common.ErrPeerWithSameIDExists) {
@@ -95,6 +105,7 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 			return nil, err
 		}
 	}
+	log.Infof("Handshake completed for peer %v", peer)
 	return peer, nil
 }
 
