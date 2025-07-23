@@ -30,7 +30,6 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 		}
 		getRelayBlocksMessage := message.(*appmessage.MsgRequestRelayBlocks)
 		hashesLen := len(getRelayBlocksMessage.Hashes)
-		log.Infof("Got relay block request for %d hashes ", hashesLen)
 		for i := 0; i < hashesLen; i++ {
 			hash := getRelayBlocksMessage.Hashes[i]
 			go func(hash *externalapi.DomainHash) {
@@ -66,7 +65,7 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 						block.PoWHash = powHash.String()
 					}
 				}
-
+				log.Infof("Relaying block %s to peer %s", hash, peer.Address())
 				err = outgoingRoute.Enqueue(appmessage.DomainBlockToMsgBlock(block))
 				if err != nil {
 					log.Warnf("failed to enqueue block %s: %s", hash, err)
