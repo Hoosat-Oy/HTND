@@ -667,12 +667,6 @@ func (pm *pruningManager) ArePruningPointsInValidChain(stagingArea *model.Stagin
 			return false, err
 		}
 
-		header, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, pruningPoint)
-		if err != nil {
-			log.Errorf("pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, pruningPoint): %s", err)
-			return false, err
-		}
-
 		if len(expectedPruningPoints) == 0 {
 			log.Errorf("Expected pruning points list is empty, can't match against stored pruning points")
 			return false, nil
@@ -695,10 +689,6 @@ func (pm *pruningManager) ArePruningPointsInValidChain(stagingArea *model.Stagin
 				return false, nil
 			}
 			break
-		}
-
-		if !expectedPruningPoints[len(expectedPruningPoints)-1].Equal(header.PruningPoint()) {
-			expectedPruningPoints = append(expectedPruningPoints, header.PruningPoint())
 		}
 	}
 
