@@ -79,7 +79,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 		if atomic.LoadUint32(&m.isClosed) == 1 {
 			panic(errors.Errorf("tried to initialize router when the protocol manager is closed"))
 		}
-
+		log.Infof("initializing route for %s", netConnection)
 		isBanned, err := m.context.ConnectionManager().IsBanned(netConnection)
 		if err != nil && !errors.Is(err, addressmanager.ErrAddressNotFound) {
 			panic(err)
@@ -95,7 +95,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 				errChan <- protocolerrors.Wrap(true, err, "received bad message")
 			}
 		})
-
+		log.Infof("Doing Handshake with %s", netConnection)
 		peer, err := handshake.HandleHandshake(m.context, netConnection, receiveVersionRoute,
 			sendVersionRoute, router.OutgoingRoute())
 		if err != nil {
@@ -123,15 +123,17 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 		default:
 			panic(errors.Errorf("no way to handle protocol version %d", peer.ProtocolVersion()))
 		}
+		log.Infof("Registered p2p flows for peer %s.", peer)
 
 		err = ready.HandleReady(receiveReadyRoute, router.OutgoingRoute(), peer)
 		if err != nil {
 			m.handleError(err, netConnection, router.OutgoingRoute())
 			return
 		}
-
+		log.Infof("HandleReady for peer %s", peer)
 		removeHandshakeRoutes(router)
 
+		log.Infof("Run flows for peer %s", peer)
 		flowsWaitGroup := &sync.WaitGroup{}
 		err = m.runFlows(flows, peer, errChan, flowsWaitGroup)
 		if err != nil {
