@@ -29,6 +29,7 @@ type GetBlockDAGInfoResponseMessage struct {
 	PastMedianTime      int64
 	PruningPointHash    string
 	VirtualDAAScore     uint64
+	BlueScore           uint64
 
 	Error *RPCError
 }
