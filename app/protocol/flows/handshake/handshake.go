@@ -2,7 +2,6 @@ package handshake
 
 import (
 	"sync/atomic"
-	"time"
 
 	"github.com/Hoosat-Oy/HTND/domain"
 
@@ -87,8 +86,6 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 	case err := <-errChan:
 		return nil, err
 	case <-doneChan:
-	case <-time.After(time.Second * 30):
-		return nil, errors.New("handshake timed out")
 	}
 
 	err := context.AddToPeers(peer)
