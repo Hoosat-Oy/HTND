@@ -519,7 +519,7 @@ func (flow *handleIBDFlow) sendRequestHeaders(
 }
 
 func (flow *handleIBDFlow) receiveHeaders() (msgIBDBlock *appmessage.BlockHeadersMessage, doneHeaders bool, err error) {
-	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	message, err := flow.incomingRoute.Dequeue()
 	if err != nil {
 		return nil, false, err
 	}
