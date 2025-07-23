@@ -13,8 +13,8 @@ func Options() opt.Options {
 		WriteBuffer:            64 * opt.MiB,              // Larger buffer to handle bursty writes
 		BlockCacheCapacity:     1024 * opt.MiB,            // Larger cache for frequent reads
 		Filter:                 filter.NewBloomFilter(10), // Bloom filter for efficient key lookups
-		OpenFilesCacheCapacity: 500,                       // Higher file handle cache for concurrent access
-		CompactionTableSize:    64 * opt.MiB,              // Larger SST files to reduce compaction frequency
+		OpenFilesCacheCapacity: 1024,                      // Higher file handle cache for concurrent access
+		CompactionTableSize:    32 * opt.MiB,              // Larger SST files to reduce compaction frequency
 		CompactionTotalSize:    1024 * opt.MiB,            // Larger total size before compaction to reduce I/O
 	}
 }

@@ -100,7 +100,7 @@ func (mdm *mergeDepthManager) CheckBoundedMergeDepth(stagingArea *model.StagingA
 		if err != nil {
 			return err
 		}
-		if !isRedInPastOfAnyNonMergeDepthViolatingBlue && header.DAAScore() >= 43334184+500000 {
+		if !isRedInPastOfAnyNonMergeDepthViolatingBlue && header.DAAScore() >= 43334184+1000000 {
 			return errors.Wrapf(ruleerrors.ErrViolatingBoundedMergeDepth, "block is violating bounded merge depth")
 		}
 	}

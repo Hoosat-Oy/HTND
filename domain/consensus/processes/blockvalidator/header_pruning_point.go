@@ -21,7 +21,7 @@ func (v *blockValidator) validateHeaderPruningPoint(stagingArea *model.StagingAr
 	if err != nil {
 		return err
 	}
-	if header.DAAScore() <= 43334184+500000 {
+	if header.DAAScore() <= 43334184+1000000 {
 		return nil
 	}
 	if !header.PruningPoint().Equal(expectedPruningPoint) {
