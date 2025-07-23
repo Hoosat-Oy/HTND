@@ -418,6 +418,28 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 				}
 			}
 
+			// var wg sync.WaitGroup
+			// var errs []error
+			// mu := sync.Mutex{} // Protects errs slice for concurrent access
+
+			// for _, header := range ibdBlocksMessage.BlockHeaders {
+			// 	wg.Add(1)
+			// 	go func(c externalapi.Consensus, h *appmessage.MsgBlockHeader) {
+			// 		defer wg.Done()
+			// 		if err := flow.processHeader(c, h); err != nil {
+			// 			mu.Lock()
+			// 			log.Errorf("Failed to process header: %v", err)
+			// 			errs = append(errs, err)
+			// 			mu.Unlock()
+			// 		}
+			// 	}(consensus, header)
+			// }
+			// wg.Wait()
+
+			// if len(errs) > 0 {
+			// 	return fmt.Errorf("encountered %d errors during header processing: %v", len(errs), errs)
+			// }
+
 			lastReceivedHeader := ibdBlocksMessage.BlockHeaders[len(ibdBlocksMessage.BlockHeaders)-1]
 			progressReporter.reportProgress(len(ibdBlocksMessage.BlockHeaders), lastReceivedHeader.DAAScore)
 		case err := <-errChan:
@@ -704,11 +726,14 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 				if !errors.As(err, &ruleerrors.RuleError{}) {
 					return errors.Wrapf(err, "failed to process header %s during IBD", expectedHash)
 				}
+				var missingParentsErr *ruleerrors.ErrMissingParents
 				if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 					log.Infof("Skipping block header %s as it is a duplicate", expectedHash)
+				} else if errors.As(err, &missingParentsErr) {
+					log.Infof("Skipping block header %s as it is missing parent", expectedHash)
 				} else {
 					log.Infof("Rejected block header %s from %s during IBD: %s", expectedHash, flow.peer, err)
-					return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", expectedHash)
+					return protocolerrors.Wrapf(false, err, "got invalid block header %s during IBD", expectedHash)
 				}
 			}
 			err = flow.OnNewBlock(block)

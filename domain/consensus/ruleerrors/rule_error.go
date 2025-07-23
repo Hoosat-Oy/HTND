@@ -316,7 +316,7 @@ type ErrMissingParents struct {
 }
 
 func (e ErrMissingParents) Error() string {
-	return fmt.Sprintf("missing the following parent hashes: %v", e.MissingParentHashes)
+	return fmt.Sprintf("missing the following parent hashes: %v\n", e.MissingParentHashes)
 }
 
 // NewErrMissingParents creates a new ErrMissingParents error wrapped in a RuleError
