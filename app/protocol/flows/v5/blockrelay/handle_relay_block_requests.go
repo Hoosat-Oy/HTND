@@ -29,7 +29,9 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 			return err
 		}
 		getRelayBlocksMessage := message.(*appmessage.MsgRequestRelayBlocks)
-		for i := 0; i < len(getRelayBlocksMessage.Hashes); i++ {
+		hashesLen := len(getRelayBlocksMessage.Hashes)
+		log.Infof("Got relay block request for %d hashes ", hashesLen)
+		for i := 0; i < hashesLen; i++ {
 			hash := getRelayBlocksMessage.Hashes[i]
 			go func(hash *externalapi.DomainHash) {
 				block, found, err := context.Domain().Consensus().GetBlock(hash)
