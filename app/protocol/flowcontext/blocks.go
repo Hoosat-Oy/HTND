@@ -148,7 +148,6 @@ func (f *FlowContext) TrySetIBDRunning(ibdPeer *peerpkg.Peer) bool {
 		return false
 	}
 	f.ibdPeer = ibdPeer
-	log.Infof("IBD started with peer %s", ibdPeer)
 
 	return true
 }
