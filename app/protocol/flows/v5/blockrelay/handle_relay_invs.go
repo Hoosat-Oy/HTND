@@ -86,7 +86,7 @@ const (
 
 var offenseTracker = make(map[string][]time.Time)
 
-func (flow *handleRelayInvsFlow) banConnection() {
+func (flow *handleRelayInvsFlow) banConnection(offenseTimesOverrule bool) {
 	address := flow.netConnection.Address()
 	now := time.Now()
 
@@ -103,7 +103,7 @@ func (flow *handleRelayInvsFlow) banConnection() {
 	}
 	offenseTracker[address] = recentOffenses
 
-	if len(recentOffenses) >= maxOffenses {
+	if len(recentOffenses) >= maxOffenses || offenseTimesOverrule {
 		log.Infof("Banning connection: %s due to exceeding offense threshold", address)
 		flow.connectionManager.Ban(flow.netConnection)
 		isBanned, _ := flow.connectionManager.IsBanned(flow.netConnection)
@@ -134,7 +134,7 @@ func (flow *handleRelayInvsFlow) start() error {
 		if blockInfo.Exists && blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
 			if blockInfo.BlockStatus == externalapi.StatusInvalid {
 				log.Infof("Sent inv of an invalid block %s", inv.Hash)
-				flow.banConnection()
+				flow.banConnection(false)
 				continue
 			}
 			log.Debugf("Block %s already exists. continuing...", inv.Hash)
@@ -185,7 +185,7 @@ func (flow *handleRelayInvsFlow) start() error {
 			continue
 		}
 		if block.PoWHash == "" && block.Header.Version() >= constants.BanMinVersion {
-			flow.banConnection()
+			flow.banConnection(false)
 		}
 		if !flow.IsIBDRunning() {
 			daaScore := block.Header.DAAScore()
@@ -200,7 +200,7 @@ func (flow *handleRelayInvsFlow) start() error {
 				log.Infof("Cannot process %s, Wrong block version %d, it should be %d", consensushashing.BlockHash(block), block.Header.Version(), constants.BlockVersion)
 				log.Infof("Unprocessable block relayed by %s", flow.netConnection.NetAddress().String())
 				if block.Header.Version() >= constants.BanMinVersion {
-					flow.banConnection()
+					flow.banConnection(false)
 				}
 				continue
 			}
@@ -259,15 +259,22 @@ func (flow *handleRelayInvsFlow) start() error {
 				continue
 			}
 			if errors.Is(err, ruleerrors.ErrCoinbaseTooManyOutputs) {
-				log.Infof("Ignoring block %s with with too many coinbase outputs", inv.Hash)
+				log.Infof("Ignoring block %s with with too many coinbase outputs and banning instantly.", inv.Hash)
+				flow.banConnection(true)
+				continue
+			}
+			if errors.Is(err, ruleerrors.ErrWrongCoinbaseSubsidy) {
+				log.Infof("Ignoring block %s with with wrong coinbase subsidy and banning instantly.", inv.Hash)
+				flow.banConnection(true)
 				continue
 			}
 			if errors.Is(err, ruleerrors.ErrInvalidPoW) {
 				if block.PoWHash != "" {
-					log.Infof(fmt.Sprintf("Ignoring invalid PoW %s, consider banning: %s", block.PoWHash, flow.netConnection.NetAddress().String()))
+					log.Infof(fmt.Sprintf("Ignoring invalid PoW %s, considering banning: %s", block.PoWHash, flow.netConnection.NetAddress().String()))
 				} else {
-					log.Infof(fmt.Sprintf("Ignoring invalid empty PoW, consider banning: %s", flow.netConnection.NetAddress().String()))
+					log.Infof(fmt.Sprintf("Ignoring invalid empty PoW, considering banning: %s", flow.netConnection.NetAddress().String()))
 				}
+				flow.banConnection(false)
 				continue
 			}
 			return err
@@ -427,9 +434,9 @@ func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock, po
 }
 
 func (flow *handleRelayInvsFlow) relayBlock(block *externalapi.DomainBlock) error {
-	// if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
-	// 	return nil // Don't relay block without PoW hash.
-	// }
+	if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
+		return nil
+	}
 	blockHash := consensushashing.BlockHash(block)
 	return flow.Broadcast(appmessage.NewMsgInvBlock(blockHash))
 }
