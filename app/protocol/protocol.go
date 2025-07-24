@@ -97,7 +97,6 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 		})
 		log.Debugf("Doing Handshake with %s", netConnection)
 		peer, err := handshake.HandleHandshake(m.context, netConnection, receiveVersionRoute, sendVersionRoute, router.OutgoingRoute())
-		defer m.context.RemoveFromPeers(peer)
 		if err != nil {
 			// non-blocking read from channel
 			select {
@@ -113,6 +112,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 			}
 			return
 		}
+		defer m.context.RemoveFromPeers(peer)
 
 		var flows []*common.Flow
 		log.Debugf("Registering p2p flows for peer %s for protocol version %d", peer, peer.ProtocolVersion())
@@ -168,7 +168,7 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 	}
 
 	if errors.Is(err, common.ErrHandshakeTimeout) {
-		log.Warnf("Handshake timed out for connection %v, retrying...", netConnection)
+		log.Warnf("Handshake timed out for connection %v", netConnection)
 		netConnection.Disconnect()
 		return
 	}
