@@ -655,6 +655,11 @@ func (pm *pruningManager) ArePruningPointsInValidChain(stagingArea *model.Stagin
 		current = currentGHOSTDAGData.SelectedParent()
 	}
 
+	if len(expectedPruningPoints) == 0 {
+		log.Errorf("Expected pruning points list is empty, can't match against stored pruning points")
+		return false, nil
+	}
+
 	// Validate stored pruning points against expected pruning points
 	lastPruningPointIndex, err := pm.pruningStore.CurrentPruningPointIndex(pm.databaseContext, stagingArea)
 	if err != nil {
@@ -667,11 +672,6 @@ func (pm *pruningManager) ArePruningPointsInValidChain(stagingArea *model.Stagin
 		if err != nil {
 			log.Errorf("pm.pruningStore.PruningPointByIndex(pm.databaseContext, stagingArea, %d): %s", i, err)
 			return false, err
-		}
-
-		if len(expectedPruningPoints) == 0 {
-			log.Errorf("Expected pruning points list is empty, can't match against stored pruning points")
-			return false, nil
 		}
 
 		// Compare with the last expected pruning point
