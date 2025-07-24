@@ -721,7 +721,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 				return protocolerrors.Errorf(true, "expected block %s not found in received blocks", expectedHash)
 			}
 			// Set updateVirtual to true only for the last block in the entire hashes list
-			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, false, true)
+			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, false, false)
 			if err != nil {
 				if !errors.As(err, &ruleerrors.RuleError{}) {
 					return errors.Wrapf(err, "failed to process header %s during IBD", expectedHash)
