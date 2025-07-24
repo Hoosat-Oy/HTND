@@ -55,15 +55,15 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 				close(doneChan)
 			}
 		}()
-		log.Infof("Starting ReceiveVersion for peer %v", peer)
+		log.Debugf("Starting ReceiveVersion for peer %v", peer)
 		address, err := ReceiveVersion(context, receiveVersionRoute, outgoingRoute, peer)
 		if err != nil {
-			log.Infof("ReceiveVersion error for peer %v: %v", peer, err)
+			log.Debugf("ReceiveVersion error for peer %v: %v", peer, err)
 			handleError(err, "ReceiveVersion", &isStopping, errChan)
 			return
 		}
 		peerAddress = address
-		log.Infof("ReceiveVersion completed for peer %v", peer)
+		log.Debugf("ReceiveVersion completed for peer %v", peer)
 	})
 
 	spawn("HandleHandshake-SendVersion", func() {
@@ -72,14 +72,14 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 				close(doneChan)
 			}
 		}()
-		log.Infof("Starting SendVersion for peer %v", peer)
+		log.Debugf("Starting SendVersion for peer %v", peer)
 		err := SendVersion(context, sendVersionRoute, outgoingRoute, peer)
 		if err != nil {
-			log.Infof("SendVersion error for peer %v: %v", peer, err)
+			log.Debugf("SendVersion error for peer %v: %v", peer, err)
 			handleError(err, "SendVersion", &isStopping, errChan)
 			return
 		}
-		log.Infof("SendVersion completed for peer %v", peer)
+		log.Debugf("SendVersion completed for peer %v", peer)
 	})
 
 	select {
@@ -102,7 +102,7 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 			return nil, err
 		}
 	}
-	log.Infof("Handshake completed for peer %v", peer)
+	log.Debugf("Handshake completed for peer %v", peer)
 	return peer, nil
 }
 
