@@ -172,7 +172,7 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 	*/
 
 	// Empty hashes indicate that the full chain is queried
-	locatorHashes, err := flow.getSyncerChainBlockLocator(nil, nil, common.DefaultTimeout)
+	locatorHashes, err := flow.getSyncerChainBlockLocator(nil, nil, time.Minute*30)
 	if err != nil {
 		return nil, nil, err
 	}
