@@ -2,6 +2,7 @@ package handshake
 
 import (
 	"sync/atomic"
+	"time"
 
 	"github.com/Hoosat-Oy/HTND/domain"
 
@@ -35,12 +36,6 @@ type HandleHandshakeContext interface {
 func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.NetConnection,
 	receiveVersionRoute *routerpkg.Route, sendVersionRoute *routerpkg.Route, outgoingRoute *routerpkg.Route,
 ) (*peerpkg.Peer, error) {
-
-	// For HandleHandshake to finish, we need to get from the other node
-	// a version and verack messages, so we set doneCount to 2, decrease it
-	// when sending and receiving the version, and close the doneChan when
-	// it's 0. Then we wait for on select for a tick from doneChan or from
-	// errChan.
 	doneCount := int32(2)
 	doneChan := make(chan struct{})
 	isStopping := uint32(0)
@@ -56,6 +51,7 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 			}
 		}()
 		log.Debugf("Starting ReceiveVersion for peer %v", peer)
+		// Pass a deadline to ReceiveVersion to enforce timeout
 		address, err := ReceiveVersion(context, receiveVersionRoute, outgoingRoute, peer)
 		if err != nil {
 			log.Debugf("ReceiveVersion error for peer %v: %v", peer, err)
@@ -73,6 +69,7 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 			}
 		}()
 		log.Debugf("Starting SendVersion for peer %v", peer)
+		// Pass a deadline to SendVersion to enforce timeout
 		err := SendVersion(context, sendVersionRoute, outgoingRoute, peer)
 		if err != nil {
 			log.Debugf("SendVersion error for peer %v: %v", peer, err)
@@ -86,12 +83,15 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 	case err := <-errChan:
 		return nil, err
 	case <-doneChan:
+	case <-time.After(30 * time.Second):
+		log.Warnf("Handshake timed out for peer %v after 30 seconds", peer)
+		return nil, errors.Wrap(common.ErrHandshakeTimeout, "handshake failed due to timeout")
 	}
 
 	err := context.AddToPeers(peer)
 	if err != nil {
 		if errors.Is(err, common.ErrPeerWithSameIDExists) {
-			return nil, protocolerrors.Wrap(false, err, "peer already exists")
+			return nil, errors.Wrap(err, "peer already exists")
 		}
 		return nil, err
 	}

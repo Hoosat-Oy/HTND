@@ -15,6 +15,7 @@ const DefaultTimeout = 600 * time.Second
 
 // ErrPeerWithSameIDExists signifies that a peer with the same ID already exist.
 var ErrPeerWithSameIDExists = errors.New("ready peer with the same ID already exists")
+var ErrHandshakeTimeout = errors.New("handshake timed out")
 
 type flowExecuteFunc func(peer *peerpkg.Peer)
 
