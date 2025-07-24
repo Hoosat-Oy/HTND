@@ -99,12 +99,6 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 		peer, err := handshake.HandleHandshake(m.context, netConnection, receiveVersionRoute, sendVersionRoute, router.OutgoingRoute())
 		defer m.context.RemoveFromPeers(peer)
 		if err != nil {
-			if errors.Is(err, common.ErrHandshakeTimeout) {
-				// Handle timeout (e.g., retry, log, or close connection)
-				log.Warnf("Handshake timed out for connection %v, retrying...", netConnection)
-				netConnection.Disconnect()
-				return
-			}
 			// non-blocking read from channel
 			select {
 			case innerError := <-errChan:
@@ -169,6 +163,12 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 			}
 		}
 		log.Debugf("Disconnecting from %s (reason: %s)", netConnection, protocolErr.Cause)
+		netConnection.Disconnect()
+		return
+	}
+
+	if errors.Is(err, common.ErrHandshakeTimeout) {
+		log.Warnf("Handshake timed out for connection %v, retrying...", netConnection)
 		netConnection.Disconnect()
 		return
 	}
