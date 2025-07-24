@@ -168,7 +168,13 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 	}
 
 	if errors.Is(err, common.ErrHandshakeTimeout) {
-		log.Warnf("Handshake timed out for connection %v", netConnection)
+		log.Warnf("Handshake timed out for connection %v. Disconnecting..", netConnection)
+		netConnection.Disconnect()
+		return
+	}
+
+	if errors.Is(err, common.ErrPeerWithSameIDExists) {
+		log.Warnf("Peer already exists %v. Disconnecting..", netConnection)
 		netConnection.Disconnect()
 		return
 	}
