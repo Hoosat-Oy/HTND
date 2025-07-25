@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
-	"github.com/Hoosat-Oy/HTND/app/protocol/common"
 	peerpkg "github.com/Hoosat-Oy/HTND/app/protocol/peer"
 	"github.com/Hoosat-Oy/HTND/app/protocol/protocolerrors"
 	"github.com/Hoosat-Oy/HTND/domain"
