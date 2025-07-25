@@ -10,6 +10,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/infrastructure/config"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
 )
@@ -68,7 +69,11 @@ func (flow *handleRequestAnticoneFlow) start() error {
 		// intersected by past of relayed block, and is thus expected to be bounded by mergeset limit since
 		// we relay blocks only if they enter virtual's mergeset. We add a 2 factor for possible sync gaps.
 		var blockHashes []*externalapi.DomainHash
-		blockHashes, err = flow.Domain().Consensus().GetAnticone(blockHash, contextHash, flow.Config().ActiveNetParams.MergeSetSizeLimit*2)
+		if constants.BlockVersion >= 5 {
+			blockHashes, err = flow.Domain().Consensus().GetAnticone(blockHash, contextHash, flow.Config().ActiveNetParams.MergeSetSizeLimit*10)
+		} else {
+			blockHashes, err = flow.Domain().Consensus().GetAnticone(blockHash, contextHash, flow.Config().ActiveNetParams.MergeSetSizeLimit*2)
+		}
 		if err != nil {
 			if errors.Is(err, model.ErrReachedMaxTraversalAllowed) {
 				log.Infof("Failed querying anticone: %s", err)
