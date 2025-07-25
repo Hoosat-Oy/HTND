@@ -174,7 +174,7 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 	}
 
 	if errors.Is(err, common.ErrPeerWithSameIDExists) {
-		log.Warnf("Peer already exists %v. Disconnecting..", netConnection)
+		log.Debug("Peer already exists %v. Disconnecting..", netConnection)
 		netConnection.Disconnect()
 		return
 	}
