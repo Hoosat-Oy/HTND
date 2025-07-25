@@ -1,12 +1,14 @@
 package blockrelay
 
 import (
+	"errors"
 	"sort"
 
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
 	"github.com/Hoosat-Oy/HTND/app/protocol/peer"
 	"github.com/Hoosat-Oy/HTND/app/protocol/protocolerrors"
 	"github.com/Hoosat-Oy/HTND/domain"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/infrastructure/config"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
@@ -68,6 +70,9 @@ func (flow *handleRequestAnticoneFlow) start() error {
 		var blockHashes []*externalapi.DomainHash
 		blockHashes, err = flow.Domain().Consensus().GetAnticone(blockHash, contextHash, flow.Config().ActiveNetParams.MergeSetSizeLimit*2)
 		if err != nil {
+			if errors.Is(err, model.ErrReachedMaxTraversalAllowed) {
+				return protocolerrors.Wrap(false, err, "Failed querying anticone")
+			}
 			return protocolerrors.Wrap(true, err, "Failed querying anticone")
 		}
 		log.Debugf("Got %d header hashes in past(%s) cap anticone(%s)", len(blockHashes), contextHash, blockHash)
