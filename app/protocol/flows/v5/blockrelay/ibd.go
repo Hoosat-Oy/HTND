@@ -332,7 +332,7 @@ func (flow *handleIBDFlow) getSyncerChainBlockLocator(
 	if err != nil {
 		return nil, err
 	}
-	message, err := flow.incomingRoute.DequeueWithTimeout(timeout)
+	message, err := flow.incomingRoute.Dequeue()
 	if err != nil {
 		return nil, err
 	}
@@ -610,7 +610,7 @@ func (flow *handleIBDFlow) receiveAndInsertPruningPointUTXOSet(
 	receivedChunkCount := 0
 	receivedUTXOCount := 0
 	for {
-		message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+		message, err := flow.incomingRoute.Dequeue()
 		if err != nil {
 			return false, err
 		}
@@ -697,7 +697,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		}
 		// Dequeue all messages for the requested hashes
 		for i := 0; i < len(hashesToRequest); i++ {
-			message, err := flow.incomingRoute.DequeueWithTimeout(600 * time.Second)
+			message, err := flow.incomingRoute.Dequeue()
 			if err != nil {
 				return err
 			}
