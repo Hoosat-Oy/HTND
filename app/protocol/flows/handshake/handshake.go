@@ -84,7 +84,7 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 		return nil, err
 	case <-doneChan:
 	case <-time.After(30 * time.Second):
-		log.Warnf("Handshake timed out for peer %v after 30 seconds", peer)
+		log.Debugf("Handshake timed out for peer %v after 30 seconds", peer)
 		return nil, errors.Wrap(common.ErrHandshakeTimeout, "handshake failed due to timeout")
 	}
 

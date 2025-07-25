@@ -168,18 +168,18 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 	}
 
 	if errors.Is(err, common.ErrHandshakeTimeout) {
-		log.Warnf("Handshake timed out for connection %v. Disconnecting..", netConnection)
+		log.Debugf("Handshake timed out for connection %v. Disconnecting..", netConnection)
 		netConnection.Disconnect()
 		return
 	}
 
 	if errors.Is(err, common.ErrPeerWithSameIDExists) {
-		log.Debug("Peer already exists %v. Disconnecting..", netConnection)
+		log.Debugf("Peer already exists %v. Disconnecting..", netConnection)
 		netConnection.Disconnect()
 		return
 	}
 	if errors.Is(err, routerpkg.ErrTimeout) {
-		log.Warnf("Got timeout from %s. Disconnecting...", netConnection)
+		log.Debugf("Got timeout from %s. Disconnecting...", netConnection)
 		netConnection.Disconnect()
 		return
 	}
