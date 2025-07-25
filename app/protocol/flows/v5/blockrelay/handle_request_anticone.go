@@ -70,7 +70,7 @@ func (flow *handleRequestAnticoneFlow) start() error {
 		// we relay blocks only if they enter virtual's mergeset. We add a 2 factor for possible sync gaps.
 		var blockHashes []*externalapi.DomainHash
 		if constants.BlockVersion >= 5 {
-			blockHashes, err = flow.Domain().Consensus().GetAnticone(blockHash, contextHash, flow.Config().ActiveNetParams.MergeSetSizeLimit*10)
+			blockHashes, err = flow.Domain().Consensus().GetAnticone(blockHash, contextHash, flow.Config().ActiveNetParams.MergeSetSizeLimit*1000)
 		} else {
 			blockHashes, err = flow.Domain().Consensus().GetAnticone(blockHash, contextHash, flow.Config().ActiveNetParams.MergeSetSizeLimit*2)
 		}
