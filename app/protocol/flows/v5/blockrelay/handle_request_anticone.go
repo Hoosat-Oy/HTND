@@ -71,7 +71,8 @@ func (flow *handleRequestAnticoneFlow) start() error {
 		blockHashes, err = flow.Domain().Consensus().GetAnticone(blockHash, contextHash, flow.Config().ActiveNetParams.MergeSetSizeLimit*2)
 		if err != nil {
 			if errors.Is(err, model.ErrReachedMaxTraversalAllowed) {
-				return protocolerrors.Wrap(false, err, "Failed querying anticone")
+				log.Infof("Failed querying anticone: %s", err)
+				continue
 			}
 			return protocolerrors.Wrap(true, err, "Failed querying anticone")
 		}
