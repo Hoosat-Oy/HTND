@@ -26,7 +26,7 @@ func (r *Routes) WaitForMessageOfType(command appmessage.MessageCommand, timeout
 	timeoutTime := time.Now().Add(timeout)
 	for {
 		route := r.chooseRouteForCommand(command)
-		message, err := route.DequeueWithTimeout(timeoutTime.Sub(time.Now()))
+		message, err := route.DequeueWithTimeout(time.Until(timeoutTime))
 		if err != nil {
 			return nil, errors.Wrapf(err, "error waiting for message of type %s", command)
 		}
@@ -53,7 +53,7 @@ func (r *Routes) chooseRouteForCommand(command appmessage.MessageCommand) *route
 func (r *Routes) WaitForDisconnect(timeout time.Duration) error {
 	timeoutTime := time.Now().Add(timeout)
 	for {
-		_, err := r.IncomingRoute.DequeueWithTimeout(timeoutTime.Sub(time.Now()))
+		_, err := r.IncomingRoute.DequeueWithTimeout(time.Until(timeoutTime))
 		if errors.Is(err, router.ErrRouteClosed) {
 			return nil
 		}

@@ -2,7 +2,6 @@ package blockrelay
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
 	"github.com/Hoosat-Oy/HTND/app/protocol/common"
@@ -122,7 +121,7 @@ func (flow *handleIBDFlow) syncAndValidatePruningPointProof() (*externalapi.Doma
 	if err != nil {
 		return nil, err
 	}
-	message, err := flow.incomingRoute.DequeueWithTimeout(10 * time.Minute)
+	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, err
 	}

@@ -12,7 +12,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/util/profiling"
 )
 
-var timeout = 30 * time.Second
+var timeout = 10 * time.Minute
 
 func main() {
 	err := parseConfig()

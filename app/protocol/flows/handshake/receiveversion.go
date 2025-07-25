@@ -1,8 +1,9 @@
 package handshake
 
 import (
+	"time"
+
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
-	"github.com/Hoosat-Oy/HTND/app/protocol/common"
 	peerpkg "github.com/Hoosat-Oy/HTND/app/protocol/peer"
 	"github.com/Hoosat-Oy/HTND/app/protocol/protocolerrors"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
@@ -50,8 +51,9 @@ func (flow *receiveVersionFlow) start() (*appmessage.NetAddress, error) {
 
 	log.Debugf("Starting receiveVersionFlow with %s", flow.peer.Address())
 
-	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	message, err := flow.incomingRoute.DequeueWithTimeout(60 * time.Second)
 	if err != nil {
+		log.Debugf("receiveVersionFlow dequeue error: %s", err)
 		return nil, err
 	}
 

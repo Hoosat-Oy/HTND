@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const defaultTimeout = 180 * time.Second
+const defaultTimeout = 10 * time.Minute
 
 // RPCClient is an RPC client
 type RPCClient struct {

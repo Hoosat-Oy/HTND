@@ -1,6 +1,7 @@
 package router
 
 import (
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -12,7 +13,7 @@ import (
 
 const (
 	// DefaultMaxMessages is the default capacity for a route with a capacity defined
-	DefaultMaxMessages = 500
+	DefaultMaxMessages = 5000
 )
 
 var (
@@ -103,9 +104,11 @@ func (r *Route) Dequeue() (appmessage.Message, error) {
 func (r *Route) DequeueWithTimeout(timeout time.Duration) (appmessage.Message, error) {
 	select {
 	case <-time.After(timeout):
+		debug.PrintStack()
 		return nil, errors.Wrapf(ErrTimeout, "route '%s' got timeout after %s", r.name, timeout)
 	case message, isOpen := <-r.channel:
 		if !isOpen {
+			debug.PrintStack()
 			return nil, errors.WithStack(ErrRouteClosed)
 		}
 		return message, nil
