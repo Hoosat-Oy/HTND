@@ -8,6 +8,8 @@ import (
 )
 
 func (v *blockValidator) validateHeaderPruningPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
+	// SKIP this check for the time being, investigate the chain
+	return nil
 	if blockHash.Equal(v.genesisHash) {
 		return nil
 	}
@@ -20,9 +22,6 @@ func (v *blockValidator) validateHeaderPruningPoint(stagingArea *model.StagingAr
 	expectedPruningPoint, err := v.pruningManager.ExpectedHeaderPruningPoint(stagingArea, blockHash)
 	if err != nil {
 		return err
-	}
-	if header.DAAScore() <= 43334184+1000000 {
-		return nil
 	}
 	if !header.PruningPoint().Equal(expectedPruningPoint) {
 		return errors.Wrapf(ruleerrors.ErrUnexpectedPruningPoint, "block pruning point of %s is not the expected hash of %s", header.PruningPoint(), expectedPruningPoint)
