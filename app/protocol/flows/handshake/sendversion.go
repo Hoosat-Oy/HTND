@@ -80,8 +80,9 @@ func (flow *sendVersionFlow) start() error {
 
 	// Wait for verack
 	log.Debugf("Waiting for verack")
-	_, err = flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
+		log.Debugf("Verack errored %s", message)
 		return err
 	}
 	log.Debugf("Got verack")

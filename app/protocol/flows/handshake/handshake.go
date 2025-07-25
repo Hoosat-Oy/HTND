@@ -33,65 +33,63 @@ type HandleHandshakeContext interface {
 
 // HandleHandshake sets up the new_handshake protocol - It sends a version message and waits for an incoming
 // version message, as well as a verack for the sent version
+
 func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.NetConnection,
 	receiveVersionRoute *routerpkg.Route, sendVersionRoute *routerpkg.Route, outgoingRoute *routerpkg.Route,
 ) (*peerpkg.Peer, error) {
+
+	// For HandleHandshake to finish, we need to get from the other node
+	// a version and verack messages, so we set doneCount to 2, decrease it
+	// when sending and receiving the version, and close the doneChan when
+	// it's 0. Then we wait for on select for a tick from doneChan or from
+	// errChan.
 	doneCount := int32(2)
 	doneChan := make(chan struct{})
+
 	isStopping := uint32(0)
-	errChan := make(chan error, 1) // Buffered channel to avoid blocking
+	errChan := make(chan error)
 
 	peer := peerpkg.New(netConnection)
-	var peerAddress *appmessage.NetAddress
 
+	var peerAddress *appmessage.NetAddress
 	spawn("HandleHandshake-ReceiveVersion", func() {
-		defer func() {
-			if atomic.AddInt32(&doneCount, -1) == 0 {
-				close(doneChan)
-			}
-		}()
-		log.Debugf("Starting ReceiveVersion for peer %v", peer)
-		// Pass a deadline to ReceiveVersion to enforce timeout
 		address, err := ReceiveVersion(context, receiveVersionRoute, outgoingRoute, peer)
 		if err != nil {
-			log.Debugf("ReceiveVersion error for peer %v: %v", peer, err)
 			handleError(err, "ReceiveVersion", &isStopping, errChan)
 			return
 		}
 		peerAddress = address
-		log.Debugf("ReceiveVersion completed for peer %v", peer)
+		if atomic.AddInt32(&doneCount, -1) == 0 {
+			close(doneChan)
+		}
 	})
 
 	spawn("HandleHandshake-SendVersion", func() {
-		defer func() {
-			if atomic.AddInt32(&doneCount, -1) == 0 {
-				close(doneChan)
-			}
-		}()
-		log.Debugf("Starting SendVersion for peer %v", peer)
-		// Pass a deadline to SendVersion to enforce timeout
 		err := SendVersion(context, sendVersionRoute, outgoingRoute, peer)
 		if err != nil {
-			log.Debugf("SendVersion error for peer %v: %v", peer, err)
 			handleError(err, "SendVersion", &isStopping, errChan)
 			return
 		}
-		log.Debugf("SendVersion completed for peer %v", peer)
+		if atomic.AddInt32(&doneCount, -1) == 0 {
+			close(doneChan)
+		}
 	})
 
 	select {
 	case err := <-errChan:
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
 	case <-doneChan:
 	case <-time.After(30 * time.Second):
 		log.Debugf("Handshake timed out for peer %v after 30 seconds", peer)
 		return nil, errors.Wrap(common.ErrHandshakeTimeout, "handshake failed due to timeout")
 	}
-
 	err := context.AddToPeers(peer)
 	if err != nil {
 		if errors.Is(err, common.ErrPeerWithSameIDExists) {
-			return nil, errors.Wrap(err, "peer already exists")
+			return nil, protocolerrors.Wrap(false, err, "peer already exists")
 		}
 		return nil, err
 	}
@@ -102,7 +100,6 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 			return nil, err
 		}
 	}
-	log.Debugf("Handshake completed for peer %v", peer)
 	return peer, nil
 }
 
