@@ -74,7 +74,7 @@ func (v *blockValidator) checkBlockVersion(header externalapi.BlockHeader) error
 func (v *blockValidator) checkBlockTimestampInIsolation(header externalapi.BlockHeader) error {
 	blockTimestamp := header.TimeInMilliseconds()
 	now := mstime.Now().UnixMilliseconds()
-	maxCurrentTime := now + int64(v.timestampDeviationTolerance)*v.targetTimePerBlock[constants.BlockVersion-1].Milliseconds()
+	maxCurrentTime := now + int64(v.timestampDeviationTolerance)*v.targetTimePerBlock[0].Milliseconds()
 	if blockTimestamp > maxCurrentTime {
 		return errors.Wrapf(
 			ruleerrors.ErrTimeTooMuchInTheFuture, "The block timestamp is in the future.")
