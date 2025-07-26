@@ -51,7 +51,6 @@ func newConnection(server *gRPCServer, address *net.TCPAddr, stream grpcStream,
 		isConnected:              1,
 		lowLevelClientConnection: lowLevelClientConnection,
 	}
-
 	return connection
 }
 
@@ -69,12 +68,18 @@ func (c *gRPCConnection) Start(router *router.Router) {
 			if isStatus {
 				switch status.Code() {
 				case codes.Canceled:
-					log.Debugf("connectionLoop canceled connection for %s: %s", c.address, err)
+					log.Debugf("Connection canceled for %s: %s", c.address, err)
+				case codes.Unavailable:
+				case codes.Unknown:
+					log.Errorf("Untrusted peer detected for %s, immediately disconnecting: %s", c.address, err)
+					c.Disconnect()
+					return
 				default:
-					log.Errorf("status error from connectionLoops for %s: %s", c.address, err)
+					log.Errorf("Status error from connectionLoops for %s: %s (code: %s, details: %s)",
+						c.address, err, status.Code(), status.Message())
 				}
 			} else {
-				log.Debugf("unknown error from connectionLoops for %s: %s", c.address, err)
+				log.Debugf("Unknown error from connectionLoops for %s: %s", c.address, err)
 			}
 		}
 	})
