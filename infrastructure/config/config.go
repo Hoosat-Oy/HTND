@@ -53,7 +53,7 @@ const (
 	defaultSigCacheMaxSize  = 100_000
 	sampleConfigFilename    = "sample-htnd.conf"
 	defaultMaxUTXOCacheSize = 5_000_000_000
-	defaultProtocolVersion  = 5
+	defaultProtocolVersion  = 6
 )
 
 var (
@@ -123,10 +123,10 @@ type Flags struct {
 	MaxUTXOCacheSize                uint64        `long:"maxutxocachesize" description:"Max size of loaded UTXO into ram from the disk in bytes"`
 	UTXOIndex                       bool          `long:"utxoindex" description:"Enable the UTXO index"`
 	IsArchivalNode                  bool          `long:"archival" description:"Run as an archival node: don't delete old block data when moving the pruning point. (Warning: heavy disk usage)'"`
-	DeletionDepth                   uint64        `long:"deletion-depth" description:"The depth at which pruning deletes blocks, multiplies pruning depth. Defaults to 0, which uses the configured pruning depth. (Warning: Setting a custom depth may significantly increase disk usage.)"`
+	DeletionDepth                   uint64        `long:"deletion-depth" hidden:"true" description:"The depth at which pruning deletes blocks, multiplies pruning depth. Defaults to 0, which uses the configured pruning depth. (Warning: Setting a custom depth may significantly increase disk usage.)"`
 	AllowSubmitBlockWhenNotSynced   bool          `long:"allow-submit-block-when-not-synced" hidden:"true" description:"Allow the node to accept blocks from RPC while not synced (this flag is mainly used for testing)"`
 	EnableSanityCheckPruningUTXOSet bool          `long:"enable-sanity-check-pruning-utxo" hidden:"true" description:"When moving the pruning point - check that the utxo set matches the utxo commitment"`
-	ProtocolVersion                 uint32        `long:"protocol-version" description:"Use non default p2p protocol version"`
+	ProtocolVersion                 uint32        `long:"protocol-version" hidden:"true" description:"Use non default p2p protocol version"`
 	NetworkFlags
 	ServiceOptions *ServiceOptions
 }

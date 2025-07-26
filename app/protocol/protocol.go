@@ -8,7 +8,7 @@ import (
 
 	"github.com/Hoosat-Oy/HTND/app/protocol/common"
 	"github.com/Hoosat-Oy/HTND/app/protocol/flows/ready"
-	v5 "github.com/Hoosat-Oy/HTND/app/protocol/flows/v5"
+	v6 "github.com/Hoosat-Oy/HTND/app/protocol/flows/v6"
 
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
 	"github.com/Hoosat-Oy/HTND/app/protocol/flows/handshake"
@@ -118,7 +118,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 		log.Debugf("Registering p2p flows for peer %s for protocol version %d", peer, peer.ProtocolVersion())
 		switch peer.ProtocolVersion() {
 		case 5:
-			flows = v5.Register(m, netConnection, router, errChan, &isStopping)
+			flows = v6.Register(m, netConnection, router, errChan, &isStopping)
 		default:
 			panic(errors.Errorf("no way to handle protocol version %d", peer.ProtocolVersion()))
 		}

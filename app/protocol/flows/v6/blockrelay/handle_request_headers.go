@@ -13,7 +13,7 @@ import (
 // This constant must be equal at both syncer and syncee. Therefore, never (!!) change this constant unless a new p2p
 // version is introduced. See `TestIBDBatchSizeLessThanRouteCapacity` as well.
 func getIBDBatchSize() int {
-	return 99
+	return 99 * 5
 }
 
 // RequestHeadersContext is the interface for the context needed for the HandleRequestHeaders flow.
