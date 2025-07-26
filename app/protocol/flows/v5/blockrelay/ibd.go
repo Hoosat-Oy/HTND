@@ -2,6 +2,7 @@ package blockrelay
 
 import (
 	"fmt"
+	"runtime/debug"
 	"time"
 
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
@@ -559,6 +560,7 @@ func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlo
 			log.Infof("Skipping block header %s as it is a duplicate", blockHash)
 		} else {
 			log.Errorf("%s errored: %s", blockHash, err)
+			debug.PrintStack()
 			return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", blockHash)
 		}
 	}
