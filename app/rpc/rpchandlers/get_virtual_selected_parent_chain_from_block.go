@@ -30,16 +30,35 @@ func HandleGetVirtualSelectedParentChainFromBlock(context *rpccontext.Context, _
 
 	chainChangedNotification, err := context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(virtualSelectedParentChain, getVirtualSelectedParentChainFromBlockRequest.IncludeAcceptedTransactionIDs)
 	if err != nil {
+		// Initialize default empty values for the response to avoid nil pointer dereference
+		removedChainBlockHashes := []string{}
+		addedChainBlockHashes := []string{}
+		acceptedTransactionIDs := []*appmessage.AcceptedTransactionIDs{}
+
+		// If chainChangedNotification is not nil, use its values
+		if chainChangedNotification != nil {
+			if chainChangedNotification.RemovedChainBlockHashes != nil {
+				removedChainBlockHashes = chainChangedNotification.RemovedChainBlockHashes
+			}
+			if chainChangedNotification.AddedChainBlockHashes != nil {
+				addedChainBlockHashes = chainChangedNotification.AddedChainBlockHashes
+			}
+			if chainChangedNotification.AcceptedTransactionIDs != nil {
+				acceptedTransactionIDs = chainChangedNotification.AcceptedTransactionIDs
+			}
+		}
+
 		response := appmessage.NewGetVirtualSelectedParentChainFromBlockResponseMessage(
-			chainChangedNotification.RemovedChainBlockHashes, chainChangedNotification.AddedChainBlockHashes,
-			chainChangedNotification.AcceptedTransactionIDs)
+			removedChainBlockHashes,
+			addedChainBlockHashes,
+			acceptedTransactionIDs,
+		)
 		if errors.Is(err, database.ErrNotFound) {
 			response.Error = appmessage.RPCErrorf("Acceptance data not found for one or more blocks in the chain starting from %s", getVirtualSelectedParentChainFromBlockRequest.StartHash)
 			return response, nil
 		}
 		return nil, err
 	}
-
 	response := appmessage.NewGetVirtualSelectedParentChainFromBlockResponseMessage(
 		chainChangedNotification.RemovedChainBlockHashes, chainChangedNotification.AddedChainBlockHashes,
 		chainChangedNotification.AcceptedTransactionIDs)
