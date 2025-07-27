@@ -3,8 +3,10 @@ package rpchandlers
 import (
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
 	"github.com/Hoosat-Oy/HTND/app/rpc/rpccontext"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
+	"github.com/pkg/errors"
 )
 
 // HandleGetVirtualSelectedParentChainFromBlock handles the respectively named RPC command
@@ -29,6 +31,11 @@ func HandleGetVirtualSelectedParentChainFromBlock(context *rpccontext.Context, _
 	chainChangedNotification, err := context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
 		virtualSelectedParentChain, getVirtualSelectedParentChainFromBlockRequest.IncludeAcceptedTransactionIDs)
 	if err != nil {
+		response := &appmessage.GetVirtualSelectedParentChainFromBlockResponseMessage{}
+		if errors.Is(err, database.ErrNotFound) {
+			response.Error = appmessage.RPCErrorf("Acceptance data not found for one or more blocks in the chain starting from %s", getVirtualSelectedParentChainFromBlockRequest.StartHash)
+			return response, nil
+		}
 		return nil, err
 	}
 
