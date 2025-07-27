@@ -28,10 +28,11 @@ func HandleGetVirtualSelectedParentChainFromBlock(context *rpccontext.Context, _
 		return response, nil
 	}
 
-	chainChangedNotification, err := context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
-		virtualSelectedParentChain, getVirtualSelectedParentChainFromBlockRequest.IncludeAcceptedTransactionIDs)
+	chainChangedNotification, err := context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(virtualSelectedParentChain, getVirtualSelectedParentChainFromBlockRequest.IncludeAcceptedTransactionIDs)
 	if err != nil {
-		response := &appmessage.GetVirtualSelectedParentChainFromBlockResponseMessage{}
+		response := appmessage.NewGetVirtualSelectedParentChainFromBlockResponseMessage(
+			chainChangedNotification.RemovedChainBlockHashes, chainChangedNotification.AddedChainBlockHashes,
+			chainChangedNotification.AcceptedTransactionIDs)
 		if errors.Is(err, database.ErrNotFound) {
 			response.Error = appmessage.RPCErrorf("Acceptance data not found for one or more blocks in the chain starting from %s", getVirtualSelectedParentChainFromBlockRequest.StartHash)
 			return response, nil
