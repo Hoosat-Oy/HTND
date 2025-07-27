@@ -129,6 +129,9 @@ func (na *NetAdapter) P2PConnectionCount() int {
 
 func (na *NetAdapter) onP2PConnectedHandler(connection server.Connection) error {
 	netConnection := newNetConnection(connection, na.p2pRouterInitializer, "on P2P connected")
+	if netConnection.ErrorMessage != nil {
+		return nil // don't do anything further since handshake failed.
+	}
 
 	na.p2pConnectionsLock.Lock()
 	defer na.p2pConnectionsLock.Unlock()
@@ -149,6 +152,9 @@ func (na *NetAdapter) onP2PConnectedHandler(connection server.Connection) error 
 
 func (na *NetAdapter) onRPCConnectedHandler(connection server.Connection) error {
 	netConnection := newNetConnection(connection, na.rpcRouterInitializer, "on RPC connected")
+	if netConnection.ErrorMessage != nil {
+		return nil // don't do anything further since handshake failed.
+	}
 	netConnection.setOnDisconnectedHandler(func() {})
 	netConnection.start()
 

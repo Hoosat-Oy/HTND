@@ -20,6 +20,7 @@ type NetConnection struct {
 	onDisconnectedHandler server.OnDisconnectedHandler
 	isRouterClosed        uint32
 	shouldBanCounter      uint32
+	ErrorMessage          error
 }
 
 func newNetConnection(connection server.Connection, routerInitializer RouterInitializer, name string) *NetConnection {
@@ -29,6 +30,7 @@ func newNetConnection(connection server.Connection, routerInitializer RouterInit
 		connection:       connection,
 		router:           router,
 		shouldBanCounter: 0,
+		ErrorMessage:     nil,
 	}
 
 	netConnection.connection.SetOnDisconnectedHandler(func() {

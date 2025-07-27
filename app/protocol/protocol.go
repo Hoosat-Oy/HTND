@@ -82,10 +82,13 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 		log.Debugf("initializing route for %s", netConnection)
 		isBanned, err := m.context.ConnectionManager().IsBanned(netConnection)
 		if err != nil && !errors.Is(err, addressmanager.ErrAddressNotFound) {
-			panic(err)
+			m.handleError(err, netConnection, router.OutgoingRoute())
+			netConnection.Disconnect()
+			return
 		}
 		if isBanned {
 			log.Infof("Peer %s is banned. Disconnecting...", netConnection)
+			m.handleError(errors.New("Peer is banned"), netConnection, router.OutgoingRoute())
 			netConnection.Disconnect()
 			return
 		}
@@ -110,6 +113,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 			default:
 				m.handleError(err, netConnection, router.OutgoingRoute())
 			}
+			netConnection.ErrorMessage = err
 			return
 		}
 		defer m.context.RemoveFromPeers(peer)
@@ -148,6 +152,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 }
 
 func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection, outgoingRoute *routerpkg.Route) {
+	netConnection.ErrorMessage = err
 	if protocolErr := (protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
 		if m.context.Config().EnableBanning && protocolErr.ShouldBan {
 			log.Warnf("Banning %s (reason: %s)", netConnection, protocolErr.Cause)
