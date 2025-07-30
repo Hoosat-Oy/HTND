@@ -83,12 +83,10 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 		isBanned, err := m.context.ConnectionManager().IsBanned(netConnection)
 		if err != nil && !errors.Is(err, addressmanager.ErrAddressNotFound) {
 			m.handleError(err, netConnection, router.OutgoingRoute())
-			netConnection.Disconnect()
 			return
 		}
 		if isBanned {
 			log.Infof("Peer %s is banned. Disconnecting...", netConnection)
-			m.handleError(errors.New("Peer is banned"), netConnection, router.OutgoingRoute())
 			netConnection.Disconnect()
 			return
 		}
