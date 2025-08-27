@@ -154,15 +154,13 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 	if protocolErr := (protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
 		if m.context.Config().EnableBanning && protocolErr.ShouldBan {
 			log.Warnf("Banning %s (reason: %s)", netConnection, protocolErr.Cause)
-
 			err := m.context.ConnectionManager().Ban(netConnection)
 			if err != nil && !errors.Is(err, connmanager.ErrCannotBanPermanent) {
-				panic(err)
+				return
 			}
-
 			err = outgoingRoute.Enqueue(appmessage.NewMsgReject(protocolErr.Error()))
 			if err != nil && !errors.Is(err, routerpkg.ErrRouteClosed) {
-				panic(err)
+				return
 			}
 		}
 		log.Debugf("Disconnecting from %s (reason: %s)", netConnection, protocolErr.Cause)
@@ -187,6 +185,11 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 		return
 	}
 	if errors.Is(err, routerpkg.ErrRouteClosed) {
+		log.Debugf("Route closed.", netConnection)
+		return
+	}
+	if errors.Is(err, addressmanager.ErrAddressNotFound) {
+		log.Debugf("Address not found.", netConnection)
 		return
 	}
 	panic(err)
