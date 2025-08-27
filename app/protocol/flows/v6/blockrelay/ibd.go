@@ -734,7 +734,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 					log.Infof("Skipping block header %s as it is missing parent", expectedHash)
 				} else {
 					log.Infof("Rejected block header %s from %s during IBD: %s", expectedHash, flow.peer, err)
-					return protocolerrors.Wrapf(false, err, "got invalid block header %s during IBD", expectedHash)
+					return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", expectedHash)
 				}
 			}
 			err = flow.OnNewBlock(block)
