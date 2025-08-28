@@ -53,7 +53,7 @@ type server struct {
 
 // MaxDaemonSendMsgSize is the max send message size used for the daemon server.
 // Currently, set to 100MB
-const MaxDaemonSendMsgSize = 100_000_000
+const MaxDaemonSendMsgSize = 1_000_000_000
 
 // Start starts the htnwalletd server
 func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath string, profile string, timeout uint32) error {
@@ -100,7 +100,7 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 	}
 
 	coinbaseMaturity := params.BlockCoinbaseMaturity
-	if dagInfo.NetworkName == "kaspa-testnet-11" {
+	if dagInfo.NetworkName == "hoosa-testnet" {
 		coinbaseMaturity = 1000
 	}
 

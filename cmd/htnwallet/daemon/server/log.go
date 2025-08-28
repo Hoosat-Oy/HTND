@@ -13,7 +13,7 @@ import (
 
 var (
 	backendLog = logger.NewBackend()
-	log        = backendLog.Logger("KSWD")
+	log        = backendLog.Logger("HSWD")
 	spawn      = panics.GoroutineWrapperFunc(log)
 
 	defaultAppDir     = util.AppDir("htnwallet", false)
