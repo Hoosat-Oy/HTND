@@ -267,7 +267,7 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry, memp
 		})
 	}
 
-	sort.Slice(utxos, func(i, j int) bool { return utxos[i].UTXOEntry.Amount() > utxos[j].UTXOEntry.Amount() })
+	sort.Slice(utxos, func(i, j int) bool { return utxos[i].UTXOEntry.Amount() < utxos[j].UTXOEntry.Amount() })
 
 	s.lock.Lock()
 	s.startTimeOfLastCompletedRefresh = refreshStart
