@@ -299,6 +299,10 @@ func (s *consensus) sendVirtualChangedEvent(virtualChangeSet *externalapi.Virtua
 
 	stagingArea := model.NewStagingArea()
 	virtualGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("sendVirtualChangedEvent failed to retrieve with %s\n", model.VirtualBlockHash)
+		return err
+	}
 	if err != nil {
 		return err
 	}
@@ -431,6 +435,10 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 	}
 
 	blockStatus, err := s.blockStatusStore.Get(s.databaseContext, stagingArea, blockHash)
+	if database.IsNotFoundError(err) {
+		log.Infof("GetBlockInfo failed to retrieve with %s\n", blockHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -442,6 +450,10 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 	}
 
 	ghostdagData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, blockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("GetBlockInfo failed to retrieve with %s\n", blockHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -494,6 +506,11 @@ func (s *consensus) GetBlocksAcceptanceData(blockHashes []*externalapi.DomainHas
 
 	for i := 0; i < len(blockHashes); i++ {
 		acceptanceData, err := s.acceptanceDataStore.Get(s.databaseContext, stagingArea, blockHashes[i])
+
+		if database.IsNotFoundError(err) {
+			log.Infof("GetBlocksAcceptanceData failed to retrieve with %s\n", blockHashes[i])
+			return nil, err
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -675,6 +692,10 @@ func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainHash, error) 
 	stagingArea := model.NewStagingArea()
 
 	virtualGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("GetVirtualSelectedParent failed to retrieve with %s\n", model.VirtualBlockHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -709,6 +730,10 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 		return nil, err
 	}
 	virtualGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("GetVirtualInfo failed to retrieve with %s\n", model.VirtualBlockHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -1038,6 +1063,10 @@ func (s *consensus) TrustedDataDataDAAHeader(trustedBlockHash, daaBlockHash *ext
 	}
 
 	ghostdagData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, daaBlockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("TrustedDataDataDAAHeader failed to retrieve with %s\n", daaBlockHash)
+		return nil, err
+	}
 	isNotFoundError := database.IsNotFoundError(err)
 	if !isNotFoundError && err != nil {
 		return nil, err
@@ -1088,6 +1117,10 @@ func (s *consensus) IsChainBlock(blockHash *externalapi.DomainHash) (bool, error
 
 	stagingArea := model.NewStagingArea()
 	virtualGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("IsChainBlock failed to retrieve with %s\n", model.VirtualBlockHash)
+		return false, err
+	}
 	if err != nil {
 		return false, err
 	}

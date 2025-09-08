@@ -57,6 +57,7 @@ func (gds *ghostdagDataStore) Get(dbContext model.DBReader, stagingArea *model.S
 	}
 
 	blockGHOSTDAGDataBytes, err := dbContext.Get(gds.serializeKey(key))
+
 	if err != nil {
 		return nil, err
 	}

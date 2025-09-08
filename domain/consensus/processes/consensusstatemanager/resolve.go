@@ -3,6 +3,7 @@ package consensusstatemanager
 import (
 	"sort"
 
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
@@ -57,6 +58,10 @@ func (csm *consensusStateManager) findNextPendingTip(stagingArea *model.StagingA
 		}
 
 		status, err := csm.blockStatusStore.Get(csm.databaseContext, stagingArea, tip)
+		if database.IsNotFoundError(err) {
+			log.Infof("findNextPendingTip failed to retrieve with %s\n", tip)
+			return nil, externalapi.StatusInvalid, err
+		}
 		if err != nil {
 			return nil, externalapi.StatusInvalid, err
 		}

@@ -8,8 +8,6 @@ import (
 )
 
 func (v *blockValidator) validateHeaderPruningPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
-	// SKIP this check for the time being, investigate the chain
-	return nil
 	if blockHash.Equal(v.genesisHash) {
 		return nil
 	}

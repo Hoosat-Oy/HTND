@@ -1,6 +1,7 @@
 package reachabilitymanager
 
 import (
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 )
@@ -37,6 +38,10 @@ func (rt *reachabilityManager) AddBlock(stagingArea *model.StagingArea, blockHas
 	rt.stageData(stagingArea, blockHash, newReachabilityData)
 
 	ghostdagData, err := rt.ghostdagDataStore.Get(rt.databaseContext, stagingArea, blockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("AddBlock failed to retrieve with %s\n", blockHash)
+		return err
+	}
 	if err != nil {
 		return err
 	}

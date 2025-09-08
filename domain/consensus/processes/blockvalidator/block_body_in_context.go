@@ -21,6 +21,11 @@ func (v *blockValidator) ValidateBodyInContext(stagingArea *model.StagingArea, b
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateBodyInContext")
 	defer onEnd()
 
+	block, err := v.blockStore.Block(v.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		return err
+	}
+
 	if !isBlockWithTrustedData {
 		err := v.checkBlockIsNotPruned(stagingArea, blockHash)
 		if err != nil {
@@ -28,7 +33,7 @@ func (v *blockValidator) ValidateBodyInContext(stagingArea *model.StagingArea, b
 		}
 	}
 
-	err := v.checkBlockTransactions(stagingArea, blockHash)
+	err = v.checkBlockTransactions(stagingArea, blockHash, block)
 	if err != nil {
 		return err
 	}
@@ -38,16 +43,16 @@ func (v *blockValidator) ValidateBodyInContext(stagingArea *model.StagingArea, b
 		if err != nil {
 			return err
 		}
-
-		err = v.checkCoinbaseSubsidy(stagingArea, blockHash)
+		reward, err := v.checkCoinbaseSubsidy(stagingArea, blockHash, block)
 		if err != nil {
 			return err
 		}
 
-		err = v.checkDevFee(stagingArea, blockHash)
+		err = v.checkDevFee(stagingArea, block, reward)
 		if err != nil {
 			return err
 		}
+
 	}
 	return nil
 }
@@ -138,12 +143,7 @@ func (v *blockValidator) checkParentBlockBodiesExist(
 }
 
 func (v *blockValidator) checkBlockTransactions(
-	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
-
-	block, err := v.blockStore.Block(v.databaseContext, stagingArea, blockHash)
-	if err != nil {
-		return err
-	}
+	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, block *externalapi.DomainBlock) error {
 
 	// Ensure all transactions in the block are finalized.
 	pastMedianTime, err := v.pastMedianTimeManager.PastMedianTime(stagingArea, blockHash)
@@ -159,32 +159,35 @@ func (v *blockValidator) checkBlockTransactions(
 	return nil
 }
 
-func (v *blockValidator) checkCoinbaseSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
-	block, err := v.blockStore.Block(v.databaseContext, stagingArea, blockHash)
-	if err != nil {
-		return err
-	}
+func (v *blockValidator) checkCoinbaseSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, block *externalapi.DomainBlock) (uint64, error) {
 
 	expectedSubsidy, err := v.coinbaseManager.CalcBlockSubsidy(stagingArea, blockHash, block.Header.Version())
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	_, _, subsidy, err := v.coinbaseManager.ExtractCoinbaseDataBlueScoreAndSubsidy(block.Transactions[transactionhelper.CoinbaseTransactionIndex])
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	if expectedSubsidy != subsidy {
-
-		return errors.Wrapf(ruleerrors.ErrWrongCoinbaseSubsidy, "the subsidy specified on the coinbase of %s is "+
-			"wrong: expected %d but got %d, blocks version %d", blockHash, expectedSubsidy, subsidy, block.Header.Version())
+	var daaScore = block.Header.DAAScore()
+	if daaScore >= 63115200 && daaScore <= 78894000 {
+		if subsidy > expectedSubsidy {
+			return 0, errors.Wrapf(ruleerrors.ErrWrongCoinbaseSubsidy, "the subsidy specified on the coinbase of %s is "+
+				"wrong: expected %d but got %d, blocks version %d", blockHash, expectedSubsidy, subsidy, block.Header.Version())
+		}
+	} else {
+		if subsidy != expectedSubsidy {
+			return 0, errors.Wrapf(ruleerrors.ErrWrongCoinbaseSubsidy, "the subsidy specified on the coinbase of %s is "+
+				"wrong: expected %d but got %d, blocks version %d", blockHash, expectedSubsidy, subsidy, block.Header.Version())
+		}
 	}
 
-	return nil
+	return subsidy, nil
 }
 
-func IsDevFeeOutput(reward uint64, output *externalapi.DomainTransactionOutput) bool {
+func IsDevFeeOutput(reward uint64, block *externalapi.DomainBlock, output *externalapi.DomainTransactionOutput) bool {
 	_, address, err := txscript.ExtractScriptPubKeyAddress(output.ScriptPublicKey, &dagconfig.MainnetParams)
 	if err != nil {
 		return false
@@ -196,28 +199,24 @@ func IsDevFeeOutput(reward uint64, output *externalapi.DomainTransactionOutput) 
 	return isDevFeeAddressEqual && isValueEqual
 }
 
-func (v *blockValidator) checkDevFee(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
-	block, err := v.blockStore.Block(v.databaseContext, stagingArea, blockHash)
-	if err != nil {
-		return err
-	}
-
-	// Check for nodeFee in block outputs
-	if len(block.Transactions) < 1 {
-		return nil
-	}
-	if len(block.Transactions[0].Outputs) < 1 {
-		return nil
-	}
+func (v *blockValidator) checkDevFee(stagingArea *model.StagingArea, block *externalapi.DomainBlock, reward uint64) error {
 	if block.Header.Version() < 2 {
 		return nil
 	}
+	// Check for nodeFee in block outputs
+	if len(block.Transactions) < 1 {
+		jsonBytes, _ := json.MarshalIndent(block, "", "    ")
+		return errors.Wrapf(ruleerrors.ErrDevFeeNotIncluded, "transactions do not include dev fee transaction. \n%s", string(jsonBytes))
+	}
+	if len(block.Transactions[0].Outputs) < 1 {
+		jsonBytes, _ := json.MarshalIndent(block, "", "    ")
+		return errors.Wrapf(ruleerrors.ErrDevFeeNotIncluded, "transactions do not include dev fee transaction. \n%s", string(jsonBytes))
+	}
 
-	reward, _ := v.coinbaseManager.CalcBlockSubsidy(stagingArea, blockHash, block.Header.Version())
 	hasDevFee := false
 	for _, transaction := range block.Transactions {
 		for _, output := range transaction.Outputs {
-			if IsDevFeeOutput(reward, output) {
+			if IsDevFeeOutput(reward, block, output) {
 				hasDevFee = true
 				break
 			}

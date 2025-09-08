@@ -52,6 +52,7 @@ const (
 	RejectImmatureSpend   RejectCode = 0x45
 	RejectBadOrphan       RejectCode = 0x64
 	RejectSpamTx          RejectCode = 0x65
+	RejectFreezedWallet   RejectCode = 0x66
 )
 
 // Map of reject codes back strings for pretty printing.

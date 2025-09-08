@@ -23,6 +23,10 @@ func (rt *reachabilityManager) reachabilityDataForInsertion(stagingArea *model.S
 
 func (rt *reachabilityManager) futureCoveringSet(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (model.FutureCoveringTreeNodeSet, error) {
 	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, stagingArea, blockHash)
+	if database.IsNotFoundError(err) {
+		log.Infof("futureCoveringSet failed to retrieve with %s\n", blockHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -32,6 +36,10 @@ func (rt *reachabilityManager) futureCoveringSet(stagingArea *model.StagingArea,
 
 func (rt *reachabilityManager) interval(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
 	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, stagingArea, blockHash)
+	if database.IsNotFoundError(err) {
+		log.Infof("Reachabilitymanager interval failed to retrieve with %s\n", blockHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -43,6 +51,10 @@ func (rt *reachabilityManager) children(stagingArea *model.StagingArea, blockHas
 	[]*externalapi.DomainHash, error) {
 
 	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, stagingArea, blockHash)
+	if database.IsNotFoundError(err) {
+		log.Infof("Reachabilitymanager children failed to retrieve with %s\n", blockHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -54,6 +66,10 @@ func (rt *reachabilityManager) parent(stagingArea *model.StagingArea, blockHash 
 	*externalapi.DomainHash, error) {
 
 	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, stagingArea, blockHash)
+	if database.IsNotFoundError(err) {
+		log.Infof("Reachabilitymanager parent failed to retrieve with %s\n", blockHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}

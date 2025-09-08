@@ -1,6 +1,7 @@
 package consensusstatemanager
 
 import (
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
@@ -39,6 +40,10 @@ func (csm *consensusStateManager) ReverseUTXODiffs(tipHash *externalapi.DomainHa
 	log.Trace("Reversed 1 utxoDiff")
 
 	previousBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, readStagingArea, previousBlock, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("ReverseUTXODiffs failed to retrieve with %s\n", previousBlock)
+		return err
+	}
 	if err != nil {
 		return err
 	}

@@ -40,10 +40,6 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 	coinbaseData *externalapi.DomainCoinbaseData) (expectedTransaction *externalapi.DomainTransaction, hasRedReward bool, err error) {
 
 	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, stagingArea, blockHash, true)
-	if !database.IsNotFoundError(err) && err != nil {
-		return nil, false, err
-	}
-
 	// If there's ghostdag data with trusted data we prefer it because we need the original merge set non-pruned merge set.
 	if database.IsNotFoundError(err) {
 		ghostdagData, err = c.ghostdagDataStore.Get(c.databaseContext, stagingArea, blockHash, false)
@@ -53,6 +49,10 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 	}
 
 	acceptanceData, err := c.acceptanceDataStore.Get(c.databaseContext, stagingArea, blockHash)
+	if database.IsNotFoundError(err) {
+		log.Infof("ExpectedCoinbaseTransaction failed to retrieve with %s\n", blockHash)
+		return nil, false, err
+	}
 	if err != nil {
 		return nil, false, err
 	}
@@ -311,12 +311,20 @@ func (c *coinbaseManager) CalcBlockSubsidy(stagingArea *model.StagingArea, block
 func (c *coinbaseManager) calcDeflationaryPeriodBlockSubsidy(blockDaaScore uint64, blockVersion uint16) uint64 {
 	// We define a year as 365.25 days and a month as 365.25 / 12 = 30.4375
 	// secondsPerMonth = 30.4375 * 24 * 60 * 60 = 2629800
-	// secondsPerYear = 2629800 * 12 = 31557600
-	const secondsPerYear = 31557600
+	// blocksPerYear = 2629800 * 12 / 0.20s (5BPS) = 157788000
+	var blocksPerYear = uint64(31557600 / c.targetTimePerBlock[blockVersion-1].Seconds())
+	// var blocksPerYear = uint64(31557600)
 	// Note that this calculation implicitly assumes that block per second = 1 (by assuming daa score diff is in second units).
-	yearsSinceDeflationStarted := (blockDaaScore - c.deflationaryPhaseDaaScore) / secondsPerYear
+	yearsSinceDeflationStarted := (blockDaaScore - c.deflationaryPhaseDaaScore) / blocksPerYear
 	// Return the pre-calculated value from subsidy-per-month table
 	return c.getDeflationaryPeriodBlockSubsidyFromTable(yearsSinceDeflationStarted, blockVersion)
+}
+
+func (c *coinbaseManager) getDeflationaryPeriodBlockSubsidyFromTable(year uint64, blockVersion uint16) uint64 {
+	if year >= uint64(len(subsidyByDeflationaryYearTable)) {
+		year = uint64(len(subsidyByDeflationaryYearTable) - 1)
+	}
+	return uint64(float64(subsidyByDeflationaryYearTable[year]) * c.targetTimePerBlock[blockVersion-1].Seconds())
 }
 
 /*
@@ -329,13 +337,6 @@ var subsidyByDeflationaryYearTable = []uint64{
 	396021, 323350, 264014, 215566, 176009, 143711, 117339, 95807, 78226, 63871, 52150, 42581, 34767, 28387, 23178, 18924, 15452, 12616, 10301, 8411, 6867, 5607, 4578, 3738, 3052,
 	2492, 2034, 1661, 1356, 1107, 904, 738, 602, 492, 401, 328, 267, 218, 178, 145, 119, 97, 79, 64, 52, 43, 35, 28, 23, 19,
 	15, 12, 10, 8, 6, 5, 4, 3, 3, 2, 2, 1, 1, 1, 0,
-}
-
-func (c *coinbaseManager) getDeflationaryPeriodBlockSubsidyFromTable(year uint64, blockVersion uint16) uint64 {
-	if year >= uint64(len(subsidyByDeflationaryYearTable)) {
-		year = uint64(len(subsidyByDeflationaryYearTable) - 1)
-	}
-	return uint64(float64(subsidyByDeflationaryYearTable[year]) * c.targetTimePerBlock[blockVersion-1].Seconds())
 }
 
 func (c *coinbaseManager) calcDeflationaryPeriodBlockSubsidyFloatCalc(year uint64) uint64 {

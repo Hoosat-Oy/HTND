@@ -332,6 +332,10 @@ func (uis *utxoIndexStore) getVirtualParents() ([]*externalapi.DomainHash, error
 	}
 
 	serializedHashes, err := uis.database.Get(virtualParentsKey)
+	// if database.IsNotFoundError(err) {
+	// 	log.Infof("getVirtualParents failed to retrieve with %s\n", virtualParentsKey)
+	// 	return nil, err
+	// }
 	if err != nil {
 		return nil, err
 	}
@@ -409,6 +413,10 @@ func (uis *utxoIndexStore) initializeCirculatingSompiSupply() error {
 func (uis *utxoIndexStore) updateCirculatingSompiSupply(dbTransaction database.Transaction, toAddSompiSupply uint64, toRemoveSompiSupply uint64) error {
 	if toAddSompiSupply != toRemoveSompiSupply {
 		circulatingSupplyBytes, err := dbTransaction.Get(circulatingSupplyKey)
+		if database.IsNotFoundError(err) {
+			log.Infof("updateCirculatingSompiSupply failed to retrieve with %s\n", circulatingSupplyKey)
+			return err
+		}
 		if err != nil {
 			return err
 		}
@@ -431,6 +439,10 @@ func (uis *utxoIndexStore) updateCirculatingSompiSupply(dbTransaction database.T
 func (uis *utxoIndexStore) updateCirculatingSompiSupplyWithoutTransaction(toAddSompiSupply uint64, toRemoveSompiSupply uint64) error {
 	if toAddSompiSupply != toRemoveSompiSupply {
 		circulatingSupplyBytes, err := uis.database.Get(circulatingSupplyKey)
+		if database.IsNotFoundError(err) {
+			log.Infof("updateCirculatingSompiSupplyWithoutTransaction failed to retrieve with %s\n", circulatingSupplyKey)
+			return err
+		}
 		if err != nil {
 			return err
 		}
@@ -455,6 +467,10 @@ func (uis *utxoIndexStore) getCirculatingSompiSupply() (uint64, error) {
 		return 0, errors.Errorf("cannot get circulatingSupply while staging isn't empty")
 	}
 	circulatingSupply, err := uis.database.Get(circulatingSupplyKey)
+	if database.IsNotFoundError(err) {
+		log.Infof("getCirculatingSompiSupply failed to retrieve with %s\n", circulatingSupplyKey)
+		return 0, err
+	}
 	if err != nil {
 		return 0, err
 	}

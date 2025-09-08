@@ -1,6 +1,7 @@
 package blockstore
 
 import (
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/database/serialization"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
@@ -46,6 +47,10 @@ func (bs *blockStore) initializeCount(dbContext model.DBReader) error {
 	}
 	if hasCountBytes {
 		countBytes, err := dbContext.Get(bs.countKey)
+		if database.IsNotFoundError(err) {
+			log.Infof("initializeCount failed to retrieve with %s\n", bs.countKey)
+			return err
+		}
 		if err != nil {
 			return err
 		}
@@ -85,6 +90,10 @@ func (bs *blockStore) block(dbContext model.DBReader, stagingShard *blockStaging
 	}
 
 	blockBytes, err := dbContext.Get(bs.hashAsKey(blockHash))
+	if database.IsNotFoundError(err) {
+		log.Infof("Block failed to retrieve with %s\n", blockHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}

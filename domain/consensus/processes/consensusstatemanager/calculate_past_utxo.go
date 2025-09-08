@@ -1,6 +1,7 @@
 package consensusstatemanager
 
 import (
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/utxo"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
@@ -24,6 +25,10 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(stagingArea
 		log.Debugf("Block %s is the genesis. By definition, "+
 			"it has a predefined UTXO diff, empty acceptance data, and a predefined multiset", blockHash)
 		multiset, err := csm.multisetStore.Get(csm.databaseContext, stagingArea, blockHash)
+		if database.IsNotFoundError(err) {
+			log.Infof("CalculatePastUTXOAndAcceptanceData failed to retrieve with %s\n", blockHash)
+			return nil, nil, nil, err
+		}
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -35,6 +40,10 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(stagingArea
 	}
 
 	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, blockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("CalculatePastUTXOAndAcceptanceData failed to retrieve with %s\n", blockHash)
+		return nil, nil, nil, err
+	}
 	if err != nil {
 		return nil, nil, nil, err
 	}

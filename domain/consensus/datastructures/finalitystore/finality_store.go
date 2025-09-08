@@ -42,6 +42,10 @@ func (fs *finalityStore) FinalityPoint(dbContext model.DBReader, stagingArea *mo
 	}
 
 	finalityPointHashBytes, err := dbContext.Get(fs.hashAsKey(blockHash))
+	// if database.IsNotFoundError(err) {
+	// 	log.Infof("FinalityPoint failed to retrieve with %s\n", blockHash)
+	// 	return nil, err
+	// }
 	if err != nil {
 		return nil, err
 	}

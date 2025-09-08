@@ -269,10 +269,15 @@ func (flow *handleRelayInvsFlow) start() error {
 				flow.banConnection(true)
 				continue
 			}
+			if errors.Is(err, ruleerrors.ErrInvalidAncestorBlock) {
+				log.Infof("Invalid ancestor block %s", inv.Hash)
+				flow.banConnection(true)
+				continue
+			}
 			if errors.Is(err, leveldb.ErrNotFound) {
 				log.Infof("Ignoring block %s due to missing UTXO diff key", inv.Hash)
 				flow.banConnection(false)
-				continue // Or trigger a resync/recovery
+				continue
 			}
 			if errors.Is(err, ruleerrors.ErrInvalidPoW) {
 				if block.PoWHash != "" {

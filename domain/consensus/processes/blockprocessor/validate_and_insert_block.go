@@ -30,6 +30,10 @@ func (bp *blockProcessor) setBlockStatusAfterBlockValidation(
 	}
 	if exists {
 		status, err := bp.blockStatusStore.Get(bp.databaseContext, stagingArea, blockHash)
+		if database.IsNotFoundError(err) {
+			log.Infof("setBlockStatusAfterBlockValidation failed to retrieve with %s\n", blockHash)
+			return externalapi.StatusInvalid, err
+		}
 		if err != nil {
 			return externalapi.StatusInvalid, err
 		}
@@ -185,9 +189,9 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 	log.Debug(logger.NewLogClosure(func() string {
 		virtualGhostDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, stagingArea, model.VirtualBlockHash, false)
 		if database.IsNotFoundError(err) {
-			return fmt.Sprintf("Cannot log data for non-existent virtual")
+			log.Infof("validateAndInsertBlock failed to retrieve with %s\n", model.VirtualBlockHash)
+			return "Cannot log data for non-existent virtual"
 		}
-
 		if err != nil {
 			logClosureErr = err
 			return fmt.Sprintf("Failed to get virtual GHOSTDAG data: %s", err)
@@ -271,6 +275,10 @@ func (bp *blockProcessor) checkBlockStatus(stagingArea *model.StagingArea, block
 	}
 
 	status, err := bp.blockStatusStore.Get(bp.databaseContext, stagingArea, hash)
+	if database.IsNotFoundError(err) {
+		log.Infof("checkBlockStatus failed to retrieve with %s\n", hash)
+		return err
+	}
 	if err != nil {
 		return err
 	}
@@ -360,6 +368,10 @@ func (bp *blockProcessor) validatePostProofOfWork(stagingArea *model.StagingArea
 // header-only block or as a block with body.
 func (bp *blockProcessor) hasValidatedHeader(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
 	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, stagingArea, blockHash)
+	if database.IsNotFoundError(err) {
+		log.Infof("hasValidatedHeader failed to retrieve with %s\n", blockHash)
+		return false, err
+	}
 	if err != nil {
 		return false, err
 	}

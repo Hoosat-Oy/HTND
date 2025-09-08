@@ -3,6 +3,7 @@ package ghostdagmanager
 import (
 	"math/big"
 
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
@@ -93,6 +94,10 @@ func (gm *ghostdagManager) GHOSTDAG(stagingArea *model.StagingArea, blockHash *e
 
 	if !isGenesis {
 		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, newBlockData.selectedParent, false)
+		if database.IsNotFoundError(err) {
+			log.Infof("GHOSTDAG failed to retrieve with %s\n", newBlockData.selectedParent)
+			return err
+		}
 		if err != nil {
 			return err
 		}
@@ -164,6 +169,10 @@ func (gm *ghostdagManager) checkBlueCandidate(stagingArea *model.StagingArea, ne
 		}
 
 		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, chainBlock.blockData.SelectedParent(), false)
+		if database.IsNotFoundError(err) {
+			log.Infof("GHOScheckBlueCandidateTDAG failed to retrieve with %s\n", chainBlock.blockData.SelectedParent())
+			return false, 0, nil, err
+		}
 		if err != nil {
 			return false, 0, nil, err
 		}
@@ -255,12 +264,20 @@ func (gm *ghostdagManager) blueAnticoneSize(stagingArea *model.StagingArea,
 
 		var err error
 		current, err = gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent(), isTrustedData)
+		if database.IsNotFoundError(err) {
+			log.Infof("blueAnticoneSize failed to retrieve with %s\n", current.SelectedParent())
+			return 0, err
+		}
 		if err != nil {
 			return 0, err
 		}
 		if current.SelectedParent().Equal(model.VirtualGenesisBlockHash) {
 			isTrustedData = true
 			current, err = gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent(), isTrustedData)
+			if database.IsNotFoundError(err) {
+				log.Infof("blueAnticoneSize failed to retrieve with %s\n", current.SelectedParent())
+				return 0, err
+			}
 			if err != nil {
 				return 0, err
 			}

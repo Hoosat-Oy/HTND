@@ -49,6 +49,10 @@ func (brs *blockRelationStore) BlockRelation(dbContext model.DBReader, stagingAr
 	}
 
 	blockRelationsBytes, err := dbContext.Get(brs.hashAsKey(blockHash))
+	// if database.IsNotFoundError(err) {
+	// 	log.Infof("BlockRelation failed to retrieve with %s\n", blockHash)
+	// 	return nil, err
+	// }
 	if err != nil {
 		return nil, err
 	}

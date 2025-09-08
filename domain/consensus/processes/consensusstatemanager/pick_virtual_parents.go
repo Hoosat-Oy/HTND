@@ -5,6 +5,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/util/math"
 	"github.com/pkg/errors"
 
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
@@ -151,6 +152,10 @@ func (csm *consensusStateManager) selectVirtualSelectedParent(stagingArea *model
 
 		log.Debugf("Checking block %s for selected parent eligibility", selectedParentCandidate)
 		selectedParentCandidateStatus, err := csm.blockStatusStore.Get(csm.databaseContext, stagingArea, selectedParentCandidate)
+		if database.IsNotFoundError(err) {
+			log.Infof("selectVirtualSelectedParent failed to retrieve with %s\n", selectedParentCandidate)
+			return nil, err
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -299,6 +304,10 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(stagingArea *model
 	var badReds []*externalapi.DomainHash
 
 	virtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("boundedMergeBreakingParents failed to retrieve with %s\n", model.VirtualBlockHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}

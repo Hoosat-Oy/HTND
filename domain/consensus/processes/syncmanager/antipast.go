@@ -1,6 +1,7 @@
 package syncmanager
 
 import (
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
@@ -32,10 +33,18 @@ func (sm *syncManager) antiPastHashesBetween(stagingArea *model.StagingArea, low
 	}
 
 	lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, lowHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("antiPastHashesBetween failed to retrieve low with %s\n", lowHash)
+		return nil, nil, err
+	}
 	if err != nil {
 		return nil, nil, err
 	}
 	highBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, highHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("antiPastHashesBetween failed to retrieve high with %s\n", highHash)
+		return nil, nil, err
+	}
 	if err != nil {
 		return nil, nil, err
 	}
@@ -105,6 +114,10 @@ func (sm *syncManager) findLowHashInHighHashSelectedParentChain(stagingArea *mod
 			break
 		}
 		lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, lowHash, false)
+		if database.IsNotFoundError(err) {
+			log.Infof("findLowHashInHighHashSelectedParentChain failed to retrieve with %s\n", lowHash)
+			return nil, err
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -135,6 +148,10 @@ func (sm *syncManager) missingBlockBodyHashes(stagingArea *model.StagingArea, hi
 			return nil, err
 		}
 		blockStatus, err := sm.blockStatusStore.Get(sm.databaseContext, stagingArea, selectedChild)
+		if database.IsNotFoundError(err) {
+			log.Infof("missingBlockBodyHashes failed to retrieve with %s\n", selectedChild)
+			return nil, err
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -187,6 +204,10 @@ func (sm *syncManager) isHeaderOnlyBlock(stagingArea *model.StagingArea, blockHa
 	}
 
 	status, err := sm.blockStatusStore.Get(sm.databaseContext, stagingArea, blockHash)
+	if database.IsNotFoundError(err) {
+		log.Infof("isHeaderOnlyBlock failed to retrieve with %s\n", blockHash)
+		return false, err
+	}
 	if err != nil {
 		return false, err
 	}

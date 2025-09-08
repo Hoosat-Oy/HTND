@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/testapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
@@ -385,6 +386,9 @@ func verifyUtxoDiffPaths(t *testing.T, tc testapi.TestConsensus, hashes []*exter
 	stagingArea := model.NewStagingArea()
 
 	virtualGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, model.VirtualBlockHash, false)
+	if database.IsNotFoundError(err) {
+		t.Fatal("verifyUtxoDiffPaths failed to retrieve with %s\n", model.VirtualBlockHash)
+	}
 	if err != nil {
 		t.Fatal(err)
 	}

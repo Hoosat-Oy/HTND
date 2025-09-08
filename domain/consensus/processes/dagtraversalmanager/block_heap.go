@@ -5,6 +5,7 @@ import (
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
+	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
 )
 
 func blockGHOSTDAGDataHashPairLess(left, right *externalapi.BlockGHOSTDAGDataHashPair, gm model.GHOSTDAGManager) bool {
@@ -95,6 +96,10 @@ func (bh *blockHeap) Pop() *externalapi.DomainHash {
 // Push pushes the block onto the heap
 func (bh *blockHeap) Push(blockHash *externalapi.DomainHash) error {
 	ghostdagData, err := bh.ghostdagStore.Get(bh.dbContext, bh.stagingArea, blockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("Push failed to retrieve with %s\n", blockHash)
+		return err
+	}
 	if err != nil {
 		return err
 	}
@@ -197,6 +202,10 @@ func (sbh *sizedUpBlockHeap) tryPushWithGHOSTDAGData(blockHash *externalapi.Doma
 // tryPush tries to push the block onto the heap, if the heap is full and it's less than the minimum it rejects it
 func (sbh *sizedUpBlockHeap) tryPush(blockHash *externalapi.DomainHash) (bool, error) {
 	ghostdagData, err := sbh.ghostdagStore.Get(sbh.dbContext, sbh.stagingArea, blockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("tryPush failed to retrieve with %s\n", blockHash)
+		return false, err
+	}
 	if err != nil {
 		return false, err
 	}

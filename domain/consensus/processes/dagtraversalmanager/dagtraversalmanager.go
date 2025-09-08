@@ -3,6 +3,7 @@ package dagtraversalmanager
 import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
+	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
 	"github.com/pkg/errors"
 )
 
@@ -48,6 +49,10 @@ func New(
 
 func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, blueScore uint64) (*externalapi.DomainHash, error) {
 	highBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, highHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("LowestChainBlockAboveOrEqualToBlueScore failed to retrieve with %s\n", highHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -98,6 +103,10 @@ func (dtm *dagTraversalManager) CalculateChainPath(stagingArea *model.StagingAre
 		removed = append(removed, current)
 
 		currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, current, false)
+		if database.IsNotFoundError(err) {
+			log.Infof("CalculateChainPath failed to retrieve with %s\n", current)
+			return nil, err
+		}
 		if err != nil {
 			return nil, err
 		}

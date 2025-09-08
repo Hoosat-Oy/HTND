@@ -8,6 +8,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus"
@@ -149,11 +150,17 @@ func addAlternatingReorgBlocks(t *testing.T, tc testapi.TestConsensus, tips []*e
 	}
 
 	chainTipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, chainTip, false)
+	if database.IsNotFoundError(err) {
+		t.Fatalf("addAlternatingReorgBlocks failed to retrieve chaintip with %s\n", chainTip)
+	}
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	reorgTipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, reorgTip, false)
+	if database.IsNotFoundError(err) {
+		t.Fatalf("addAlternatingReorgBlocks failed to retrieve reorgtip with %s\n", reorgTip)
+	}
 	if err != nil {
 		t.Fatal(err)
 	}

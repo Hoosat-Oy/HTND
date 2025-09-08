@@ -1,6 +1,7 @@
 package daablocksstore
 
 import (
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/database/binaryserialization"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
@@ -59,6 +60,10 @@ func (daas *daaBlocksStore) DAAScore(dbContext model.DBReader, stagingArea *mode
 	}
 
 	daaScoreBytes, err := dbContext.Get(daas.daaScoreHashAsKey(blockHash))
+	if database.IsNotFoundError(err) {
+		log.Infof("DAAScore failed to retrieve with %s\n", blockHash)
+		return 0, err
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -83,6 +88,10 @@ func (daas *daaBlocksStore) DAAAddedBlocks(dbContext model.DBReader, stagingArea
 	}
 
 	addedBlocksBytes, err := dbContext.Get(daas.daaAddedBlocksHashAsKey(blockHash))
+	if database.IsNotFoundError(err) {
+		log.Infof("DAAAddedBlocks failed to retrieve with %s\n", blockHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}

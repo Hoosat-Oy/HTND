@@ -3,6 +3,7 @@ package difficultymanager
 import (
 	"math/big"
 
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
@@ -42,6 +43,10 @@ func (dm *difficultyManager) estimateNetworkHashesPerSecond(stagingArea *model.S
 
 	firstHash := windowHashes[0]
 	firstBlockGHOSTDAGData, err := dm.ghostdagStore.Get(dm.databaseContext, stagingArea, firstHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("calculateBlockWindowHeap failed to retrieve with %s\n", firstHash)
+		return 0, err
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -50,6 +55,10 @@ func (dm *difficultyManager) estimateNetworkHashesPerSecond(stagingArea *model.S
 	maxWindowBlueWork := firstBlockBlueWork
 	for _, hash := range windowHashes[1:] {
 		blockGHOSTDAGData, err := dm.ghostdagStore.Get(dm.databaseContext, stagingArea, hash, false)
+		if database.IsNotFoundError(err) {
+			log.Infof("calculateBlockWindowHeap failed to retrieve with %s\n", hash)
+			return 0, err
+		}
 		if err != nil {
 			return 0, err
 		}

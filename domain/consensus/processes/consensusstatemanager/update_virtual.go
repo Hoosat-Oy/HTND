@@ -1,6 +1,7 @@
 package consensusstatemanager
 
 import (
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
@@ -18,6 +19,10 @@ func (csm *consensusStateManager) updateVirtual(stagingArea *model.StagingArea, 
 	var oldVirtualSelectedParent *externalapi.DomainHash
 	if !newBlockHash.Equal(csm.genesisHash) {
 		oldVirtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, model.VirtualBlockHash, false)
+		if database.IsNotFoundError(err) {
+			log.Infof("updateVirtual failed to retrieve with %s\n", model.VirtualBlockHash)
+			return nil, nil, err
+		}
 		if err != nil {
 			return nil, nil, err
 		}

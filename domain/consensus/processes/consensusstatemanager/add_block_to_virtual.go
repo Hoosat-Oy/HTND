@@ -1,6 +1,7 @@
 package consensusstatemanager
 
 import (
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/utxo"
@@ -89,6 +90,10 @@ func (csm *consensusStateManager) isCandidateToBeNextVirtualSelectedParent(
 	}
 
 	virtualGhostdagData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("isCandidateToBeNextVirtualSelectedParent failed to retrieve with %s\n", model.VirtualBlockHash)
+		return false, err
+	}
 	if err != nil {
 		return false, err
 	}

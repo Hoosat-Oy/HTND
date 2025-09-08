@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/reachabilitydata"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
@@ -394,6 +395,10 @@ func (rt *reachabilityManager) findNextReindexRoot(stagingArea *model.StagingAre
 	newReindexRoot = currentReindexRoot
 
 	selectedTipGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, stagingArea, selectedTip, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("findNextReindexRoot failed to retrieve with %s\n", selectedTip)
+		return nil, nil, err
+	}
 	if err != nil {
 		return nil, nil, err
 	}

@@ -1,6 +1,7 @@
 package utxodiffstore
 
 import (
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/database/serialization"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
@@ -61,8 +62,8 @@ func (uds *utxoDiffStore) isBlockHashStaged(stagingShard *utxoDiffStagingShard, 
 // UTXODiff gets the utxoDiff associated with the given blockHash
 func (uds *utxoDiffStore) UTXODiff(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (externalapi.UTXODiff, error) {
 	stagingShard := uds.stagingShard(stagingArea)
-
-	if utxoDiff, ok := stagingShard.utxoDiffToAdd[*blockHash]; ok {
+	utxoDiff, ok := stagingShard.utxoDiffToAdd[*blockHash]
+	if ok {
 		return utxoDiff, nil
 	}
 
@@ -71,11 +72,15 @@ func (uds *utxoDiffStore) UTXODiff(dbContext model.DBReader, stagingArea *model.
 	}
 
 	utxoDiffBytes, err := dbContext.Get(uds.utxoDiffHashAsKey(blockHash))
+	if database.IsNotFoundError(err) {
+		log.Infof("UTXODiff failed to retrieve with %s, %s\n", blockHash, uds.utxoDiffHashAsKey(blockHash))
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	utxoDiff, err := uds.deserializeUTXODiff(utxoDiffBytes)
+	utxoDiff, err = uds.deserializeUTXODiff(utxoDiffBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -96,6 +101,10 @@ func (uds *utxoDiffStore) UTXODiffChild(dbContext model.DBReader, stagingArea *m
 	}
 
 	utxoDiffChildBytes, err := dbContext.Get(uds.utxoDiffChildHashAsKey(blockHash))
+	if database.IsNotFoundError(err) {
+		log.Infof("UTXODiffChild failed to retrieve with %s, %s\n", blockHash, uds.utxoDiffHashAsKey(blockHash))
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}

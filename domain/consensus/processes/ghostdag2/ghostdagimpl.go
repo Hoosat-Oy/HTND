@@ -7,6 +7,7 @@ import (
 
 	"math/big"
 
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
@@ -53,6 +54,10 @@ func (gh *ghostdagHelper) GHOSTDAG(stagingArea *model.StagingArea, blockCandidat
 	var selectedParent = blockParents[0]
 	for _, parent := range blockParents {
 		blockData, err := gh.dataStore.Get(gh.dbAccess, stagingArea, parent, false)
+		if database.IsNotFoundError(err) {
+			log.Infof("GHOSTDAG failed to retrieve with %s\n", parent)
+			return err
+		}
 		if err != nil {
 			return err
 		}
@@ -359,6 +364,10 @@ func (gh *ghostdagHelper) findBlueSet(stagingArea *model.StagingArea, blueSet *[
 			*blueSet = append(*blueSet, selectedParent)
 		}
 		blockData, err := gh.dataStore.Get(gh.dbAccess, stagingArea, selectedParent, false)
+		if database.IsNotFoundError(err) {
+			log.Infof("findBlueSet failed to retrieve with %s\n", selectedParent)
+			return err
+		}
 		if err != nil {
 			return err
 		}
@@ -387,6 +396,10 @@ func (gh *ghostdagHelper) sortByBlueWork(stagingArea *model.StagingArea, arr []*
 		}
 
 		blockRight, error := gh.dataStore.Get(gh.dbAccess, stagingArea, arr[j], false)
+		if database.IsNotFoundError(err) {
+			log.Infof("sortByBlueWork failed to retrieve with %s\n", arr[j])
+			return false
+		}
 		if error != nil {
 			err = error
 			return false

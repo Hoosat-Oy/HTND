@@ -37,11 +37,14 @@ func (csm *consensusStateManager) verifyUTXO(stagingArea *model.StagingArea, blo
 	}
 	log.Debugf("AcceptedIDMerkleRoot validation passed for block %s", blockHash)
 
-	coinbaseTransaction := block.Transactions[0]
-	err = csm.validateCoinbaseTransaction(stagingArea, blockHash, coinbaseTransaction)
-	if err != nil {
-		return err
+	if block.Header.DAAScore() <= 31557600*2 && block.Header.DAAScore() >= 31557600*2.5 {
+		coinbaseTransaction := block.Transactions[0]
+		err = csm.validateCoinbaseTransaction(stagingArea, block, blockHash, coinbaseTransaction)
+		if err != nil {
+			return err
+		}
 	}
+
 	log.Debugf("Coinbase transaction validation passed for block %s", blockHash)
 
 	log.Debugf("Validating transactions against past UTXO for block %s", blockHash)
@@ -154,7 +157,7 @@ func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData externalapi.Acceptan
 	return merkle.CalculateIDMerkleRoot(acceptedTransactions)
 }
 
-func (csm *consensusStateManager) validateCoinbaseTransaction(stagingArea *model.StagingArea,
+func (csm *consensusStateManager) validateCoinbaseTransaction(stagingArea *model.StagingArea, block *externalapi.DomainBlock,
 	blockHash *externalapi.DomainHash, coinbaseTransaction *externalapi.DomainTransaction) error {
 
 	log.Tracef("validateCoinbaseTransaction start for block %s", blockHash)
@@ -176,9 +179,7 @@ func (csm *consensusStateManager) validateCoinbaseTransaction(stagingArea *model
 
 	coinbaseTransactionHash := consensushashing.TransactionHash(coinbaseTransaction)
 	expectedCoinbaseTransactionHash := consensushashing.TransactionHash(expectedCoinbaseTransaction)
-	log.Tracef("given coinbase hash: %s, expected coinbase hash: %s",
-		coinbaseTransactionHash, expectedCoinbaseTransactionHash)
-
+	log.Tracef("given coinbase hash: %s, expected coinbase hash: %s", coinbaseTransactionHash, expectedCoinbaseTransactionHash)
 	if !coinbaseTransactionHash.Equal(expectedCoinbaseTransactionHash) {
 		return errors.Wrap(ruleerrors.ErrBadCoinbaseTransaction, "coinbase transaction is not built as expected")
 	}

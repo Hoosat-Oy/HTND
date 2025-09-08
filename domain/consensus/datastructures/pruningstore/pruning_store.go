@@ -69,6 +69,10 @@ func (ps *pruningStore) PruningPointCandidate(dbContext model.DBReader, stagingA
 	}
 
 	candidateBytes, err := dbContext.Get(ps.candidatePruningPointHashKey)
+	if database.IsNotFoundError(err) {
+		log.Infof("PruningPointCandidate failed to retrieve with %s\n", ps.candidatePruningPointHashKey)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -182,6 +186,10 @@ func (ps *pruningStore) PruningPointByIndex(dbContext model.DBReader, stagingAre
 	}
 
 	pruningPointBytes, err := dbContext.Get(ps.indexAsKey(index))
+	if database.IsNotFoundError(err) {
+		log.Infof("PruningPointByIndex failed to retrieve with %s\n", index)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -338,6 +346,10 @@ func (ps *pruningStore) CurrentPruningPointIndex(dbContext model.DBReader, stagi
 	}
 
 	pruningPointIndexBytes, err := dbContext.Get(ps.currentPruningPointIndexKey)
+	// if database.IsNotFoundError(err) {
+	// 	log.Infof("CurrentPruningPointIndex failed to retrieve with %s\n", ps.currentPruningPointIndexKey)
+	// 	return 0, err
+	// }
 	if err != nil {
 		return 0, err
 	}

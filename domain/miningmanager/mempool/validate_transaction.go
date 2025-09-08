@@ -54,6 +54,25 @@ func (mp *mempool) validateTransactionInContext(transaction *externalapi.DomainT
 		}
 	}
 
+	// for _, input := range transaction.Inputs {
+	// 	inputTransaction, _, found := mp.GetTransaction(&input.PreviousOutpoint.TransactionID, true, true)
+	// 	if found {
+	// 		for _, output := range inputTransaction.Outputs {
+	// 			_, extractedAddress, err := txscript.ExtractScriptPubKeyAddress(output.ScriptPublicKey, &dagconfig.MainnetParams)
+	// 			if err != nil {
+	// 				continue
+	// 			}
+	// 			var address = extractedAddress.EncodeAddress()
+	// 			for _, bannedAddresses := range constants.BannedAddresses {
+	// 				if address == bannedAddresses {
+	// 					log.Warnf("Rejected freezed wallet %s tx %s from mempool (%d outputs)", address, consensushashing.TransactionID(transaction), len(transaction.Outputs))
+	// 					return transactionRuleError(RejectFreezedWallet, fmt.Sprintf("Rejected freezed wallet %s tx %s from mempool", address, consensushashing.TransactionID(transaction)))
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
+
 	numExtraOuts := len(transaction.Outputs) - len(transaction.Inputs)
 	if !hasCoinbaseInput && numExtraOuts > 2 && transaction.Fee < uint64(numExtraOuts)*constants.SompiPerHoosat {
 		log.Warnf("Rejected spam tx %s from mempool (%d outputs)", consensushashing.TransactionID(transaction), len(transaction.Outputs))

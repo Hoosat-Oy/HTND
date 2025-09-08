@@ -1,6 +1,7 @@
 package consensusstatemanager
 
 import (
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
@@ -23,6 +24,10 @@ func (csm *consensusStateManager) calculateMultiset(stagingArea *model.StagingAr
 	}
 
 	ms, err := csm.multisetStore.Get(csm.databaseContext, stagingArea, blockGHOSTDAGData.SelectedParent())
+	if database.IsNotFoundError(err) {
+		log.Infof("calculateMultiset failed to retrieve with %s\n", blockGHOSTDAGData.SelectedParent())
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}

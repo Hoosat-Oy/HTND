@@ -64,6 +64,10 @@ func (dtm *dagTraversalManager) calculateBlockWindowHeap(stagingArea *model.Stag
 
 	current := highHash
 	currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, highHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("calculateBlockWindowHeap failed to retrieve with %s\n", highHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}

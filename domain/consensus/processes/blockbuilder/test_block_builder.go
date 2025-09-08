@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"sort"
 
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/testapi"
@@ -184,6 +185,10 @@ func (bb *testBlockBuilder) buildBlockWithParents(stagingArea *model.StagingArea
 	}
 
 	ghostdagData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, tempBlockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("buildBlockWithParents failed to retrieve with %s\n", tempBlockHash)
+		return nil, nil, err
+	}
 	if err != nil {
 		return nil, nil, err
 	}
@@ -264,6 +269,10 @@ func (bb *testBlockBuilder) BuildUTXOInvalidBlock(parentHashes []*externalapi.Do
 	}
 
 	ghostdagData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, tempBlockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("BuildUTXOInvalidBlock failed to retrieve with %s\n", tempBlockHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}

@@ -90,6 +90,10 @@ func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea
 	}
 
 	ghostdagData, err := fm.ghostdagDataStore.Get(fm.databaseContext, stagingArea, blockHash, false)
+	// if database.IsNotFoundError(err) {
+	// log.Infof("calculateFinalityPoint failed to retrieve with %s\n", blockHash)
+	// 	return nil, err
+	// }
 	if err != nil {
 		return nil, err
 	}
@@ -104,6 +108,10 @@ func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea
 		return nil, err
 	}
 	pruningPointGhostdagData, err := fm.ghostdagDataStore.Get(fm.databaseContext, stagingArea, pruningPoint, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("calculateFinalityPoint failed to retrieve with %s\n", pruningPoint)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
 package consensusstatestore
 
 import (
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/database/serialization"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
@@ -21,6 +22,10 @@ func (css *consensusStateStore) Tips(stagingArea *model.StagingArea, dbContext m
 	}
 
 	tipsBytes, err := dbContext.Get(css.tipsKey)
+	if database.IsNotFoundError(err) {
+		log.Infof("Tips failed to retrieve with %s\n", css.tipsKey)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}

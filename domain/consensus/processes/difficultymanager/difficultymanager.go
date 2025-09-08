@@ -9,6 +9,7 @@ import (
 
 	"github.com/Hoosat-Oy/HTND/util/difficulty"
 
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
@@ -182,6 +183,10 @@ func (dm *difficultyManager) calculateDaaScoreAndAddedBlocks(stagingArea *model.
 	}
 
 	ghostdagData, err := dm.ghostdagStore.Get(dm.databaseContext, stagingArea, blockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("calculateBlockWindowHeap failed to retrieve with %s\n", blockHash)
+		return 0, nil, err
+	}
 	if err != nil {
 		return 0, nil, err
 	}

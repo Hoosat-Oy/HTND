@@ -291,6 +291,10 @@ func (ppm *pruningProofManager) buildPruningPointProof(stagingArea *model.Stagin
 func (ppm *pruningProofManager) blockAtDepth(stagingArea *model.StagingArea, ghostdagDataStore model.GHOSTDAGDataStore, highHash *externalapi.DomainHash, depth uint64) (*externalapi.DomainHash, error) {
 	currentBlockHash := highHash
 	highBlockGHOSTDAGData, err := ghostdagDataStore.Get(ppm.databaseContext, stagingArea, highHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("isPruningPointInPruningDepth failed to retrieve with %s\n", highHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}

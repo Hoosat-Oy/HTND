@@ -1,6 +1,7 @@
 package dagtopologymanager
 
 import (
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
@@ -110,6 +111,10 @@ func (dtm *dagTopologyManager) IsInSelectedParentChainOf(stagingArea *model.Stag
 	// use its selected parent as blockHashB.
 	if blockHashB == model.VirtualBlockHash {
 		ghostdagData, err := dtm.ghostdagStore.Get(dtm.databaseContext, stagingArea, blockHashB, false)
+		if database.IsNotFoundError(err) {
+			log.Infof("IsInSelectedParentChainOf failed to retrieve with %s\n", blockHashB)
+			return false, err
+		}
 		if err != nil {
 			return false, err
 		}
@@ -195,6 +200,10 @@ func (dtm *dagTopologyManager) ChildInSelectedParentChainOf(stagingArea *model.S
 	specifiedHighHash := highHash
 	if highHash == model.VirtualBlockHash {
 		ghostdagData, err := dtm.ghostdagStore.Get(dtm.databaseContext, stagingArea, highHash, false)
+		if database.IsNotFoundError(err) {
+			log.Infof("IsInSelectedParentChainOf failed to retrieve with %s\n", highHash)
+			return nil, err
+		}
 		if err != nil {
 			return nil, err
 		}

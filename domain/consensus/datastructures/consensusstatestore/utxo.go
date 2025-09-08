@@ -108,6 +108,10 @@ func (css *consensusStateStore) utxoByOutpointFromStagedVirtualUTXODiff(dbContex
 	}
 
 	serializedUTXOEntry, err := dbContext.Get(key)
+	// if database.IsNotFoundError(err) {
+	// 	log.Infof("utxoByOutpointFromStagedVirtualUTXODiff failed to retrieve with %s\n", outpoint)
+	// 	return nil, false, err
+	// }
 	if err != nil {
 		return nil, false, err
 	}
@@ -166,6 +170,7 @@ func (css *consensusStateStore) VirtualUTXOs(dbContext model.DBReader, fromOutpo
 		seekKey := css.utxoSetBucket.Key(serializedFromOutpoint)
 		err = cursor.Seek(seekKey)
 		if err != nil {
+			log.Infof("Cursor seek failed at serialized outpoint key %s\n", serializedFromOutpoint)
 			return nil, err
 		}
 	}

@@ -1,6 +1,7 @@
 package headersselectedtipstore
 
 import (
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/database/serialization"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
@@ -61,6 +62,10 @@ func (hsts *headerSelectedTipStore) HeadersSelectedTip(dbContext model.DBReader,
 	}
 
 	selectedTipBytes, err := dbContext.Get(hsts.key)
+	if database.IsNotFoundError(err) {
+		log.Infof("HeadersSelectedTip failed to retrieve with %s\n", hsts.key)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}

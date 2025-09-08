@@ -31,6 +31,10 @@ func (sm *syncManager) createBlockLocator(stagingArea *model.StagingArea, lowHas
 		}
 
 		currentBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, currentHash, false)
+		if database.IsNotFoundError(err) {
+			log.Infof("createBlockLocator failed to retrieve with %s\n", currentHash)
+			return nil, err
+		}
 		if err != nil {
 			return nil, err
 		}

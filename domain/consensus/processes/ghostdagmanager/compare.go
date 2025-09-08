@@ -1,6 +1,7 @@
 package ghostdagmanager
 
 import (
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 )
@@ -36,11 +37,19 @@ func (gm *ghostdagManager) less(stagingArea *model.StagingArea, blockHashA, bloc
 func (gm *ghostdagManager) ChooseSelectedParent(stagingArea *model.StagingArea, blockHashes ...*externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	selectedParent := blockHashes[0]
 	selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, selectedParent, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("ChooseSelectedParent failed to retrieve with %s\n", selectedParent)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
 	for _, blockHash := range blockHashes {
 		blockGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, blockHash, false)
+		if database.IsNotFoundError(err) {
+			log.Infof("ChooseSelectedParent failed to retrieve with %s\n", blockHash)
+			return nil, err
+		}
 		if err != nil {
 			return nil, err
 		}

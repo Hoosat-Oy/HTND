@@ -50,6 +50,7 @@ func (bss *blockStatusStore) Get(dbContext model.DBReader, stagingArea *model.St
 	}
 
 	statusBytes, err := dbContext.Get(bss.hashAsKey(blockHash))
+
 	if err != nil {
 		return 0, err
 	}

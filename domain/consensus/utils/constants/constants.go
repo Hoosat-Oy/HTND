@@ -14,6 +14,10 @@ var (
 	BanMinVersion          uint16 = 5
 )
 
+var BannedAddresses = []string{
+	"",
+}
+
 const (
 	DevFee        = 5
 	DevFeeMin     = 1

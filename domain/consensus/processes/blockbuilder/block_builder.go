@@ -4,6 +4,7 @@ import (
 	"math/big"
 	"sort"
 
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/blockheader"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
@@ -297,6 +298,10 @@ func (bb *blockBuilder) newBlockHashMerkleRoot(transactions []*externalapi.Domai
 
 func (bb *blockBuilder) newBlockAcceptedIDMerkleRoot(stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {
 	newBlockAcceptanceData, err := bb.acceptanceDataStore.Get(bb.databaseContext, stagingArea, model.VirtualBlockHash)
+	if database.IsNotFoundError(err) {
+		log.Infof("newBlockAcceptedIDMerkleRoot failed to retrieve with %s\n", model.VirtualBlockHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -328,6 +333,10 @@ func (bb *blockBuilder) calculateAcceptedIDMerkleRoot(acceptanceData externalapi
 
 func (bb *blockBuilder) newBlockUTXOCommitment(stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {
 	newBlockMultiset, err := bb.multisetStore.Get(bb.databaseContext, stagingArea, model.VirtualBlockHash)
+	if database.IsNotFoundError(err) {
+		log.Infof("newBlockUTXOCommitment failed to retrieve with %s\n", model.VirtualBlockHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -341,6 +350,11 @@ func (bb *blockBuilder) newBlockDAAScore(stagingArea *model.StagingArea) (uint64
 
 func (bb *blockBuilder) newBlockBlueWork(stagingArea *model.StagingArea) (*big.Int, error) {
 	virtualGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, model.VirtualBlockHash, false)
+
+	if database.IsNotFoundError(err) {
+		log.Infof("newBlockBlueWork failed to retrieve with %s\n", model.VirtualBlockHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -349,6 +363,10 @@ func (bb *blockBuilder) newBlockBlueWork(stagingArea *model.StagingArea) (*big.I
 
 func (bb *blockBuilder) newBlockBlueScore(stagingArea *model.StagingArea) (uint64, error) {
 	virtualGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("newBlockBlueScore failed to retrieve with %s\n", model.VirtualBlockHash)
+		return 0, err
+	}
 	if err != nil {
 		return 0, err
 	}

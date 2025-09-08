@@ -5,6 +5,7 @@ import (
 
 	"github.com/Hoosat-Oy/HTND/util/staging"
 
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
@@ -33,6 +34,10 @@ func (csm *consensusStateManager) resolveBlockStatus(stagingArea *model.StagingA
 		log.Debugf("There are not unverified blocks in %s's selected parent chain. "+
 			"This means that the block already has a UTXO-verified status.", blockHash)
 		status, err := csm.blockStatusStore.Get(csm.databaseContext, stagingArea, blockHash)
+		if database.IsNotFoundError(err) {
+			log.Infof("resolveBlockStatusfailed to retrieve with %s\n", blockHash)
+			return 0, nil, err
+		}
 		if err != nil {
 			return 0, nil, err
 		}
@@ -134,11 +139,19 @@ func (csm *consensusStateManager) selectedParentInfo(
 		return lastUnverifiedBlock, externalapi.StatusUTXOValid, utxoDiff, nil
 	}
 	lastUnverifiedBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, lastUnverifiedBlock, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("selectedParentInfo failed to retrieve with %s\n", lastUnverifiedBlock)
+		return nil, 0, nil, err
+	}
 	if err != nil {
 		return nil, 0, nil, err
 	}
 	selectedParent := lastUnverifiedBlockGHOSTDAGData.SelectedParent()
 	selectedParentStatus, err := csm.blockStatusStore.Get(csm.databaseContext, stagingArea, selectedParent)
+	if database.IsNotFoundError(err) {
+		log.Infof("selectedParentInfo failed to retrieve with %s\n", selectedParent)
+		return nil, 0, nil, err
+	}
 	if err != nil {
 		return nil, 0, nil, err
 	}
@@ -164,6 +177,10 @@ func (csm *consensusStateManager) getUnverifiedChainBlocks(stagingArea *model.St
 	for {
 		log.Tracef("Getting status for block %s", currentHash)
 		currentBlockStatus, err := csm.blockStatusStore.Get(csm.databaseContext, stagingArea, currentHash)
+		if database.IsNotFoundError(err) {
+			log.Infof("getUnverifiedChainBlocks failed to retrieve with %s\n", currentHash)
+			return nil, err
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -177,6 +194,10 @@ func (csm *consensusStateManager) getUnverifiedChainBlocks(stagingArea *model.St
 		unverifiedBlocks = append(unverifiedBlocks, currentHash)
 
 		currentBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, currentHash, false)
+		if database.IsNotFoundError(err) {
+			log.Infof("getUnverifiedChainBlocks failed to retrieve with %s\n", currentHash)
+			return nil, err
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -200,6 +221,10 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 
 	log.Tracef("Calculating pastUTXO and acceptance data and multiset for block %s", blockHash)
 	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, blockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("resolveSingleBlockStatus failed to retrieve with %s\n", blockHash)
+		return 0, nil, err
+	}
 	if err != nil {
 		return 0, nil, err
 	}
@@ -295,6 +320,10 @@ func (csm *consensusStateManager) isNewSelectedTip(stagingArea *model.StagingAre
 	blockHash, oldSelectedTip *externalapi.DomainHash) (bool, error) {
 
 	newSelectedTip, err := csm.ghostdagManager.ChooseSelectedParent(stagingArea, blockHash, oldSelectedTip)
+	if database.IsNotFoundError(err) {
+		log.Infof("isNewSelectedTip failed to retrieve with %s\n", oldSelectedTip)
+		return false, err
+	}
 	if err != nil {
 		return false, err
 	}

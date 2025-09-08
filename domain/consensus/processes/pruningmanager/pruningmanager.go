@@ -148,6 +148,10 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 	}
 
 	virtualGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("UpdatePruningPointByVirtual failed to retrieve with %s\n", model.VirtualBlockHash)
+		return err
+	}
 	if err != nil {
 		return err
 	}
@@ -280,11 +284,19 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 	}
 
 	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("nextPruningPointAndCandidateByBlockHash failed to retrieve with %s\n", blockHash)
+		return nil, nil, err
+	}
 	if err != nil {
 		return nil, nil, err
 	}
 
 	currentPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningPoint, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("nextPruningPointAndCandidateByBlockHash failed to retrieve with %s\n", currentPruningPoint)
+		return nil, nil, err
+	}
 	if err != nil {
 		return nil, nil, err
 	}
@@ -519,6 +531,10 @@ func (pm *pruningManager) deleteBlock(stagingArea *model.StagingArea, blockHash 
 	alreadyPruned bool, err error) {
 
 	status, err := pm.blockStatusStore.Get(pm.databaseContext, stagingArea, blockHash)
+	if database.IsNotFoundError(err) {
+		log.Infof("deleteBlock failed to retrieve with %s\n", blockHash)
+		return false, nil
+	}
 	if err != nil {
 		return false, err
 	}
@@ -552,6 +568,10 @@ func (pm *pruningManager) IsValidPruningPoint(stagingArea *model.StagingArea, bl
 
 	// A pruning point has to be in the selected chain of the headers selected tip.
 	headersSelectedTipGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, headersSelectedTip, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("IsValidPruningPoint failed to retrieve with %s\n", headersSelectedTip)
+		return false, err
+	}
 	if err != nil {
 		return false, err
 	}
@@ -647,6 +667,10 @@ func (pm *pruningManager) ArePruningPointsInValidChain(stagingArea *model.Stagin
 		}
 
 		currentGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current, false)
+		if database.IsNotFoundError(err) {
+			log.Infof("ArePruningPointsInValidChain failed to retrieve with %s\n", current)
+			return false, err
+		}
 		if err != nil {
 			log.Errorf("pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current): %s", err)
 			return false, err
@@ -770,6 +794,10 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 		set := make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)
 		for ok := iter.First(); ok; ok = iter.Next() {
 			outpoint, entry, err := iter.Get()
+			if database.IsNotFoundError(err) {
+				log.Infof("calculateDiffBetweenPreviousAndCurrentPruningPoints failed to retrieve\n")
+				return nil, err
+			}
 			if err != nil {
 				return nil, err
 			}
@@ -792,10 +820,18 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 		return nil, err
 	}
 	currentPruningGhostDAG, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("calculateDiffBetweenPreviousAndCurrentPruningPoints failed to retrieve with %s\n", currentPruningHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
 	previousPruningGhostDAG, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, previousPruningHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("calculateDiffBetweenPreviousAndCurrentPruningPoints failed to retrieve with %s\n", previousPruningHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -914,6 +950,10 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPointsUsi
 			return nil, err
 		}
 		chainBlockAcceptanceData, err := pm.acceptanceDataStore.Get(pm.databaseContext, stagingArea, child)
+		if database.IsNotFoundError(err) {
+			log.Infof("calculateDiffBetweenPreviousAndCurrentPruningPointsUsingAcceptanceData failed to retrieve with %s\n", child)
+			return nil, err
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -1177,6 +1217,10 @@ func (pm *pruningManager) PruningPointAndItsAnticone() ([]*externalapi.DomainHas
 
 func (pm *pruningManager) ExpectedHeaderPruningPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("ExpectedHeaderPruningPoint failed to retrieve with %s\n", blockHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -1284,6 +1328,10 @@ func (pm *pruningManager) isPruningPointInPruningDepth(stagingArea *model.Stagin
 	}
 
 	blockGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockHash, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("isPruningPointInPruningDepth failed to retrieve with %s\n", blockHash)
+		return false, err
+	}
 	if err != nil {
 		return false, err
 	}
@@ -1297,6 +1345,10 @@ func (pm *pruningManager) TrustedBlockAssociatedGHOSTDAGDataBlockHashes(stagingA
 	isTrustedData := false
 	for i := externalapi.KType(0); i <= pm.k[constants.BlockVersion-1]; i++ {
 		ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current, isTrustedData)
+		if database.IsNotFoundError(err) {
+			log.Infof("TrustedBlockAssociatedGHOSTDAGDataBlockHashes failed to retrieve with %s\n", current)
+			return nil, err
+		}
 		isNotFoundError := database.IsNotFoundError(err)
 		if !isNotFoundError && err != nil {
 			return nil, err

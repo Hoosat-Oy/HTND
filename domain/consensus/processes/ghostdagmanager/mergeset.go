@@ -3,6 +3,7 @@ package ghostdagmanager
 import (
 	"sort"
 
+	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 
@@ -89,6 +90,10 @@ func (gm *ghostdagManager) GetSortedMergeSet(stagingArea *model.StagingArea,
 	current *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 
 	currentGhostdagData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current, false)
+	if database.IsNotFoundError(err) {
+		log.Infof("GetSortedMergeSet failed to retrieve with %s\n", current)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}

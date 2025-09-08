@@ -56,13 +56,13 @@ func (c *LevelDBCursor) Seek(key *database.Key) error {
 
 	found := c.ldbIterator.Seek(key.Bytes())
 	if !found {
-		return errors.Wrapf(database.ErrNotFound, "key %s not found", key)
+		return errors.Wrapf(database.ErrNotFound, "Cursor key %s not found", key)
 	}
 
 	// Use c.ldbIterator.Key because c.Key removes the prefix from the key
 	currentKey := c.ldbIterator.Key()
 	if currentKey == nil || !bytes.Equal(currentKey, key.Bytes()) {
-		return errors.Wrapf(database.ErrNotFound, "key %s not found", key)
+		return errors.Wrapf(database.ErrNotFound, "Cursor key %s not found", key)
 	}
 
 	return nil
