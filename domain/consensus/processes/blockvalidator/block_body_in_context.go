@@ -43,15 +43,15 @@ func (v *blockValidator) ValidateBodyInContext(stagingArea *model.StagingArea, b
 		if err != nil {
 			return err
 		}
-		reward, err := v.checkCoinbaseSubsidy(stagingArea, blockHash, block)
-		if err != nil {
-			return err
-		}
+		// reward, err := v.checkCoinbaseSubsidy(stagingArea, blockHash, block)
+		// if err != nil {
+		// 	return err
+		// }
 
-		err = v.checkDevFee(stagingArea, block, reward)
-		if err != nil {
-			return err
-		}
+		// err = v.checkDevFee(stagingArea, block, reward)
+		// if err != nil {
+		// 	return err
+		// }
 
 	}
 	return nil
