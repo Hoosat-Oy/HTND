@@ -315,7 +315,20 @@ func (c *coinbaseManager) calcDeflationaryPeriodBlockSubsidy(blockDaaScore uint6
 	var blocksPerYear = uint64(31557600 / c.targetTimePerBlock[blockVersion-1].Seconds())
 	// var blocksPerYear = uint64(31557600)
 	// Note that this calculation implicitly assumes that block per second = 1 (by assuming daa score diff is in second units).
-	yearsSinceDeflationStarted := (blockDaaScore - c.deflationaryPhaseDaaScore) / blocksPerYear
+	var yearsSinceDeflationStarted uint64
+	// First year on 1 BPS
+	if blockDaaScore >= 31557600 {
+		yearsSinceDeflationStarted = 1
+		blockDaaScore -= 31557600
+	}
+	// Second year partly on 1 BPS, lets bloat the blockDaaScore calculation for those blocks to 5 BPS
+	nocturneHfScore := uint64(43334184 - 31557600)
+	if blockDaaScore >= nocturneHfScore {
+		blockDaaScore += nocturneHfScore * 4
+	}
+
+	yearsSinceDeflationStarted += (blockDaaScore - c.deflationaryPhaseDaaScore) / blocksPerYear
+
 	// Return the pre-calculated value from subsidy-per-month table
 	return c.getDeflationaryPeriodBlockSubsidyFromTable(yearsSinceDeflationStarted, blockVersion)
 }
