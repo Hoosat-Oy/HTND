@@ -172,13 +172,13 @@ func (v *blockValidator) checkCoinbaseSubsidy(stagingArea *model.StagingArea, bl
 	}
 
 	var daaScore = block.Header.DAAScore()
-	if daaScore <= 63115200 || daaScore >= 78894000 {
+	if 63115200 >= daaScore || daaScore >= 78894000 {
 		if subsidy != expectedSubsidy {
 			return 0, errors.Wrapf(ruleerrors.ErrWrongCoinbaseSubsidy, "the subsidy specified on the coinbase of %s is "+
 				"wrong: expected %d but got %d, blocks version %d", blockHash, expectedSubsidy, subsidy, block.Header.Version())
 		}
 	} else {
-		if subsidy >= 20 || subsidy <= 10 {
+		if 10 > subsidy || subsidy > 20 {
 			return 0, errors.Wrapf(ruleerrors.ErrWrongCoinbaseSubsidy, "the subsidy specified on the coinbase of %s is "+
 				"wrong: expected %d but got %d, blocks version %d", blockHash, expectedSubsidy, subsidy, block.Header.Version())
 		}
