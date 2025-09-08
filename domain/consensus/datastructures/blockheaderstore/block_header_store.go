@@ -94,10 +94,10 @@ func (bhs *blockHeaderStore) blockHeader(dbContext model.DBReader, stagingShard 
 	}
 
 	headerBytes, err := dbContext.Get(bhs.hashAsKey(blockHash))
-	if database.IsNotFoundError(err) {
-		log.Infof("blockHeader failed to retrieve with %s\n", blockHash)
-		return nil, err
-	}
+	// if database.IsNotFoundError(err) {
+	// 	log.Infof("blockHeader failed to retrieve with %s\n", blockHash)
+	// 	return nil, err
+	// }
 	if err != nil {
 		return nil, err
 	}
