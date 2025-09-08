@@ -37,14 +37,13 @@ func (csm *consensusStateManager) verifyUTXO(stagingArea *model.StagingArea, blo
 	}
 	log.Debugf("AcceptedIDMerkleRoot validation passed for block %s", blockHash)
 
-	// var daaScore = block.Header.DAAScore()
-	// if 63115200 >= daaScore && daaScore >= 78894000 {
-	// 	coinbaseTransaction := block.Transactions[0]
-	// 	err = csm.validateCoinbaseTransaction(stagingArea, block, blockHash, coinbaseTransaction)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
+	if block.Header.DAAScore() >= 31557600*2.2 {
+		coinbaseTransaction := block.Transactions[0]
+		err = csm.validateCoinbaseTransaction(stagingArea, block, blockHash, coinbaseTransaction)
+		if err != nil {
+			return err
+		}
+	}
 
 	log.Debugf("Coinbase transaction validation passed for block %s", blockHash)
 

@@ -90,10 +90,10 @@ func (bs *blockStore) block(dbContext model.DBReader, stagingShard *blockStaging
 	}
 
 	blockBytes, err := dbContext.Get(bs.hashAsKey(blockHash))
-	if database.IsNotFoundError(err) {
-		log.Infof("Block failed to retrieve with %s\n", blockHash)
-		return nil, err
-	}
+	// if database.IsNotFoundError(err) {
+	// 	log.Infof("Block failed to retrieve with %s\n", blockHash)
+	// 	return nil, err
+	// }
 	if err != nil {
 		return nil, err
 	}
