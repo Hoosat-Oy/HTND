@@ -2,7 +2,7 @@ package pebble
 
 import (
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
-	"github.com/cockroachdb/pebble"
+	"github.com/cockroachdb/pebble/v2"
 	"github.com/pkg/errors"
 )
 

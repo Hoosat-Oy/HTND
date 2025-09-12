@@ -4,7 +4,7 @@ import (
 	"bytes"
 
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
-	"github.com/cockroachdb/pebble"
+	"github.com/cockroachdb/pebble/v2"
 	"github.com/pkg/errors"
 )
 
@@ -33,6 +33,9 @@ func BytesPrefix(prefix []byte) *pebble.IterOptions {
 	return &pebble.IterOptions{
 		LowerBound: prefix,
 		UpperBound: limit,
+		// Optional v2 fields: Set if needed (e.g., TableFilter for skipping files)
+		// TableFilter: func(level int, fileNum uint64) bool { return true }, // Example: Include all
+		// OnlyReadGuaranteedDurable: true, // For crash consistency in IBD
 	}
 }
 

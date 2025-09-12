@@ -1,12 +1,13 @@
 package pebble
 
 import (
+	"context"
 	"os"
 	"strings"
 	"sync"
 
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
-	"github.com/cockroachdb/pebble"
+	"github.com/cockroachdb/pebble/v2"
 	"github.com/pkg/errors"
 )
 
@@ -49,9 +50,10 @@ func NewPebbleDB(path string, cacheSizeMiB int) (*PebbleDB, error) {
 	return dbInstance, nil
 }
 
-// Compact compacts the Pebble instance.
+// Compact compacts the Pebble instance (full range).
 func (db *PebbleDB) Compact() error {
-	err := db.db.Compact(nil, []byte{0xff, 0xff, 0xff, 0xff}, false)
+	// Full-range compaction: empty start key to max end key, non-parallel
+	err := db.db.Compact(context.Background(), nil, []byte{0xff, 0xff, 0xff, 0xff}, false)
 	return errors.WithStack(err)
 }
 
