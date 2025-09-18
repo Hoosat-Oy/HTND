@@ -18,7 +18,7 @@ func Options() *pebble.Options {
 	baseFileSize := memTableSize * int64(memTableStopWritesThreshold)
 
 	opts := &pebble.Options{
-		FormatMajorVersion: pebble.FormatNewest, // v2: Modern formats; migrate DB
+		FormatMajorVersion: 2, // v2: Modern formats; migrate DB
 
 		// v2: TargetFileSizes as fixed [7]int64 array (L0 [0], L6 [6])
 		TargetFileSizes: [7]int64{
