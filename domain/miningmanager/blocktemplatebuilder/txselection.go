@@ -102,6 +102,9 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 
 		// Enforce maximum transaction mass per block. Also check
 		// for overflow.
+		log.Infof("Current total mass %d, candidate tx %s mass %d, max block mass %d",
+			txsForBlockTemplate.totalMass, consensushashing.TransactionID(tx),
+			selectedTx.Mass, btb.policy.BlockMaxMass)
 		if txsForBlockTemplate.totalMass+selectedTx.Mass < txsForBlockTemplate.totalMass ||
 			txsForBlockTemplate.totalMass+selectedTx.Mass > btb.policy.BlockMaxMass {
 			log.Tracef("Tx %s would exceed the max block mass. "+
