@@ -43,7 +43,7 @@ type blockTemplateBuilder struct {
 
 // New creates a new blockTemplateBuilder
 func New(consensusReference consensusreference.ConsensusReference, mempool miningmanagerapi.Mempool,
-	blockMaxMass uint64, coinbasePayloadScriptPublicKeyMaxLength uint8) miningmanagerapi.BlockTemplateBuilder {
+	blockMaxMass []uint64, coinbasePayloadScriptPublicKeyMaxLength uint8) miningmanagerapi.BlockTemplateBuilder {
 	return &blockTemplateBuilder{
 		consensusReference: consensusReference,
 		mempool:            mempool,
@@ -206,7 +206,7 @@ func (btb *blockTemplateBuilder) ModifyBlockTemplate(newCoinbaseData *consensuse
 // The higher the number the more likely it is that the transaction will be
 // included in the block.
 func (btb *blockTemplateBuilder) calcTxValue(tx *consensusexternalapi.DomainTransaction) float64 {
-	massLimit := btb.policy.BlockMaxMass
+	massLimit := btb.policy.BlockMaxMass[constants.BlockVersion-1]
 
 	mass := tx.Mass
 	fee := tx.Fee
