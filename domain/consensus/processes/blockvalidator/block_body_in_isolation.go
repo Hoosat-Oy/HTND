@@ -226,8 +226,8 @@ func (v *blockValidator) checkBlockMass(block *externalapi.DomainBlock) error {
 
 		massBefore := mass
 		mass += transaction.Mass
-		log.Infof("Adding transaction %s with mass %d, total mass is now %d",
-			consensushashing.TransactionID(transaction), transaction.Mass, mass)
+		log.Infof("Adding transaction %s with mass %d, max mass is now %d",
+			consensushashing.TransactionID(transaction), transaction.Mass, v.maxBlockMass[constants.BlockVersion-1])
 		if mass > v.maxBlockMass[constants.BlockVersion-1] || mass < massBefore {
 			return errors.Wrapf(ruleerrors.ErrBlockMassTooHigh, "block exceeded the mass limit of %d",
 				v.maxBlockMass)
