@@ -278,7 +278,7 @@ var MainnetParams = Params{
 	AcceptUnroutable: false,
 
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.Bech32PrefixHoosat,
+	Prefix: util.Bech32PrefixHoosatTest,
 
 	// Address encoding magics
 	PrivateKeyID: 0x80, // starts with 5 (uncompressed) or K (compressed)
@@ -310,8 +310,8 @@ var TestnetParams = Params{
 	K:           []externalapi.KType{defaultGHOSTDAGK, defaultGHOSTDAGK, defaultGHOSTDAGK, defaultGHOSTDAGK, 40},
 	Name:        "hoosat-testnet",
 	Net:         appmessage.Testnet,
-	RPCPort:     "42420",
-	DefaultPort: "42421",
+	RPCPort:     "42422",
+	DefaultPort: "42423",
 	DNSSeeds: []string{
 		// This DNS seeder is run by Toni Lukkaroinen
 		"mainnet-dnsseed.hoosat.fi",
