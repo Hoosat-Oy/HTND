@@ -102,6 +102,8 @@ const (
 	CmdVirtualSelectedParentChainChangedNotificationMessage
 	CmdGetBlockRequestMessage
 	CmdGetBlockResponseMessage
+	CmdGetBlockByTransactionIDRequestMessage
+	CmdGetBlockByTransactionIDResponseMessage
 	CmdGetSubnetworkRequestMessage
 	CmdGetSubnetworkResponseMessage
 	CmdGetVirtualSelectedParentChainFromBlockRequestMessage

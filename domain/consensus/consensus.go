@@ -10,6 +10,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
 	"github.com/Hoosat-Oy/HTND/util/staging"
 	"github.com/pkg/errors"
@@ -1173,4 +1174,52 @@ func (s *consensus) isNearlySyncedNoLock() (bool, error) {
 	log.Debugf("The selected tip timestamp is old (%d), so IsNearlySynced returns false",
 		virtualSelectedParentHeader.TimeInMilliseconds())
 	return false, nil
+}
+
+func (s *consensus) GetBlockByTransactionID(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainBlock, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+
+	// Get an iterator to go through all blocks
+	iterator, err := s.blockStore.AllBlockHashesIterator(s.databaseContext)
+	if err != nil {
+		return nil, err
+	}
+	defer iterator.Close()
+
+	// Iterate through all blocks
+	if iterator.First() {
+		for {
+			blockHash, err := iterator.Get()
+			if err != nil {
+				return nil, err
+			}
+
+			// Get the block
+			block, err := s.blockStore.Block(s.databaseContext, stagingArea, blockHash)
+			if err != nil {
+				// Skip blocks that can't be retrieved (might be pruned)
+				if !iterator.Next() {
+					break
+				}
+				continue
+			}
+
+			// Check if the transaction ID is in this block
+			for _, tx := range block.Transactions {
+				txID := consensushashing.TransactionID(tx)
+				if txID.Equal(transactionID) {
+					return block, nil
+				}
+			}
+
+			if !iterator.Next() {
+				break
+			}
+		}
+	}
+
+	return nil, errors.New("Transaction not found in any block")
 }

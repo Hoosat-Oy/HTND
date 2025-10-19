@@ -56,4 +56,5 @@ type Consensus interface {
 	IsChainBlock(blockHash *DomainHash) (bool, error)
 	VirtualMergeDepthRoot() (*DomainHash, error)
 	IsNearlySynced() (bool, error)
+	GetBlockByTransactionID(transactionID *DomainTransactionID) (*DomainBlock, error)
 }

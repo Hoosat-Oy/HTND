@@ -343,6 +343,20 @@ message GetBlockResponseMessage{
   RPCError error = 1000;
 }
 
+// GetBlockByTransactionIDRequestMessage requests information about a block containing a specific transaction
+message GetBlockByTransactionIDRequestMessage{
+  // The transaction ID to search for
+  string transactionId = 1;
+
+  // Whether to include transaction data in the response
+  bool includeTransactions = 2;
+}
+
+message GetBlockByTransactionIDResponseMessage{
+  RpcBlock block = 1;
+  RPCError error = 1000;
+}
+
 // GetSubnetworkRequestMessage requests information about a specific subnetwork
 //
 // Currently unimplemented

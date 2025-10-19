@@ -94,6 +94,8 @@ type HoosatdMessage struct {
 	//	*HoosatdMessage_VirtualSelectedParentChainChangedNotification
 	//	*HoosatdMessage_GetBlockRequest
 	//	*HoosatdMessage_GetBlockResponse
+	//	*HoosatdMessage_GetBlockByTransactionIdRequest
+	//	*HoosatdMessage_GetBlockByTransactionIdResponse
 	//	*HoosatdMessage_GetSubnetworkRequest
 	//	*HoosatdMessage_GetSubnetworkResponse
 	//	*HoosatdMessage_GetVirtualSelectedParentChainFromBlockRequest
@@ -813,6 +815,24 @@ func (x *HoosatdMessage) GetGetBlockResponse() *GetBlockResponseMessage {
 	if x != nil {
 		if x, ok := x.Payload.(*HoosatdMessage_GetBlockResponse); ok {
 			return x.GetBlockResponse
+		}
+	}
+	return nil
+}
+
+func (x *HoosatdMessage) GetGetBlockByTransactionIdRequest() *GetBlockByTransactionIDRequestMessage {
+	if x != nil {
+		if x, ok := x.Payload.(*HoosatdMessage_GetBlockByTransactionIdRequest); ok {
+			return x.GetBlockByTransactionIdRequest
+		}
+	}
+	return nil
+}
+
+func (x *HoosatdMessage) GetGetBlockByTransactionIdResponse() *GetBlockByTransactionIDResponseMessage {
+	if x != nil {
+		if x, ok := x.Payload.(*HoosatdMessage_GetBlockByTransactionIdResponse); ok {
+			return x.GetBlockByTransactionIdResponse
 		}
 	}
 	return nil
@@ -1647,248 +1667,256 @@ type HoosatdMessage_GetBlockResponse struct {
 	GetBlockResponse *GetBlockResponseMessage `protobuf:"bytes,1026,opt,name=getBlockResponse,proto3,oneof"`
 }
 
+type HoosatdMessage_GetBlockByTransactionIdRequest struct {
+	GetBlockByTransactionIdRequest *GetBlockByTransactionIDRequestMessage `protobuf:"bytes,1027,opt,name=getBlockByTransactionIdRequest,proto3,oneof"`
+}
+
+type HoosatdMessage_GetBlockByTransactionIdResponse struct {
+	GetBlockByTransactionIdResponse *GetBlockByTransactionIDResponseMessage `protobuf:"bytes,1028,opt,name=getBlockByTransactionIdResponse,proto3,oneof"`
+}
+
 type HoosatdMessage_GetSubnetworkRequest struct {
-	GetSubnetworkRequest *GetSubnetworkRequestMessage `protobuf:"bytes,1027,opt,name=getSubnetworkRequest,proto3,oneof"`
+	GetSubnetworkRequest *GetSubnetworkRequestMessage `protobuf:"bytes,1029,opt,name=getSubnetworkRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_GetSubnetworkResponse struct {
-	GetSubnetworkResponse *GetSubnetworkResponseMessage `protobuf:"bytes,1028,opt,name=getSubnetworkResponse,proto3,oneof"`
+	GetSubnetworkResponse *GetSubnetworkResponseMessage `protobuf:"bytes,1030,opt,name=getSubnetworkResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_GetVirtualSelectedParentChainFromBlockRequest struct {
-	GetVirtualSelectedParentChainFromBlockRequest *GetVirtualSelectedParentChainFromBlockRequestMessage `protobuf:"bytes,1029,opt,name=getVirtualSelectedParentChainFromBlockRequest,proto3,oneof"`
+	GetVirtualSelectedParentChainFromBlockRequest *GetVirtualSelectedParentChainFromBlockRequestMessage `protobuf:"bytes,1031,opt,name=getVirtualSelectedParentChainFromBlockRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_GetVirtualSelectedParentChainFromBlockResponse struct {
-	GetVirtualSelectedParentChainFromBlockResponse *GetVirtualSelectedParentChainFromBlockResponseMessage `protobuf:"bytes,1030,opt,name=getVirtualSelectedParentChainFromBlockResponse,proto3,oneof"`
+	GetVirtualSelectedParentChainFromBlockResponse *GetVirtualSelectedParentChainFromBlockResponseMessage `protobuf:"bytes,1032,opt,name=getVirtualSelectedParentChainFromBlockResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_GetBlocksRequest struct {
-	GetBlocksRequest *GetBlocksRequestMessage `protobuf:"bytes,1031,opt,name=getBlocksRequest,proto3,oneof"`
+	GetBlocksRequest *GetBlocksRequestMessage `protobuf:"bytes,1033,opt,name=getBlocksRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_GetBlocksResponse struct {
-	GetBlocksResponse *GetBlocksResponseMessage `protobuf:"bytes,1032,opt,name=getBlocksResponse,proto3,oneof"`
+	GetBlocksResponse *GetBlocksResponseMessage `protobuf:"bytes,1034,opt,name=getBlocksResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_GetBlockCountRequest struct {
-	GetBlockCountRequest *GetBlockCountRequestMessage `protobuf:"bytes,1033,opt,name=getBlockCountRequest,proto3,oneof"`
+	GetBlockCountRequest *GetBlockCountRequestMessage `protobuf:"bytes,1035,opt,name=getBlockCountRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_GetBlockCountResponse struct {
-	GetBlockCountResponse *GetBlockCountResponseMessage `protobuf:"bytes,1034,opt,name=getBlockCountResponse,proto3,oneof"`
+	GetBlockCountResponse *GetBlockCountResponseMessage `protobuf:"bytes,1036,opt,name=getBlockCountResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_GetBlockDagInfoRequest struct {
-	GetBlockDagInfoRequest *GetBlockDagInfoRequestMessage `protobuf:"bytes,1035,opt,name=getBlockDagInfoRequest,proto3,oneof"`
+	GetBlockDagInfoRequest *GetBlockDagInfoRequestMessage `protobuf:"bytes,1037,opt,name=getBlockDagInfoRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_GetBlockDagInfoResponse struct {
-	GetBlockDagInfoResponse *GetBlockDagInfoResponseMessage `protobuf:"bytes,1036,opt,name=getBlockDagInfoResponse,proto3,oneof"`
+	GetBlockDagInfoResponse *GetBlockDagInfoResponseMessage `protobuf:"bytes,1038,opt,name=getBlockDagInfoResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_ResolveFinalityConflictRequest struct {
-	ResolveFinalityConflictRequest *ResolveFinalityConflictRequestMessage `protobuf:"bytes,1037,opt,name=resolveFinalityConflictRequest,proto3,oneof"`
+	ResolveFinalityConflictRequest *ResolveFinalityConflictRequestMessage `protobuf:"bytes,1039,opt,name=resolveFinalityConflictRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_ResolveFinalityConflictResponse struct {
-	ResolveFinalityConflictResponse *ResolveFinalityConflictResponseMessage `protobuf:"bytes,1038,opt,name=resolveFinalityConflictResponse,proto3,oneof"`
+	ResolveFinalityConflictResponse *ResolveFinalityConflictResponseMessage `protobuf:"bytes,1040,opt,name=resolveFinalityConflictResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_NotifyFinalityConflictsRequest struct {
-	NotifyFinalityConflictsRequest *NotifyFinalityConflictsRequestMessage `protobuf:"bytes,1039,opt,name=notifyFinalityConflictsRequest,proto3,oneof"`
+	NotifyFinalityConflictsRequest *NotifyFinalityConflictsRequestMessage `protobuf:"bytes,1041,opt,name=notifyFinalityConflictsRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_NotifyFinalityConflictsResponse struct {
-	NotifyFinalityConflictsResponse *NotifyFinalityConflictsResponseMessage `protobuf:"bytes,1040,opt,name=notifyFinalityConflictsResponse,proto3,oneof"`
+	NotifyFinalityConflictsResponse *NotifyFinalityConflictsResponseMessage `protobuf:"bytes,1042,opt,name=notifyFinalityConflictsResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_FinalityConflictNotification struct {
-	FinalityConflictNotification *FinalityConflictNotificationMessage `protobuf:"bytes,1041,opt,name=finalityConflictNotification,proto3,oneof"`
+	FinalityConflictNotification *FinalityConflictNotificationMessage `protobuf:"bytes,1043,opt,name=finalityConflictNotification,proto3,oneof"`
 }
 
 type HoosatdMessage_FinalityConflictResolvedNotification struct {
-	FinalityConflictResolvedNotification *FinalityConflictResolvedNotificationMessage `protobuf:"bytes,1042,opt,name=finalityConflictResolvedNotification,proto3,oneof"`
+	FinalityConflictResolvedNotification *FinalityConflictResolvedNotificationMessage `protobuf:"bytes,1044,opt,name=finalityConflictResolvedNotification,proto3,oneof"`
 }
 
 type HoosatdMessage_GetMempoolEntriesRequest struct {
-	GetMempoolEntriesRequest *GetMempoolEntriesRequestMessage `protobuf:"bytes,1043,opt,name=getMempoolEntriesRequest,proto3,oneof"`
+	GetMempoolEntriesRequest *GetMempoolEntriesRequestMessage `protobuf:"bytes,1045,opt,name=getMempoolEntriesRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_GetMempoolEntriesResponse struct {
-	GetMempoolEntriesResponse *GetMempoolEntriesResponseMessage `protobuf:"bytes,1044,opt,name=getMempoolEntriesResponse,proto3,oneof"`
+	GetMempoolEntriesResponse *GetMempoolEntriesResponseMessage `protobuf:"bytes,1046,opt,name=getMempoolEntriesResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_ShutDownRequest struct {
-	ShutDownRequest *ShutDownRequestMessage `protobuf:"bytes,1045,opt,name=shutDownRequest,proto3,oneof"`
+	ShutDownRequest *ShutDownRequestMessage `protobuf:"bytes,1047,opt,name=shutDownRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_ShutDownResponse struct {
-	ShutDownResponse *ShutDownResponseMessage `protobuf:"bytes,1046,opt,name=shutDownResponse,proto3,oneof"`
+	ShutDownResponse *ShutDownResponseMessage `protobuf:"bytes,1048,opt,name=shutDownResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_GetHeadersRequest struct {
-	GetHeadersRequest *GetHeadersRequestMessage `protobuf:"bytes,1047,opt,name=getHeadersRequest,proto3,oneof"`
+	GetHeadersRequest *GetHeadersRequestMessage `protobuf:"bytes,1049,opt,name=getHeadersRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_GetHeadersResponse struct {
-	GetHeadersResponse *GetHeadersResponseMessage `protobuf:"bytes,1048,opt,name=getHeadersResponse,proto3,oneof"`
+	GetHeadersResponse *GetHeadersResponseMessage `protobuf:"bytes,1050,opt,name=getHeadersResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_NotifyUtxosChangedRequest struct {
-	NotifyUtxosChangedRequest *NotifyUtxosChangedRequestMessage `protobuf:"bytes,1049,opt,name=notifyUtxosChangedRequest,proto3,oneof"`
+	NotifyUtxosChangedRequest *NotifyUtxosChangedRequestMessage `protobuf:"bytes,1051,opt,name=notifyUtxosChangedRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_NotifyUtxosChangedResponse struct {
-	NotifyUtxosChangedResponse *NotifyUtxosChangedResponseMessage `protobuf:"bytes,1050,opt,name=notifyUtxosChangedResponse,proto3,oneof"`
+	NotifyUtxosChangedResponse *NotifyUtxosChangedResponseMessage `protobuf:"bytes,1052,opt,name=notifyUtxosChangedResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_UtxosChangedNotification struct {
-	UtxosChangedNotification *UtxosChangedNotificationMessage `protobuf:"bytes,1051,opt,name=utxosChangedNotification,proto3,oneof"`
+	UtxosChangedNotification *UtxosChangedNotificationMessage `protobuf:"bytes,1053,opt,name=utxosChangedNotification,proto3,oneof"`
 }
 
 type HoosatdMessage_GetUtxosByAddressesRequest struct {
-	GetUtxosByAddressesRequest *GetUtxosByAddressesRequestMessage `protobuf:"bytes,1052,opt,name=getUtxosByAddressesRequest,proto3,oneof"`
+	GetUtxosByAddressesRequest *GetUtxosByAddressesRequestMessage `protobuf:"bytes,1054,opt,name=getUtxosByAddressesRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_GetUtxosByAddressesResponse struct {
-	GetUtxosByAddressesResponse *GetUtxosByAddressesResponseMessage `protobuf:"bytes,1053,opt,name=getUtxosByAddressesResponse,proto3,oneof"`
+	GetUtxosByAddressesResponse *GetUtxosByAddressesResponseMessage `protobuf:"bytes,1055,opt,name=getUtxosByAddressesResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_GetVirtualSelectedParentBlueScoreRequest struct {
-	GetVirtualSelectedParentBlueScoreRequest *GetVirtualSelectedParentBlueScoreRequestMessage `protobuf:"bytes,1054,opt,name=getVirtualSelectedParentBlueScoreRequest,proto3,oneof"`
+	GetVirtualSelectedParentBlueScoreRequest *GetVirtualSelectedParentBlueScoreRequestMessage `protobuf:"bytes,1056,opt,name=getVirtualSelectedParentBlueScoreRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_GetVirtualSelectedParentBlueScoreResponse struct {
-	GetVirtualSelectedParentBlueScoreResponse *GetVirtualSelectedParentBlueScoreResponseMessage `protobuf:"bytes,1055,opt,name=getVirtualSelectedParentBlueScoreResponse,proto3,oneof"`
+	GetVirtualSelectedParentBlueScoreResponse *GetVirtualSelectedParentBlueScoreResponseMessage `protobuf:"bytes,1057,opt,name=getVirtualSelectedParentBlueScoreResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_NotifyVirtualSelectedParentBlueScoreChangedRequest struct {
-	NotifyVirtualSelectedParentBlueScoreChangedRequest *NotifyVirtualSelectedParentBlueScoreChangedRequestMessage `protobuf:"bytes,1056,opt,name=notifyVirtualSelectedParentBlueScoreChangedRequest,proto3,oneof"`
+	NotifyVirtualSelectedParentBlueScoreChangedRequest *NotifyVirtualSelectedParentBlueScoreChangedRequestMessage `protobuf:"bytes,1058,opt,name=notifyVirtualSelectedParentBlueScoreChangedRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_NotifyVirtualSelectedParentBlueScoreChangedResponse struct {
-	NotifyVirtualSelectedParentBlueScoreChangedResponse *NotifyVirtualSelectedParentBlueScoreChangedResponseMessage `protobuf:"bytes,1057,opt,name=notifyVirtualSelectedParentBlueScoreChangedResponse,proto3,oneof"`
+	NotifyVirtualSelectedParentBlueScoreChangedResponse *NotifyVirtualSelectedParentBlueScoreChangedResponseMessage `protobuf:"bytes,1059,opt,name=notifyVirtualSelectedParentBlueScoreChangedResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_VirtualSelectedParentBlueScoreChangedNotification struct {
-	VirtualSelectedParentBlueScoreChangedNotification *VirtualSelectedParentBlueScoreChangedNotificationMessage `protobuf:"bytes,1058,opt,name=virtualSelectedParentBlueScoreChangedNotification,proto3,oneof"`
+	VirtualSelectedParentBlueScoreChangedNotification *VirtualSelectedParentBlueScoreChangedNotificationMessage `protobuf:"bytes,1060,opt,name=virtualSelectedParentBlueScoreChangedNotification,proto3,oneof"`
 }
 
 type HoosatdMessage_BanRequest struct {
-	BanRequest *BanRequestMessage `protobuf:"bytes,1059,opt,name=banRequest,proto3,oneof"`
+	BanRequest *BanRequestMessage `protobuf:"bytes,1061,opt,name=banRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_BanResponse struct {
-	BanResponse *BanResponseMessage `protobuf:"bytes,1060,opt,name=banResponse,proto3,oneof"`
+	BanResponse *BanResponseMessage `protobuf:"bytes,1062,opt,name=banResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_UnbanRequest struct {
-	UnbanRequest *UnbanRequestMessage `protobuf:"bytes,1061,opt,name=unbanRequest,proto3,oneof"`
+	UnbanRequest *UnbanRequestMessage `protobuf:"bytes,1063,opt,name=unbanRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_UnbanResponse struct {
-	UnbanResponse *UnbanResponseMessage `protobuf:"bytes,1062,opt,name=unbanResponse,proto3,oneof"`
+	UnbanResponse *UnbanResponseMessage `protobuf:"bytes,1064,opt,name=unbanResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_GetInfoRequest struct {
-	GetInfoRequest *GetInfoRequestMessage `protobuf:"bytes,1063,opt,name=getInfoRequest,proto3,oneof"`
+	GetInfoRequest *GetInfoRequestMessage `protobuf:"bytes,1065,opt,name=getInfoRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_GetInfoResponse struct {
-	GetInfoResponse *GetInfoResponseMessage `protobuf:"bytes,1064,opt,name=getInfoResponse,proto3,oneof"`
+	GetInfoResponse *GetInfoResponseMessage `protobuf:"bytes,1066,opt,name=getInfoResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_StopNotifyingUtxosChangedRequest struct {
-	StopNotifyingUtxosChangedRequest *StopNotifyingUtxosChangedRequestMessage `protobuf:"bytes,1065,opt,name=stopNotifyingUtxosChangedRequest,proto3,oneof"`
+	StopNotifyingUtxosChangedRequest *StopNotifyingUtxosChangedRequestMessage `protobuf:"bytes,1067,opt,name=stopNotifyingUtxosChangedRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_StopNotifyingUtxosChangedResponse struct {
-	StopNotifyingUtxosChangedResponse *StopNotifyingUtxosChangedResponseMessage `protobuf:"bytes,1066,opt,name=stopNotifyingUtxosChangedResponse,proto3,oneof"`
+	StopNotifyingUtxosChangedResponse *StopNotifyingUtxosChangedResponseMessage `protobuf:"bytes,1068,opt,name=stopNotifyingUtxosChangedResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_NotifyPruningPointUTXOSetOverrideRequest struct {
-	NotifyPruningPointUTXOSetOverrideRequest *NotifyPruningPointUTXOSetOverrideRequestMessage `protobuf:"bytes,1067,opt,name=notifyPruningPointUTXOSetOverrideRequest,proto3,oneof"`
+	NotifyPruningPointUTXOSetOverrideRequest *NotifyPruningPointUTXOSetOverrideRequestMessage `protobuf:"bytes,1069,opt,name=notifyPruningPointUTXOSetOverrideRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_NotifyPruningPointUTXOSetOverrideResponse struct {
-	NotifyPruningPointUTXOSetOverrideResponse *NotifyPruningPointUTXOSetOverrideResponseMessage `protobuf:"bytes,1068,opt,name=notifyPruningPointUTXOSetOverrideResponse,proto3,oneof"`
+	NotifyPruningPointUTXOSetOverrideResponse *NotifyPruningPointUTXOSetOverrideResponseMessage `protobuf:"bytes,1070,opt,name=notifyPruningPointUTXOSetOverrideResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_PruningPointUTXOSetOverrideNotification struct {
-	PruningPointUTXOSetOverrideNotification *PruningPointUTXOSetOverrideNotificationMessage `protobuf:"bytes,1069,opt,name=pruningPointUTXOSetOverrideNotification,proto3,oneof"`
+	PruningPointUTXOSetOverrideNotification *PruningPointUTXOSetOverrideNotificationMessage `protobuf:"bytes,1071,opt,name=pruningPointUTXOSetOverrideNotification,proto3,oneof"`
 }
 
 type HoosatdMessage_StopNotifyingPruningPointUTXOSetOverrideRequest struct {
-	StopNotifyingPruningPointUTXOSetOverrideRequest *StopNotifyingPruningPointUTXOSetOverrideRequestMessage `protobuf:"bytes,1070,opt,name=stopNotifyingPruningPointUTXOSetOverrideRequest,proto3,oneof"`
+	StopNotifyingPruningPointUTXOSetOverrideRequest *StopNotifyingPruningPointUTXOSetOverrideRequestMessage `protobuf:"bytes,1072,opt,name=stopNotifyingPruningPointUTXOSetOverrideRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_StopNotifyingPruningPointUTXOSetOverrideResponse struct {
-	StopNotifyingPruningPointUTXOSetOverrideResponse *StopNotifyingPruningPointUTXOSetOverrideResponseMessage `protobuf:"bytes,1071,opt,name=stopNotifyingPruningPointUTXOSetOverrideResponse,proto3,oneof"`
+	StopNotifyingPruningPointUTXOSetOverrideResponse *StopNotifyingPruningPointUTXOSetOverrideResponseMessage `protobuf:"bytes,1073,opt,name=stopNotifyingPruningPointUTXOSetOverrideResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_EstimateNetworkHashesPerSecondRequest struct {
-	EstimateNetworkHashesPerSecondRequest *EstimateNetworkHashesPerSecondRequestMessage `protobuf:"bytes,1072,opt,name=estimateNetworkHashesPerSecondRequest,proto3,oneof"`
+	EstimateNetworkHashesPerSecondRequest *EstimateNetworkHashesPerSecondRequestMessage `protobuf:"bytes,1074,opt,name=estimateNetworkHashesPerSecondRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_EstimateNetworkHashesPerSecondResponse struct {
-	EstimateNetworkHashesPerSecondResponse *EstimateNetworkHashesPerSecondResponseMessage `protobuf:"bytes,1073,opt,name=estimateNetworkHashesPerSecondResponse,proto3,oneof"`
+	EstimateNetworkHashesPerSecondResponse *EstimateNetworkHashesPerSecondResponseMessage `protobuf:"bytes,1075,opt,name=estimateNetworkHashesPerSecondResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_NotifyVirtualDaaScoreChangedRequest struct {
-	NotifyVirtualDaaScoreChangedRequest *NotifyVirtualDaaScoreChangedRequestMessage `protobuf:"bytes,1074,opt,name=notifyVirtualDaaScoreChangedRequest,proto3,oneof"`
+	NotifyVirtualDaaScoreChangedRequest *NotifyVirtualDaaScoreChangedRequestMessage `protobuf:"bytes,1076,opt,name=notifyVirtualDaaScoreChangedRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_NotifyVirtualDaaScoreChangedResponse struct {
-	NotifyVirtualDaaScoreChangedResponse *NotifyVirtualDaaScoreChangedResponseMessage `protobuf:"bytes,1075,opt,name=notifyVirtualDaaScoreChangedResponse,proto3,oneof"`
+	NotifyVirtualDaaScoreChangedResponse *NotifyVirtualDaaScoreChangedResponseMessage `protobuf:"bytes,1077,opt,name=notifyVirtualDaaScoreChangedResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_VirtualDaaScoreChangedNotification struct {
-	VirtualDaaScoreChangedNotification *VirtualDaaScoreChangedNotificationMessage `protobuf:"bytes,1076,opt,name=virtualDaaScoreChangedNotification,proto3,oneof"`
+	VirtualDaaScoreChangedNotification *VirtualDaaScoreChangedNotificationMessage `protobuf:"bytes,1078,opt,name=virtualDaaScoreChangedNotification,proto3,oneof"`
 }
 
 type HoosatdMessage_GetBalanceByAddressRequest struct {
-	GetBalanceByAddressRequest *GetBalanceByAddressRequestMessage `protobuf:"bytes,1077,opt,name=getBalanceByAddressRequest,proto3,oneof"`
+	GetBalanceByAddressRequest *GetBalanceByAddressRequestMessage `protobuf:"bytes,1079,opt,name=getBalanceByAddressRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_GetBalanceByAddressResponse struct {
-	GetBalanceByAddressResponse *GetBalanceByAddressResponseMessage `protobuf:"bytes,1078,opt,name=getBalanceByAddressResponse,proto3,oneof"`
+	GetBalanceByAddressResponse *GetBalanceByAddressResponseMessage `protobuf:"bytes,1080,opt,name=getBalanceByAddressResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_GetBalancesByAddressesRequest struct {
-	GetBalancesByAddressesRequest *GetBalancesByAddressesRequestMessage `protobuf:"bytes,1079,opt,name=getBalancesByAddressesRequest,proto3,oneof"`
+	GetBalancesByAddressesRequest *GetBalancesByAddressesRequestMessage `protobuf:"bytes,1081,opt,name=getBalancesByAddressesRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_GetBalancesByAddressesResponse struct {
-	GetBalancesByAddressesResponse *GetBalancesByAddressesResponseMessage `protobuf:"bytes,1080,opt,name=getBalancesByAddressesResponse,proto3,oneof"`
+	GetBalancesByAddressesResponse *GetBalancesByAddressesResponseMessage `protobuf:"bytes,1082,opt,name=getBalancesByAddressesResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_NotifyNewBlockTemplateRequest struct {
-	NotifyNewBlockTemplateRequest *NotifyNewBlockTemplateRequestMessage `protobuf:"bytes,1081,opt,name=notifyNewBlockTemplateRequest,proto3,oneof"`
+	NotifyNewBlockTemplateRequest *NotifyNewBlockTemplateRequestMessage `protobuf:"bytes,1083,opt,name=notifyNewBlockTemplateRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_NotifyNewBlockTemplateResponse struct {
-	NotifyNewBlockTemplateResponse *NotifyNewBlockTemplateResponseMessage `protobuf:"bytes,1082,opt,name=notifyNewBlockTemplateResponse,proto3,oneof"`
+	NotifyNewBlockTemplateResponse *NotifyNewBlockTemplateResponseMessage `protobuf:"bytes,1084,opt,name=notifyNewBlockTemplateResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_NewBlockTemplateNotification struct {
-	NewBlockTemplateNotification *NewBlockTemplateNotificationMessage `protobuf:"bytes,1083,opt,name=newBlockTemplateNotification,proto3,oneof"`
+	NewBlockTemplateNotification *NewBlockTemplateNotificationMessage `protobuf:"bytes,1085,opt,name=newBlockTemplateNotification,proto3,oneof"`
 }
 
 type HoosatdMessage_GetMempoolEntriesByAddressesRequest struct {
-	GetMempoolEntriesByAddressesRequest *GetMempoolEntriesByAddressesRequestMessage `protobuf:"bytes,1084,opt,name=getMempoolEntriesByAddressesRequest,proto3,oneof"`
+	GetMempoolEntriesByAddressesRequest *GetMempoolEntriesByAddressesRequestMessage `protobuf:"bytes,1086,opt,name=getMempoolEntriesByAddressesRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_GetMempoolEntriesByAddressesResponse struct {
-	GetMempoolEntriesByAddressesResponse *GetMempoolEntriesByAddressesResponseMessage `protobuf:"bytes,1085,opt,name=getMempoolEntriesByAddressesResponse,proto3,oneof"`
+	GetMempoolEntriesByAddressesResponse *GetMempoolEntriesByAddressesResponseMessage `protobuf:"bytes,1087,opt,name=getMempoolEntriesByAddressesResponse,proto3,oneof"`
 }
 
 type HoosatdMessage_GetCoinSupplyRequest struct {
-	GetCoinSupplyRequest *GetCoinSupplyRequestMessage `protobuf:"bytes,1086,opt,name=getCoinSupplyRequest,proto3,oneof"`
+	GetCoinSupplyRequest *GetCoinSupplyRequestMessage `protobuf:"bytes,1088,opt,name=getCoinSupplyRequest,proto3,oneof"`
 }
 
 type HoosatdMessage_GetCoinSupplyResponse struct {
-	GetCoinSupplyResponse *GetCoinSupplyResponseMessage `protobuf:"bytes,1087,opt,name=getCoinSupplyResponse,proto3,oneof"`
+	GetCoinSupplyResponse *GetCoinSupplyResponseMessage `protobuf:"bytes,1089,opt,name=getCoinSupplyResponse,proto3,oneof"`
 }
 
 func (*HoosatdMessage_Addresses) isHoosatdMessage_Payload() {}
@@ -2029,6 +2057,10 @@ func (*HoosatdMessage_GetBlockRequest) isHoosatdMessage_Payload() {}
 
 func (*HoosatdMessage_GetBlockResponse) isHoosatdMessage_Payload() {}
 
+func (*HoosatdMessage_GetBlockByTransactionIdRequest) isHoosatdMessage_Payload() {}
+
+func (*HoosatdMessage_GetBlockByTransactionIdResponse) isHoosatdMessage_Payload() {}
+
 func (*HoosatdMessage_GetSubnetworkRequest) isHoosatdMessage_Payload() {}
 
 func (*HoosatdMessage_GetSubnetworkResponse) isHoosatdMessage_Payload() {}
@@ -2157,7 +2189,7 @@ var File_messages_proto protoreflect.FileDescriptor
 
 const file_messages_proto_rawDesc = "" +
 	"\n" +
-	"\x0emessages.proto\x12\tprotowire\x1a\tp2p.proto\x1a\trpc.proto\"\xc0m\n" +
+	"\x0emessages.proto\x12\tprotowire\x1a\tp2p.proto\x1a\trpc.proto\"\xbdo\n" +
 	"\x0eHoosatdMessage\x12;\n" +
 	"\taddresses\x18\x01 \x01(\v2\x1b.protowire.AddressesMessageH\x00R\taddresses\x12/\n" +
 	"\x05block\x18\x02 \x01(\v2\x17.protowire.BlockMessageH\x00R\x05block\x12A\n" +
@@ -2228,70 +2260,72 @@ const file_messages_proto_rawDesc = "" +
 	"/notifyVirtualSelectedParentChainChangedResponse\x18\xff\a \x01(\v2A.protowire.NotifyVirtualSelectedParentChainChangedResponseMessageH\x00R/notifyVirtualSelectedParentChainChangedResponse\x12\xa8\x01\n" +
 	"-virtualSelectedParentChainChangedNotification\x18\x80\b \x01(\v2?.protowire.VirtualSelectedParentChainChangedNotificationMessageH\x00R-virtualSelectedParentChainChangedNotification\x12N\n" +
 	"\x0fgetBlockRequest\x18\x81\b \x01(\v2!.protowire.GetBlockRequestMessageH\x00R\x0fgetBlockRequest\x12Q\n" +
-	"\x10getBlockResponse\x18\x82\b \x01(\v2\".protowire.GetBlockResponseMessageH\x00R\x10getBlockResponse\x12]\n" +
-	"\x14getSubnetworkRequest\x18\x83\b \x01(\v2&.protowire.GetSubnetworkRequestMessageH\x00R\x14getSubnetworkRequest\x12`\n" +
-	"\x15getSubnetworkResponse\x18\x84\b \x01(\v2'.protowire.GetSubnetworkResponseMessageH\x00R\x15getSubnetworkResponse\x12\xa8\x01\n" +
-	"-getVirtualSelectedParentChainFromBlockRequest\x18\x85\b \x01(\v2?.protowire.GetVirtualSelectedParentChainFromBlockRequestMessageH\x00R-getVirtualSelectedParentChainFromBlockRequest\x12\xab\x01\n" +
-	".getVirtualSelectedParentChainFromBlockResponse\x18\x86\b \x01(\v2@.protowire.GetVirtualSelectedParentChainFromBlockResponseMessageH\x00R.getVirtualSelectedParentChainFromBlockResponse\x12Q\n" +
-	"\x10getBlocksRequest\x18\x87\b \x01(\v2\".protowire.GetBlocksRequestMessageH\x00R\x10getBlocksRequest\x12T\n" +
-	"\x11getBlocksResponse\x18\x88\b \x01(\v2#.protowire.GetBlocksResponseMessageH\x00R\x11getBlocksResponse\x12]\n" +
-	"\x14getBlockCountRequest\x18\x89\b \x01(\v2&.protowire.GetBlockCountRequestMessageH\x00R\x14getBlockCountRequest\x12`\n" +
-	"\x15getBlockCountResponse\x18\x8a\b \x01(\v2'.protowire.GetBlockCountResponseMessageH\x00R\x15getBlockCountResponse\x12c\n" +
-	"\x16getBlockDagInfoRequest\x18\x8b\b \x01(\v2(.protowire.GetBlockDagInfoRequestMessageH\x00R\x16getBlockDagInfoRequest\x12f\n" +
-	"\x17getBlockDagInfoResponse\x18\x8c\b \x01(\v2).protowire.GetBlockDagInfoResponseMessageH\x00R\x17getBlockDagInfoResponse\x12{\n" +
-	"\x1eresolveFinalityConflictRequest\x18\x8d\b \x01(\v20.protowire.ResolveFinalityConflictRequestMessageH\x00R\x1eresolveFinalityConflictRequest\x12~\n" +
-	"\x1fresolveFinalityConflictResponse\x18\x8e\b \x01(\v21.protowire.ResolveFinalityConflictResponseMessageH\x00R\x1fresolveFinalityConflictResponse\x12{\n" +
-	"\x1enotifyFinalityConflictsRequest\x18\x8f\b \x01(\v20.protowire.NotifyFinalityConflictsRequestMessageH\x00R\x1enotifyFinalityConflictsRequest\x12~\n" +
-	"\x1fnotifyFinalityConflictsResponse\x18\x90\b \x01(\v21.protowire.NotifyFinalityConflictsResponseMessageH\x00R\x1fnotifyFinalityConflictsResponse\x12u\n" +
-	"\x1cfinalityConflictNotification\x18\x91\b \x01(\v2..protowire.FinalityConflictNotificationMessageH\x00R\x1cfinalityConflictNotification\x12\x8d\x01\n" +
-	"$finalityConflictResolvedNotification\x18\x92\b \x01(\v26.protowire.FinalityConflictResolvedNotificationMessageH\x00R$finalityConflictResolvedNotification\x12i\n" +
-	"\x18getMempoolEntriesRequest\x18\x93\b \x01(\v2*.protowire.GetMempoolEntriesRequestMessageH\x00R\x18getMempoolEntriesRequest\x12l\n" +
-	"\x19getMempoolEntriesResponse\x18\x94\b \x01(\v2+.protowire.GetMempoolEntriesResponseMessageH\x00R\x19getMempoolEntriesResponse\x12N\n" +
-	"\x0fshutDownRequest\x18\x95\b \x01(\v2!.protowire.ShutDownRequestMessageH\x00R\x0fshutDownRequest\x12Q\n" +
-	"\x10shutDownResponse\x18\x96\b \x01(\v2\".protowire.ShutDownResponseMessageH\x00R\x10shutDownResponse\x12T\n" +
-	"\x11getHeadersRequest\x18\x97\b \x01(\v2#.protowire.GetHeadersRequestMessageH\x00R\x11getHeadersRequest\x12W\n" +
-	"\x12getHeadersResponse\x18\x98\b \x01(\v2$.protowire.GetHeadersResponseMessageH\x00R\x12getHeadersResponse\x12l\n" +
-	"\x19notifyUtxosChangedRequest\x18\x99\b \x01(\v2+.protowire.NotifyUtxosChangedRequestMessageH\x00R\x19notifyUtxosChangedRequest\x12o\n" +
-	"\x1anotifyUtxosChangedResponse\x18\x9a\b \x01(\v2,.protowire.NotifyUtxosChangedResponseMessageH\x00R\x1anotifyUtxosChangedResponse\x12i\n" +
-	"\x18utxosChangedNotification\x18\x9b\b \x01(\v2*.protowire.UtxosChangedNotificationMessageH\x00R\x18utxosChangedNotification\x12o\n" +
-	"\x1agetUtxosByAddressesRequest\x18\x9c\b \x01(\v2,.protowire.GetUtxosByAddressesRequestMessageH\x00R\x1agetUtxosByAddressesRequest\x12r\n" +
-	"\x1bgetUtxosByAddressesResponse\x18\x9d\b \x01(\v2-.protowire.GetUtxosByAddressesResponseMessageH\x00R\x1bgetUtxosByAddressesResponse\x12\x99\x01\n" +
-	"(getVirtualSelectedParentBlueScoreRequest\x18\x9e\b \x01(\v2:.protowire.GetVirtualSelectedParentBlueScoreRequestMessageH\x00R(getVirtualSelectedParentBlueScoreRequest\x12\x9c\x01\n" +
-	")getVirtualSelectedParentBlueScoreResponse\x18\x9f\b \x01(\v2;.protowire.GetVirtualSelectedParentBlueScoreResponseMessageH\x00R)getVirtualSelectedParentBlueScoreResponse\x12\xb7\x01\n" +
-	"2notifyVirtualSelectedParentBlueScoreChangedRequest\x18\xa0\b \x01(\v2D.protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessageH\x00R2notifyVirtualSelectedParentBlueScoreChangedRequest\x12\xba\x01\n" +
-	"3notifyVirtualSelectedParentBlueScoreChangedResponse\x18\xa1\b \x01(\v2E.protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessageH\x00R3notifyVirtualSelectedParentBlueScoreChangedResponse\x12\xb4\x01\n" +
-	"1virtualSelectedParentBlueScoreChangedNotification\x18\xa2\b \x01(\v2C.protowire.VirtualSelectedParentBlueScoreChangedNotificationMessageH\x00R1virtualSelectedParentBlueScoreChangedNotification\x12?\n" +
+	"\x10getBlockResponse\x18\x82\b \x01(\v2\".protowire.GetBlockResponseMessageH\x00R\x10getBlockResponse\x12{\n" +
+	"\x1egetBlockByTransactionIdRequest\x18\x83\b \x01(\v20.protowire.GetBlockByTransactionIDRequestMessageH\x00R\x1egetBlockByTransactionIdRequest\x12~\n" +
+	"\x1fgetBlockByTransactionIdResponse\x18\x84\b \x01(\v21.protowire.GetBlockByTransactionIDResponseMessageH\x00R\x1fgetBlockByTransactionIdResponse\x12]\n" +
+	"\x14getSubnetworkRequest\x18\x85\b \x01(\v2&.protowire.GetSubnetworkRequestMessageH\x00R\x14getSubnetworkRequest\x12`\n" +
+	"\x15getSubnetworkResponse\x18\x86\b \x01(\v2'.protowire.GetSubnetworkResponseMessageH\x00R\x15getSubnetworkResponse\x12\xa8\x01\n" +
+	"-getVirtualSelectedParentChainFromBlockRequest\x18\x87\b \x01(\v2?.protowire.GetVirtualSelectedParentChainFromBlockRequestMessageH\x00R-getVirtualSelectedParentChainFromBlockRequest\x12\xab\x01\n" +
+	".getVirtualSelectedParentChainFromBlockResponse\x18\x88\b \x01(\v2@.protowire.GetVirtualSelectedParentChainFromBlockResponseMessageH\x00R.getVirtualSelectedParentChainFromBlockResponse\x12Q\n" +
+	"\x10getBlocksRequest\x18\x89\b \x01(\v2\".protowire.GetBlocksRequestMessageH\x00R\x10getBlocksRequest\x12T\n" +
+	"\x11getBlocksResponse\x18\x8a\b \x01(\v2#.protowire.GetBlocksResponseMessageH\x00R\x11getBlocksResponse\x12]\n" +
+	"\x14getBlockCountRequest\x18\x8b\b \x01(\v2&.protowire.GetBlockCountRequestMessageH\x00R\x14getBlockCountRequest\x12`\n" +
+	"\x15getBlockCountResponse\x18\x8c\b \x01(\v2'.protowire.GetBlockCountResponseMessageH\x00R\x15getBlockCountResponse\x12c\n" +
+	"\x16getBlockDagInfoRequest\x18\x8d\b \x01(\v2(.protowire.GetBlockDagInfoRequestMessageH\x00R\x16getBlockDagInfoRequest\x12f\n" +
+	"\x17getBlockDagInfoResponse\x18\x8e\b \x01(\v2).protowire.GetBlockDagInfoResponseMessageH\x00R\x17getBlockDagInfoResponse\x12{\n" +
+	"\x1eresolveFinalityConflictRequest\x18\x8f\b \x01(\v20.protowire.ResolveFinalityConflictRequestMessageH\x00R\x1eresolveFinalityConflictRequest\x12~\n" +
+	"\x1fresolveFinalityConflictResponse\x18\x90\b \x01(\v21.protowire.ResolveFinalityConflictResponseMessageH\x00R\x1fresolveFinalityConflictResponse\x12{\n" +
+	"\x1enotifyFinalityConflictsRequest\x18\x91\b \x01(\v20.protowire.NotifyFinalityConflictsRequestMessageH\x00R\x1enotifyFinalityConflictsRequest\x12~\n" +
+	"\x1fnotifyFinalityConflictsResponse\x18\x92\b \x01(\v21.protowire.NotifyFinalityConflictsResponseMessageH\x00R\x1fnotifyFinalityConflictsResponse\x12u\n" +
+	"\x1cfinalityConflictNotification\x18\x93\b \x01(\v2..protowire.FinalityConflictNotificationMessageH\x00R\x1cfinalityConflictNotification\x12\x8d\x01\n" +
+	"$finalityConflictResolvedNotification\x18\x94\b \x01(\v26.protowire.FinalityConflictResolvedNotificationMessageH\x00R$finalityConflictResolvedNotification\x12i\n" +
+	"\x18getMempoolEntriesRequest\x18\x95\b \x01(\v2*.protowire.GetMempoolEntriesRequestMessageH\x00R\x18getMempoolEntriesRequest\x12l\n" +
+	"\x19getMempoolEntriesResponse\x18\x96\b \x01(\v2+.protowire.GetMempoolEntriesResponseMessageH\x00R\x19getMempoolEntriesResponse\x12N\n" +
+	"\x0fshutDownRequest\x18\x97\b \x01(\v2!.protowire.ShutDownRequestMessageH\x00R\x0fshutDownRequest\x12Q\n" +
+	"\x10shutDownResponse\x18\x98\b \x01(\v2\".protowire.ShutDownResponseMessageH\x00R\x10shutDownResponse\x12T\n" +
+	"\x11getHeadersRequest\x18\x99\b \x01(\v2#.protowire.GetHeadersRequestMessageH\x00R\x11getHeadersRequest\x12W\n" +
+	"\x12getHeadersResponse\x18\x9a\b \x01(\v2$.protowire.GetHeadersResponseMessageH\x00R\x12getHeadersResponse\x12l\n" +
+	"\x19notifyUtxosChangedRequest\x18\x9b\b \x01(\v2+.protowire.NotifyUtxosChangedRequestMessageH\x00R\x19notifyUtxosChangedRequest\x12o\n" +
+	"\x1anotifyUtxosChangedResponse\x18\x9c\b \x01(\v2,.protowire.NotifyUtxosChangedResponseMessageH\x00R\x1anotifyUtxosChangedResponse\x12i\n" +
+	"\x18utxosChangedNotification\x18\x9d\b \x01(\v2*.protowire.UtxosChangedNotificationMessageH\x00R\x18utxosChangedNotification\x12o\n" +
+	"\x1agetUtxosByAddressesRequest\x18\x9e\b \x01(\v2,.protowire.GetUtxosByAddressesRequestMessageH\x00R\x1agetUtxosByAddressesRequest\x12r\n" +
+	"\x1bgetUtxosByAddressesResponse\x18\x9f\b \x01(\v2-.protowire.GetUtxosByAddressesResponseMessageH\x00R\x1bgetUtxosByAddressesResponse\x12\x99\x01\n" +
+	"(getVirtualSelectedParentBlueScoreRequest\x18\xa0\b \x01(\v2:.protowire.GetVirtualSelectedParentBlueScoreRequestMessageH\x00R(getVirtualSelectedParentBlueScoreRequest\x12\x9c\x01\n" +
+	")getVirtualSelectedParentBlueScoreResponse\x18\xa1\b \x01(\v2;.protowire.GetVirtualSelectedParentBlueScoreResponseMessageH\x00R)getVirtualSelectedParentBlueScoreResponse\x12\xb7\x01\n" +
+	"2notifyVirtualSelectedParentBlueScoreChangedRequest\x18\xa2\b \x01(\v2D.protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessageH\x00R2notifyVirtualSelectedParentBlueScoreChangedRequest\x12\xba\x01\n" +
+	"3notifyVirtualSelectedParentBlueScoreChangedResponse\x18\xa3\b \x01(\v2E.protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessageH\x00R3notifyVirtualSelectedParentBlueScoreChangedResponse\x12\xb4\x01\n" +
+	"1virtualSelectedParentBlueScoreChangedNotification\x18\xa4\b \x01(\v2C.protowire.VirtualSelectedParentBlueScoreChangedNotificationMessageH\x00R1virtualSelectedParentBlueScoreChangedNotification\x12?\n" +
 	"\n" +
-	"banRequest\x18\xa3\b \x01(\v2\x1c.protowire.BanRequestMessageH\x00R\n" +
+	"banRequest\x18\xa5\b \x01(\v2\x1c.protowire.BanRequestMessageH\x00R\n" +
 	"banRequest\x12B\n" +
-	"\vbanResponse\x18\xa4\b \x01(\v2\x1d.protowire.BanResponseMessageH\x00R\vbanResponse\x12E\n" +
-	"\funbanRequest\x18\xa5\b \x01(\v2\x1e.protowire.UnbanRequestMessageH\x00R\funbanRequest\x12H\n" +
-	"\runbanResponse\x18\xa6\b \x01(\v2\x1f.protowire.UnbanResponseMessageH\x00R\runbanResponse\x12K\n" +
-	"\x0egetInfoRequest\x18\xa7\b \x01(\v2 .protowire.GetInfoRequestMessageH\x00R\x0egetInfoRequest\x12N\n" +
-	"\x0fgetInfoResponse\x18\xa8\b \x01(\v2!.protowire.GetInfoResponseMessageH\x00R\x0fgetInfoResponse\x12\x81\x01\n" +
-	" stopNotifyingUtxosChangedRequest\x18\xa9\b \x01(\v22.protowire.StopNotifyingUtxosChangedRequestMessageH\x00R stopNotifyingUtxosChangedRequest\x12\x84\x01\n" +
-	"!stopNotifyingUtxosChangedResponse\x18\xaa\b \x01(\v23.protowire.StopNotifyingUtxosChangedResponseMessageH\x00R!stopNotifyingUtxosChangedResponse\x12\x99\x01\n" +
-	"(notifyPruningPointUTXOSetOverrideRequest\x18\xab\b \x01(\v2:.protowire.NotifyPruningPointUTXOSetOverrideRequestMessageH\x00R(notifyPruningPointUTXOSetOverrideRequest\x12\x9c\x01\n" +
-	")notifyPruningPointUTXOSetOverrideResponse\x18\xac\b \x01(\v2;.protowire.NotifyPruningPointUTXOSetOverrideResponseMessageH\x00R)notifyPruningPointUTXOSetOverrideResponse\x12\x96\x01\n" +
-	"'pruningPointUTXOSetOverrideNotification\x18\xad\b \x01(\v29.protowire.PruningPointUTXOSetOverrideNotificationMessageH\x00R'pruningPointUTXOSetOverrideNotification\x12\xae\x01\n" +
-	"/stopNotifyingPruningPointUTXOSetOverrideRequest\x18\xae\b \x01(\v2A.protowire.StopNotifyingPruningPointUTXOSetOverrideRequestMessageH\x00R/stopNotifyingPruningPointUTXOSetOverrideRequest\x12\xb1\x01\n" +
-	"0stopNotifyingPruningPointUTXOSetOverrideResponse\x18\xaf\b \x01(\v2B.protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessageH\x00R0stopNotifyingPruningPointUTXOSetOverrideResponse\x12\x90\x01\n" +
-	"%estimateNetworkHashesPerSecondRequest\x18\xb0\b \x01(\v27.protowire.EstimateNetworkHashesPerSecondRequestMessageH\x00R%estimateNetworkHashesPerSecondRequest\x12\x93\x01\n" +
-	"&estimateNetworkHashesPerSecondResponse\x18\xb1\b \x01(\v28.protowire.EstimateNetworkHashesPerSecondResponseMessageH\x00R&estimateNetworkHashesPerSecondResponse\x12\x8a\x01\n" +
-	"#notifyVirtualDaaScoreChangedRequest\x18\xb2\b \x01(\v25.protowire.NotifyVirtualDaaScoreChangedRequestMessageH\x00R#notifyVirtualDaaScoreChangedRequest\x12\x8d\x01\n" +
-	"$notifyVirtualDaaScoreChangedResponse\x18\xb3\b \x01(\v26.protowire.NotifyVirtualDaaScoreChangedResponseMessageH\x00R$notifyVirtualDaaScoreChangedResponse\x12\x87\x01\n" +
-	"\"virtualDaaScoreChangedNotification\x18\xb4\b \x01(\v24.protowire.VirtualDaaScoreChangedNotificationMessageH\x00R\"virtualDaaScoreChangedNotification\x12o\n" +
-	"\x1agetBalanceByAddressRequest\x18\xb5\b \x01(\v2,.protowire.GetBalanceByAddressRequestMessageH\x00R\x1agetBalanceByAddressRequest\x12r\n" +
-	"\x1bgetBalanceByAddressResponse\x18\xb6\b \x01(\v2-.protowire.GetBalanceByAddressResponseMessageH\x00R\x1bgetBalanceByAddressResponse\x12x\n" +
-	"\x1dgetBalancesByAddressesRequest\x18\xb7\b \x01(\v2/.protowire.GetBalancesByAddressesRequestMessageH\x00R\x1dgetBalancesByAddressesRequest\x12{\n" +
-	"\x1egetBalancesByAddressesResponse\x18\xb8\b \x01(\v20.protowire.GetBalancesByAddressesResponseMessageH\x00R\x1egetBalancesByAddressesResponse\x12x\n" +
-	"\x1dnotifyNewBlockTemplateRequest\x18\xb9\b \x01(\v2/.protowire.NotifyNewBlockTemplateRequestMessageH\x00R\x1dnotifyNewBlockTemplateRequest\x12{\n" +
-	"\x1enotifyNewBlockTemplateResponse\x18\xba\b \x01(\v20.protowire.NotifyNewBlockTemplateResponseMessageH\x00R\x1enotifyNewBlockTemplateResponse\x12u\n" +
-	"\x1cnewBlockTemplateNotification\x18\xbb\b \x01(\v2..protowire.NewBlockTemplateNotificationMessageH\x00R\x1cnewBlockTemplateNotification\x12\x8a\x01\n" +
-	"#getMempoolEntriesByAddressesRequest\x18\xbc\b \x01(\v25.protowire.GetMempoolEntriesByAddressesRequestMessageH\x00R#getMempoolEntriesByAddressesRequest\x12\x8d\x01\n" +
-	"$getMempoolEntriesByAddressesResponse\x18\xbd\b \x01(\v26.protowire.GetMempoolEntriesByAddressesResponseMessageH\x00R$getMempoolEntriesByAddressesResponse\x12]\n" +
-	"\x14getCoinSupplyRequest\x18\xbe\b \x01(\v2&.protowire.GetCoinSupplyRequestMessageH\x00R\x14getCoinSupplyRequest\x12`\n" +
-	"\x15getCoinSupplyResponse\x18\xbf\b \x01(\v2'.protowire.GetCoinSupplyResponseMessageH\x00R\x15getCoinSupplyResponseB\t\n" +
+	"\vbanResponse\x18\xa6\b \x01(\v2\x1d.protowire.BanResponseMessageH\x00R\vbanResponse\x12E\n" +
+	"\funbanRequest\x18\xa7\b \x01(\v2\x1e.protowire.UnbanRequestMessageH\x00R\funbanRequest\x12H\n" +
+	"\runbanResponse\x18\xa8\b \x01(\v2\x1f.protowire.UnbanResponseMessageH\x00R\runbanResponse\x12K\n" +
+	"\x0egetInfoRequest\x18\xa9\b \x01(\v2 .protowire.GetInfoRequestMessageH\x00R\x0egetInfoRequest\x12N\n" +
+	"\x0fgetInfoResponse\x18\xaa\b \x01(\v2!.protowire.GetInfoResponseMessageH\x00R\x0fgetInfoResponse\x12\x81\x01\n" +
+	" stopNotifyingUtxosChangedRequest\x18\xab\b \x01(\v22.protowire.StopNotifyingUtxosChangedRequestMessageH\x00R stopNotifyingUtxosChangedRequest\x12\x84\x01\n" +
+	"!stopNotifyingUtxosChangedResponse\x18\xac\b \x01(\v23.protowire.StopNotifyingUtxosChangedResponseMessageH\x00R!stopNotifyingUtxosChangedResponse\x12\x99\x01\n" +
+	"(notifyPruningPointUTXOSetOverrideRequest\x18\xad\b \x01(\v2:.protowire.NotifyPruningPointUTXOSetOverrideRequestMessageH\x00R(notifyPruningPointUTXOSetOverrideRequest\x12\x9c\x01\n" +
+	")notifyPruningPointUTXOSetOverrideResponse\x18\xae\b \x01(\v2;.protowire.NotifyPruningPointUTXOSetOverrideResponseMessageH\x00R)notifyPruningPointUTXOSetOverrideResponse\x12\x96\x01\n" +
+	"'pruningPointUTXOSetOverrideNotification\x18\xaf\b \x01(\v29.protowire.PruningPointUTXOSetOverrideNotificationMessageH\x00R'pruningPointUTXOSetOverrideNotification\x12\xae\x01\n" +
+	"/stopNotifyingPruningPointUTXOSetOverrideRequest\x18\xb0\b \x01(\v2A.protowire.StopNotifyingPruningPointUTXOSetOverrideRequestMessageH\x00R/stopNotifyingPruningPointUTXOSetOverrideRequest\x12\xb1\x01\n" +
+	"0stopNotifyingPruningPointUTXOSetOverrideResponse\x18\xb1\b \x01(\v2B.protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessageH\x00R0stopNotifyingPruningPointUTXOSetOverrideResponse\x12\x90\x01\n" +
+	"%estimateNetworkHashesPerSecondRequest\x18\xb2\b \x01(\v27.protowire.EstimateNetworkHashesPerSecondRequestMessageH\x00R%estimateNetworkHashesPerSecondRequest\x12\x93\x01\n" +
+	"&estimateNetworkHashesPerSecondResponse\x18\xb3\b \x01(\v28.protowire.EstimateNetworkHashesPerSecondResponseMessageH\x00R&estimateNetworkHashesPerSecondResponse\x12\x8a\x01\n" +
+	"#notifyVirtualDaaScoreChangedRequest\x18\xb4\b \x01(\v25.protowire.NotifyVirtualDaaScoreChangedRequestMessageH\x00R#notifyVirtualDaaScoreChangedRequest\x12\x8d\x01\n" +
+	"$notifyVirtualDaaScoreChangedResponse\x18\xb5\b \x01(\v26.protowire.NotifyVirtualDaaScoreChangedResponseMessageH\x00R$notifyVirtualDaaScoreChangedResponse\x12\x87\x01\n" +
+	"\"virtualDaaScoreChangedNotification\x18\xb6\b \x01(\v24.protowire.VirtualDaaScoreChangedNotificationMessageH\x00R\"virtualDaaScoreChangedNotification\x12o\n" +
+	"\x1agetBalanceByAddressRequest\x18\xb7\b \x01(\v2,.protowire.GetBalanceByAddressRequestMessageH\x00R\x1agetBalanceByAddressRequest\x12r\n" +
+	"\x1bgetBalanceByAddressResponse\x18\xb8\b \x01(\v2-.protowire.GetBalanceByAddressResponseMessageH\x00R\x1bgetBalanceByAddressResponse\x12x\n" +
+	"\x1dgetBalancesByAddressesRequest\x18\xb9\b \x01(\v2/.protowire.GetBalancesByAddressesRequestMessageH\x00R\x1dgetBalancesByAddressesRequest\x12{\n" +
+	"\x1egetBalancesByAddressesResponse\x18\xba\b \x01(\v20.protowire.GetBalancesByAddressesResponseMessageH\x00R\x1egetBalancesByAddressesResponse\x12x\n" +
+	"\x1dnotifyNewBlockTemplateRequest\x18\xbb\b \x01(\v2/.protowire.NotifyNewBlockTemplateRequestMessageH\x00R\x1dnotifyNewBlockTemplateRequest\x12{\n" +
+	"\x1enotifyNewBlockTemplateResponse\x18\xbc\b \x01(\v20.protowire.NotifyNewBlockTemplateResponseMessageH\x00R\x1enotifyNewBlockTemplateResponse\x12u\n" +
+	"\x1cnewBlockTemplateNotification\x18\xbd\b \x01(\v2..protowire.NewBlockTemplateNotificationMessageH\x00R\x1cnewBlockTemplateNotification\x12\x8a\x01\n" +
+	"#getMempoolEntriesByAddressesRequest\x18\xbe\b \x01(\v25.protowire.GetMempoolEntriesByAddressesRequestMessageH\x00R#getMempoolEntriesByAddressesRequest\x12\x8d\x01\n" +
+	"$getMempoolEntriesByAddressesResponse\x18\xbf\b \x01(\v26.protowire.GetMempoolEntriesByAddressesResponseMessageH\x00R$getMempoolEntriesByAddressesResponse\x12]\n" +
+	"\x14getCoinSupplyRequest\x18\xc0\b \x01(\v2&.protowire.GetCoinSupplyRequestMessageH\x00R\x14getCoinSupplyRequest\x12`\n" +
+	"\x15getCoinSupplyResponse\x18\xc1\b \x01(\v2'.protowire.GetCoinSupplyResponseMessageH\x00R\x15getCoinSupplyResponseB\t\n" +
 	"\apayload2R\n" +
 	"\x03P2P\x12K\n" +
 	"\rMessageStream\x12\x19.protowire.HoosatdMessage\x1a\x19.protowire.HoosatdMessage\"\x00(\x010\x012R\n" +
@@ -2381,67 +2415,69 @@ var file_messages_proto_goTypes = []any{
 	(*VirtualSelectedParentChainChangedNotificationMessage)(nil),       // 66: protowire.VirtualSelectedParentChainChangedNotificationMessage
 	(*GetBlockRequestMessage)(nil),                                     // 67: protowire.GetBlockRequestMessage
 	(*GetBlockResponseMessage)(nil),                                    // 68: protowire.GetBlockResponseMessage
-	(*GetSubnetworkRequestMessage)(nil),                                // 69: protowire.GetSubnetworkRequestMessage
-	(*GetSubnetworkResponseMessage)(nil),                               // 70: protowire.GetSubnetworkResponseMessage
-	(*GetVirtualSelectedParentChainFromBlockRequestMessage)(nil),       // 71: protowire.GetVirtualSelectedParentChainFromBlockRequestMessage
-	(*GetVirtualSelectedParentChainFromBlockResponseMessage)(nil),      // 72: protowire.GetVirtualSelectedParentChainFromBlockResponseMessage
-	(*GetBlocksRequestMessage)(nil),                                    // 73: protowire.GetBlocksRequestMessage
-	(*GetBlocksResponseMessage)(nil),                                   // 74: protowire.GetBlocksResponseMessage
-	(*GetBlockCountRequestMessage)(nil),                                // 75: protowire.GetBlockCountRequestMessage
-	(*GetBlockCountResponseMessage)(nil),                               // 76: protowire.GetBlockCountResponseMessage
-	(*GetBlockDagInfoRequestMessage)(nil),                              // 77: protowire.GetBlockDagInfoRequestMessage
-	(*GetBlockDagInfoResponseMessage)(nil),                             // 78: protowire.GetBlockDagInfoResponseMessage
-	(*ResolveFinalityConflictRequestMessage)(nil),                      // 79: protowire.ResolveFinalityConflictRequestMessage
-	(*ResolveFinalityConflictResponseMessage)(nil),                     // 80: protowire.ResolveFinalityConflictResponseMessage
-	(*NotifyFinalityConflictsRequestMessage)(nil),                      // 81: protowire.NotifyFinalityConflictsRequestMessage
-	(*NotifyFinalityConflictsResponseMessage)(nil),                     // 82: protowire.NotifyFinalityConflictsResponseMessage
-	(*FinalityConflictNotificationMessage)(nil),                        // 83: protowire.FinalityConflictNotificationMessage
-	(*FinalityConflictResolvedNotificationMessage)(nil),                // 84: protowire.FinalityConflictResolvedNotificationMessage
-	(*GetMempoolEntriesRequestMessage)(nil),                            // 85: protowire.GetMempoolEntriesRequestMessage
-	(*GetMempoolEntriesResponseMessage)(nil),                           // 86: protowire.GetMempoolEntriesResponseMessage
-	(*ShutDownRequestMessage)(nil),                                     // 87: protowire.ShutDownRequestMessage
-	(*ShutDownResponseMessage)(nil),                                    // 88: protowire.ShutDownResponseMessage
-	(*GetHeadersRequestMessage)(nil),                                   // 89: protowire.GetHeadersRequestMessage
-	(*GetHeadersResponseMessage)(nil),                                  // 90: protowire.GetHeadersResponseMessage
-	(*NotifyUtxosChangedRequestMessage)(nil),                           // 91: protowire.NotifyUtxosChangedRequestMessage
-	(*NotifyUtxosChangedResponseMessage)(nil),                          // 92: protowire.NotifyUtxosChangedResponseMessage
-	(*UtxosChangedNotificationMessage)(nil),                            // 93: protowire.UtxosChangedNotificationMessage
-	(*GetUtxosByAddressesRequestMessage)(nil),                          // 94: protowire.GetUtxosByAddressesRequestMessage
-	(*GetUtxosByAddressesResponseMessage)(nil),                         // 95: protowire.GetUtxosByAddressesResponseMessage
-	(*GetVirtualSelectedParentBlueScoreRequestMessage)(nil),            // 96: protowire.GetVirtualSelectedParentBlueScoreRequestMessage
-	(*GetVirtualSelectedParentBlueScoreResponseMessage)(nil),           // 97: protowire.GetVirtualSelectedParentBlueScoreResponseMessage
-	(*NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)(nil),  // 98: protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
-	(*NotifyVirtualSelectedParentBlueScoreChangedResponseMessage)(nil), // 99: protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage
-	(*VirtualSelectedParentBlueScoreChangedNotificationMessage)(nil),   // 100: protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage
-	(*BanRequestMessage)(nil),                                          // 101: protowire.BanRequestMessage
-	(*BanResponseMessage)(nil),                                         // 102: protowire.BanResponseMessage
-	(*UnbanRequestMessage)(nil),                                        // 103: protowire.UnbanRequestMessage
-	(*UnbanResponseMessage)(nil),                                       // 104: protowire.UnbanResponseMessage
-	(*GetInfoRequestMessage)(nil),                                      // 105: protowire.GetInfoRequestMessage
-	(*GetInfoResponseMessage)(nil),                                     // 106: protowire.GetInfoResponseMessage
-	(*StopNotifyingUtxosChangedRequestMessage)(nil),                    // 107: protowire.StopNotifyingUtxosChangedRequestMessage
-	(*StopNotifyingUtxosChangedResponseMessage)(nil),                   // 108: protowire.StopNotifyingUtxosChangedResponseMessage
-	(*NotifyPruningPointUTXOSetOverrideRequestMessage)(nil),            // 109: protowire.NotifyPruningPointUTXOSetOverrideRequestMessage
-	(*NotifyPruningPointUTXOSetOverrideResponseMessage)(nil),           // 110: protowire.NotifyPruningPointUTXOSetOverrideResponseMessage
-	(*PruningPointUTXOSetOverrideNotificationMessage)(nil),             // 111: protowire.PruningPointUTXOSetOverrideNotificationMessage
-	(*StopNotifyingPruningPointUTXOSetOverrideRequestMessage)(nil),     // 112: protowire.StopNotifyingPruningPointUTXOSetOverrideRequestMessage
-	(*StopNotifyingPruningPointUTXOSetOverrideResponseMessage)(nil),    // 113: protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage
-	(*EstimateNetworkHashesPerSecondRequestMessage)(nil),               // 114: protowire.EstimateNetworkHashesPerSecondRequestMessage
-	(*EstimateNetworkHashesPerSecondResponseMessage)(nil),              // 115: protowire.EstimateNetworkHashesPerSecondResponseMessage
-	(*NotifyVirtualDaaScoreChangedRequestMessage)(nil),                 // 116: protowire.NotifyVirtualDaaScoreChangedRequestMessage
-	(*NotifyVirtualDaaScoreChangedResponseMessage)(nil),                // 117: protowire.NotifyVirtualDaaScoreChangedResponseMessage
-	(*VirtualDaaScoreChangedNotificationMessage)(nil),                  // 118: protowire.VirtualDaaScoreChangedNotificationMessage
-	(*GetBalanceByAddressRequestMessage)(nil),                          // 119: protowire.GetBalanceByAddressRequestMessage
-	(*GetBalanceByAddressResponseMessage)(nil),                         // 120: protowire.GetBalanceByAddressResponseMessage
-	(*GetBalancesByAddressesRequestMessage)(nil),                       // 121: protowire.GetBalancesByAddressesRequestMessage
-	(*GetBalancesByAddressesResponseMessage)(nil),                      // 122: protowire.GetBalancesByAddressesResponseMessage
-	(*NotifyNewBlockTemplateRequestMessage)(nil),                       // 123: protowire.NotifyNewBlockTemplateRequestMessage
-	(*NotifyNewBlockTemplateResponseMessage)(nil),                      // 124: protowire.NotifyNewBlockTemplateResponseMessage
-	(*NewBlockTemplateNotificationMessage)(nil),                        // 125: protowire.NewBlockTemplateNotificationMessage
-	(*GetMempoolEntriesByAddressesRequestMessage)(nil),                 // 126: protowire.GetMempoolEntriesByAddressesRequestMessage
-	(*GetMempoolEntriesByAddressesResponseMessage)(nil),                // 127: protowire.GetMempoolEntriesByAddressesResponseMessage
-	(*GetCoinSupplyRequestMessage)(nil),                                // 128: protowire.GetCoinSupplyRequestMessage
-	(*GetCoinSupplyResponseMessage)(nil),                               // 129: protowire.GetCoinSupplyResponseMessage
+	(*GetBlockByTransactionIDRequestMessage)(nil),                      // 69: protowire.GetBlockByTransactionIDRequestMessage
+	(*GetBlockByTransactionIDResponseMessage)(nil),                     // 70: protowire.GetBlockByTransactionIDResponseMessage
+	(*GetSubnetworkRequestMessage)(nil),                                // 71: protowire.GetSubnetworkRequestMessage
+	(*GetSubnetworkResponseMessage)(nil),                               // 72: protowire.GetSubnetworkResponseMessage
+	(*GetVirtualSelectedParentChainFromBlockRequestMessage)(nil),       // 73: protowire.GetVirtualSelectedParentChainFromBlockRequestMessage
+	(*GetVirtualSelectedParentChainFromBlockResponseMessage)(nil),      // 74: protowire.GetVirtualSelectedParentChainFromBlockResponseMessage
+	(*GetBlocksRequestMessage)(nil),                                    // 75: protowire.GetBlocksRequestMessage
+	(*GetBlocksResponseMessage)(nil),                                   // 76: protowire.GetBlocksResponseMessage
+	(*GetBlockCountRequestMessage)(nil),                                // 77: protowire.GetBlockCountRequestMessage
+	(*GetBlockCountResponseMessage)(nil),                               // 78: protowire.GetBlockCountResponseMessage
+	(*GetBlockDagInfoRequestMessage)(nil),                              // 79: protowire.GetBlockDagInfoRequestMessage
+	(*GetBlockDagInfoResponseMessage)(nil),                             // 80: protowire.GetBlockDagInfoResponseMessage
+	(*ResolveFinalityConflictRequestMessage)(nil),                      // 81: protowire.ResolveFinalityConflictRequestMessage
+	(*ResolveFinalityConflictResponseMessage)(nil),                     // 82: protowire.ResolveFinalityConflictResponseMessage
+	(*NotifyFinalityConflictsRequestMessage)(nil),                      // 83: protowire.NotifyFinalityConflictsRequestMessage
+	(*NotifyFinalityConflictsResponseMessage)(nil),                     // 84: protowire.NotifyFinalityConflictsResponseMessage
+	(*FinalityConflictNotificationMessage)(nil),                        // 85: protowire.FinalityConflictNotificationMessage
+	(*FinalityConflictResolvedNotificationMessage)(nil),                // 86: protowire.FinalityConflictResolvedNotificationMessage
+	(*GetMempoolEntriesRequestMessage)(nil),                            // 87: protowire.GetMempoolEntriesRequestMessage
+	(*GetMempoolEntriesResponseMessage)(nil),                           // 88: protowire.GetMempoolEntriesResponseMessage
+	(*ShutDownRequestMessage)(nil),                                     // 89: protowire.ShutDownRequestMessage
+	(*ShutDownResponseMessage)(nil),                                    // 90: protowire.ShutDownResponseMessage
+	(*GetHeadersRequestMessage)(nil),                                   // 91: protowire.GetHeadersRequestMessage
+	(*GetHeadersResponseMessage)(nil),                                  // 92: protowire.GetHeadersResponseMessage
+	(*NotifyUtxosChangedRequestMessage)(nil),                           // 93: protowire.NotifyUtxosChangedRequestMessage
+	(*NotifyUtxosChangedResponseMessage)(nil),                          // 94: protowire.NotifyUtxosChangedResponseMessage
+	(*UtxosChangedNotificationMessage)(nil),                            // 95: protowire.UtxosChangedNotificationMessage
+	(*GetUtxosByAddressesRequestMessage)(nil),                          // 96: protowire.GetUtxosByAddressesRequestMessage
+	(*GetUtxosByAddressesResponseMessage)(nil),                         // 97: protowire.GetUtxosByAddressesResponseMessage
+	(*GetVirtualSelectedParentBlueScoreRequestMessage)(nil),            // 98: protowire.GetVirtualSelectedParentBlueScoreRequestMessage
+	(*GetVirtualSelectedParentBlueScoreResponseMessage)(nil),           // 99: protowire.GetVirtualSelectedParentBlueScoreResponseMessage
+	(*NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)(nil),  // 100: protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
+	(*NotifyVirtualSelectedParentBlueScoreChangedResponseMessage)(nil), // 101: protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage
+	(*VirtualSelectedParentBlueScoreChangedNotificationMessage)(nil),   // 102: protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage
+	(*BanRequestMessage)(nil),                                          // 103: protowire.BanRequestMessage
+	(*BanResponseMessage)(nil),                                         // 104: protowire.BanResponseMessage
+	(*UnbanRequestMessage)(nil),                                        // 105: protowire.UnbanRequestMessage
+	(*UnbanResponseMessage)(nil),                                       // 106: protowire.UnbanResponseMessage
+	(*GetInfoRequestMessage)(nil),                                      // 107: protowire.GetInfoRequestMessage
+	(*GetInfoResponseMessage)(nil),                                     // 108: protowire.GetInfoResponseMessage
+	(*StopNotifyingUtxosChangedRequestMessage)(nil),                    // 109: protowire.StopNotifyingUtxosChangedRequestMessage
+	(*StopNotifyingUtxosChangedResponseMessage)(nil),                   // 110: protowire.StopNotifyingUtxosChangedResponseMessage
+	(*NotifyPruningPointUTXOSetOverrideRequestMessage)(nil),            // 111: protowire.NotifyPruningPointUTXOSetOverrideRequestMessage
+	(*NotifyPruningPointUTXOSetOverrideResponseMessage)(nil),           // 112: protowire.NotifyPruningPointUTXOSetOverrideResponseMessage
+	(*PruningPointUTXOSetOverrideNotificationMessage)(nil),             // 113: protowire.PruningPointUTXOSetOverrideNotificationMessage
+	(*StopNotifyingPruningPointUTXOSetOverrideRequestMessage)(nil),     // 114: protowire.StopNotifyingPruningPointUTXOSetOverrideRequestMessage
+	(*StopNotifyingPruningPointUTXOSetOverrideResponseMessage)(nil),    // 115: protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage
+	(*EstimateNetworkHashesPerSecondRequestMessage)(nil),               // 116: protowire.EstimateNetworkHashesPerSecondRequestMessage
+	(*EstimateNetworkHashesPerSecondResponseMessage)(nil),              // 117: protowire.EstimateNetworkHashesPerSecondResponseMessage
+	(*NotifyVirtualDaaScoreChangedRequestMessage)(nil),                 // 118: protowire.NotifyVirtualDaaScoreChangedRequestMessage
+	(*NotifyVirtualDaaScoreChangedResponseMessage)(nil),                // 119: protowire.NotifyVirtualDaaScoreChangedResponseMessage
+	(*VirtualDaaScoreChangedNotificationMessage)(nil),                  // 120: protowire.VirtualDaaScoreChangedNotificationMessage
+	(*GetBalanceByAddressRequestMessage)(nil),                          // 121: protowire.GetBalanceByAddressRequestMessage
+	(*GetBalanceByAddressResponseMessage)(nil),                         // 122: protowire.GetBalanceByAddressResponseMessage
+	(*GetBalancesByAddressesRequestMessage)(nil),                       // 123: protowire.GetBalancesByAddressesRequestMessage
+	(*GetBalancesByAddressesResponseMessage)(nil),                      // 124: protowire.GetBalancesByAddressesResponseMessage
+	(*NotifyNewBlockTemplateRequestMessage)(nil),                       // 125: protowire.NotifyNewBlockTemplateRequestMessage
+	(*NotifyNewBlockTemplateResponseMessage)(nil),                      // 126: protowire.NotifyNewBlockTemplateResponseMessage
+	(*NewBlockTemplateNotificationMessage)(nil),                        // 127: protowire.NewBlockTemplateNotificationMessage
+	(*GetMempoolEntriesByAddressesRequestMessage)(nil),                 // 128: protowire.GetMempoolEntriesByAddressesRequestMessage
+	(*GetMempoolEntriesByAddressesResponseMessage)(nil),                // 129: protowire.GetMempoolEntriesByAddressesResponseMessage
+	(*GetCoinSupplyRequestMessage)(nil),                                // 130: protowire.GetCoinSupplyRequestMessage
+	(*GetCoinSupplyResponseMessage)(nil),                               // 131: protowire.GetCoinSupplyResponseMessage
 }
 var file_messages_proto_depIdxs = []int32{
 	1,   // 0: protowire.HoosatdMessage.addresses:type_name -> protowire.AddressesMessage
@@ -2513,76 +2549,78 @@ var file_messages_proto_depIdxs = []int32{
 	66,  // 66: protowire.HoosatdMessage.virtualSelectedParentChainChangedNotification:type_name -> protowire.VirtualSelectedParentChainChangedNotificationMessage
 	67,  // 67: protowire.HoosatdMessage.getBlockRequest:type_name -> protowire.GetBlockRequestMessage
 	68,  // 68: protowire.HoosatdMessage.getBlockResponse:type_name -> protowire.GetBlockResponseMessage
-	69,  // 69: protowire.HoosatdMessage.getSubnetworkRequest:type_name -> protowire.GetSubnetworkRequestMessage
-	70,  // 70: protowire.HoosatdMessage.getSubnetworkResponse:type_name -> protowire.GetSubnetworkResponseMessage
-	71,  // 71: protowire.HoosatdMessage.getVirtualSelectedParentChainFromBlockRequest:type_name -> protowire.GetVirtualSelectedParentChainFromBlockRequestMessage
-	72,  // 72: protowire.HoosatdMessage.getVirtualSelectedParentChainFromBlockResponse:type_name -> protowire.GetVirtualSelectedParentChainFromBlockResponseMessage
-	73,  // 73: protowire.HoosatdMessage.getBlocksRequest:type_name -> protowire.GetBlocksRequestMessage
-	74,  // 74: protowire.HoosatdMessage.getBlocksResponse:type_name -> protowire.GetBlocksResponseMessage
-	75,  // 75: protowire.HoosatdMessage.getBlockCountRequest:type_name -> protowire.GetBlockCountRequestMessage
-	76,  // 76: protowire.HoosatdMessage.getBlockCountResponse:type_name -> protowire.GetBlockCountResponseMessage
-	77,  // 77: protowire.HoosatdMessage.getBlockDagInfoRequest:type_name -> protowire.GetBlockDagInfoRequestMessage
-	78,  // 78: protowire.HoosatdMessage.getBlockDagInfoResponse:type_name -> protowire.GetBlockDagInfoResponseMessage
-	79,  // 79: protowire.HoosatdMessage.resolveFinalityConflictRequest:type_name -> protowire.ResolveFinalityConflictRequestMessage
-	80,  // 80: protowire.HoosatdMessage.resolveFinalityConflictResponse:type_name -> protowire.ResolveFinalityConflictResponseMessage
-	81,  // 81: protowire.HoosatdMessage.notifyFinalityConflictsRequest:type_name -> protowire.NotifyFinalityConflictsRequestMessage
-	82,  // 82: protowire.HoosatdMessage.notifyFinalityConflictsResponse:type_name -> protowire.NotifyFinalityConflictsResponseMessage
-	83,  // 83: protowire.HoosatdMessage.finalityConflictNotification:type_name -> protowire.FinalityConflictNotificationMessage
-	84,  // 84: protowire.HoosatdMessage.finalityConflictResolvedNotification:type_name -> protowire.FinalityConflictResolvedNotificationMessage
-	85,  // 85: protowire.HoosatdMessage.getMempoolEntriesRequest:type_name -> protowire.GetMempoolEntriesRequestMessage
-	86,  // 86: protowire.HoosatdMessage.getMempoolEntriesResponse:type_name -> protowire.GetMempoolEntriesResponseMessage
-	87,  // 87: protowire.HoosatdMessage.shutDownRequest:type_name -> protowire.ShutDownRequestMessage
-	88,  // 88: protowire.HoosatdMessage.shutDownResponse:type_name -> protowire.ShutDownResponseMessage
-	89,  // 89: protowire.HoosatdMessage.getHeadersRequest:type_name -> protowire.GetHeadersRequestMessage
-	90,  // 90: protowire.HoosatdMessage.getHeadersResponse:type_name -> protowire.GetHeadersResponseMessage
-	91,  // 91: protowire.HoosatdMessage.notifyUtxosChangedRequest:type_name -> protowire.NotifyUtxosChangedRequestMessage
-	92,  // 92: protowire.HoosatdMessage.notifyUtxosChangedResponse:type_name -> protowire.NotifyUtxosChangedResponseMessage
-	93,  // 93: protowire.HoosatdMessage.utxosChangedNotification:type_name -> protowire.UtxosChangedNotificationMessage
-	94,  // 94: protowire.HoosatdMessage.getUtxosByAddressesRequest:type_name -> protowire.GetUtxosByAddressesRequestMessage
-	95,  // 95: protowire.HoosatdMessage.getUtxosByAddressesResponse:type_name -> protowire.GetUtxosByAddressesResponseMessage
-	96,  // 96: protowire.HoosatdMessage.getVirtualSelectedParentBlueScoreRequest:type_name -> protowire.GetVirtualSelectedParentBlueScoreRequestMessage
-	97,  // 97: protowire.HoosatdMessage.getVirtualSelectedParentBlueScoreResponse:type_name -> protowire.GetVirtualSelectedParentBlueScoreResponseMessage
-	98,  // 98: protowire.HoosatdMessage.notifyVirtualSelectedParentBlueScoreChangedRequest:type_name -> protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
-	99,  // 99: protowire.HoosatdMessage.notifyVirtualSelectedParentBlueScoreChangedResponse:type_name -> protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage
-	100, // 100: protowire.HoosatdMessage.virtualSelectedParentBlueScoreChangedNotification:type_name -> protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage
-	101, // 101: protowire.HoosatdMessage.banRequest:type_name -> protowire.BanRequestMessage
-	102, // 102: protowire.HoosatdMessage.banResponse:type_name -> protowire.BanResponseMessage
-	103, // 103: protowire.HoosatdMessage.unbanRequest:type_name -> protowire.UnbanRequestMessage
-	104, // 104: protowire.HoosatdMessage.unbanResponse:type_name -> protowire.UnbanResponseMessage
-	105, // 105: protowire.HoosatdMessage.getInfoRequest:type_name -> protowire.GetInfoRequestMessage
-	106, // 106: protowire.HoosatdMessage.getInfoResponse:type_name -> protowire.GetInfoResponseMessage
-	107, // 107: protowire.HoosatdMessage.stopNotifyingUtxosChangedRequest:type_name -> protowire.StopNotifyingUtxosChangedRequestMessage
-	108, // 108: protowire.HoosatdMessage.stopNotifyingUtxosChangedResponse:type_name -> protowire.StopNotifyingUtxosChangedResponseMessage
-	109, // 109: protowire.HoosatdMessage.notifyPruningPointUTXOSetOverrideRequest:type_name -> protowire.NotifyPruningPointUTXOSetOverrideRequestMessage
-	110, // 110: protowire.HoosatdMessage.notifyPruningPointUTXOSetOverrideResponse:type_name -> protowire.NotifyPruningPointUTXOSetOverrideResponseMessage
-	111, // 111: protowire.HoosatdMessage.pruningPointUTXOSetOverrideNotification:type_name -> protowire.PruningPointUTXOSetOverrideNotificationMessage
-	112, // 112: protowire.HoosatdMessage.stopNotifyingPruningPointUTXOSetOverrideRequest:type_name -> protowire.StopNotifyingPruningPointUTXOSetOverrideRequestMessage
-	113, // 113: protowire.HoosatdMessage.stopNotifyingPruningPointUTXOSetOverrideResponse:type_name -> protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage
-	114, // 114: protowire.HoosatdMessage.estimateNetworkHashesPerSecondRequest:type_name -> protowire.EstimateNetworkHashesPerSecondRequestMessage
-	115, // 115: protowire.HoosatdMessage.estimateNetworkHashesPerSecondResponse:type_name -> protowire.EstimateNetworkHashesPerSecondResponseMessage
-	116, // 116: protowire.HoosatdMessage.notifyVirtualDaaScoreChangedRequest:type_name -> protowire.NotifyVirtualDaaScoreChangedRequestMessage
-	117, // 117: protowire.HoosatdMessage.notifyVirtualDaaScoreChangedResponse:type_name -> protowire.NotifyVirtualDaaScoreChangedResponseMessage
-	118, // 118: protowire.HoosatdMessage.virtualDaaScoreChangedNotification:type_name -> protowire.VirtualDaaScoreChangedNotificationMessage
-	119, // 119: protowire.HoosatdMessage.getBalanceByAddressRequest:type_name -> protowire.GetBalanceByAddressRequestMessage
-	120, // 120: protowire.HoosatdMessage.getBalanceByAddressResponse:type_name -> protowire.GetBalanceByAddressResponseMessage
-	121, // 121: protowire.HoosatdMessage.getBalancesByAddressesRequest:type_name -> protowire.GetBalancesByAddressesRequestMessage
-	122, // 122: protowire.HoosatdMessage.getBalancesByAddressesResponse:type_name -> protowire.GetBalancesByAddressesResponseMessage
-	123, // 123: protowire.HoosatdMessage.notifyNewBlockTemplateRequest:type_name -> protowire.NotifyNewBlockTemplateRequestMessage
-	124, // 124: protowire.HoosatdMessage.notifyNewBlockTemplateResponse:type_name -> protowire.NotifyNewBlockTemplateResponseMessage
-	125, // 125: protowire.HoosatdMessage.newBlockTemplateNotification:type_name -> protowire.NewBlockTemplateNotificationMessage
-	126, // 126: protowire.HoosatdMessage.getMempoolEntriesByAddressesRequest:type_name -> protowire.GetMempoolEntriesByAddressesRequestMessage
-	127, // 127: protowire.HoosatdMessage.getMempoolEntriesByAddressesResponse:type_name -> protowire.GetMempoolEntriesByAddressesResponseMessage
-	128, // 128: protowire.HoosatdMessage.getCoinSupplyRequest:type_name -> protowire.GetCoinSupplyRequestMessage
-	129, // 129: protowire.HoosatdMessage.getCoinSupplyResponse:type_name -> protowire.GetCoinSupplyResponseMessage
-	0,   // 130: protowire.P2P.MessageStream:input_type -> protowire.HoosatdMessage
-	0,   // 131: protowire.RPC.MessageStream:input_type -> protowire.HoosatdMessage
-	0,   // 132: protowire.P2P.MessageStream:output_type -> protowire.HoosatdMessage
-	0,   // 133: protowire.RPC.MessageStream:output_type -> protowire.HoosatdMessage
-	132, // [132:134] is the sub-list for method output_type
-	130, // [130:132] is the sub-list for method input_type
-	130, // [130:130] is the sub-list for extension type_name
-	130, // [130:130] is the sub-list for extension extendee
-	0,   // [0:130] is the sub-list for field type_name
+	69,  // 69: protowire.HoosatdMessage.getBlockByTransactionIdRequest:type_name -> protowire.GetBlockByTransactionIDRequestMessage
+	70,  // 70: protowire.HoosatdMessage.getBlockByTransactionIdResponse:type_name -> protowire.GetBlockByTransactionIDResponseMessage
+	71,  // 71: protowire.HoosatdMessage.getSubnetworkRequest:type_name -> protowire.GetSubnetworkRequestMessage
+	72,  // 72: protowire.HoosatdMessage.getSubnetworkResponse:type_name -> protowire.GetSubnetworkResponseMessage
+	73,  // 73: protowire.HoosatdMessage.getVirtualSelectedParentChainFromBlockRequest:type_name -> protowire.GetVirtualSelectedParentChainFromBlockRequestMessage
+	74,  // 74: protowire.HoosatdMessage.getVirtualSelectedParentChainFromBlockResponse:type_name -> protowire.GetVirtualSelectedParentChainFromBlockResponseMessage
+	75,  // 75: protowire.HoosatdMessage.getBlocksRequest:type_name -> protowire.GetBlocksRequestMessage
+	76,  // 76: protowire.HoosatdMessage.getBlocksResponse:type_name -> protowire.GetBlocksResponseMessage
+	77,  // 77: protowire.HoosatdMessage.getBlockCountRequest:type_name -> protowire.GetBlockCountRequestMessage
+	78,  // 78: protowire.HoosatdMessage.getBlockCountResponse:type_name -> protowire.GetBlockCountResponseMessage
+	79,  // 79: protowire.HoosatdMessage.getBlockDagInfoRequest:type_name -> protowire.GetBlockDagInfoRequestMessage
+	80,  // 80: protowire.HoosatdMessage.getBlockDagInfoResponse:type_name -> protowire.GetBlockDagInfoResponseMessage
+	81,  // 81: protowire.HoosatdMessage.resolveFinalityConflictRequest:type_name -> protowire.ResolveFinalityConflictRequestMessage
+	82,  // 82: protowire.HoosatdMessage.resolveFinalityConflictResponse:type_name -> protowire.ResolveFinalityConflictResponseMessage
+	83,  // 83: protowire.HoosatdMessage.notifyFinalityConflictsRequest:type_name -> protowire.NotifyFinalityConflictsRequestMessage
+	84,  // 84: protowire.HoosatdMessage.notifyFinalityConflictsResponse:type_name -> protowire.NotifyFinalityConflictsResponseMessage
+	85,  // 85: protowire.HoosatdMessage.finalityConflictNotification:type_name -> protowire.FinalityConflictNotificationMessage
+	86,  // 86: protowire.HoosatdMessage.finalityConflictResolvedNotification:type_name -> protowire.FinalityConflictResolvedNotificationMessage
+	87,  // 87: protowire.HoosatdMessage.getMempoolEntriesRequest:type_name -> protowire.GetMempoolEntriesRequestMessage
+	88,  // 88: protowire.HoosatdMessage.getMempoolEntriesResponse:type_name -> protowire.GetMempoolEntriesResponseMessage
+	89,  // 89: protowire.HoosatdMessage.shutDownRequest:type_name -> protowire.ShutDownRequestMessage
+	90,  // 90: protowire.HoosatdMessage.shutDownResponse:type_name -> protowire.ShutDownResponseMessage
+	91,  // 91: protowire.HoosatdMessage.getHeadersRequest:type_name -> protowire.GetHeadersRequestMessage
+	92,  // 92: protowire.HoosatdMessage.getHeadersResponse:type_name -> protowire.GetHeadersResponseMessage
+	93,  // 93: protowire.HoosatdMessage.notifyUtxosChangedRequest:type_name -> protowire.NotifyUtxosChangedRequestMessage
+	94,  // 94: protowire.HoosatdMessage.notifyUtxosChangedResponse:type_name -> protowire.NotifyUtxosChangedResponseMessage
+	95,  // 95: protowire.HoosatdMessage.utxosChangedNotification:type_name -> protowire.UtxosChangedNotificationMessage
+	96,  // 96: protowire.HoosatdMessage.getUtxosByAddressesRequest:type_name -> protowire.GetUtxosByAddressesRequestMessage
+	97,  // 97: protowire.HoosatdMessage.getUtxosByAddressesResponse:type_name -> protowire.GetUtxosByAddressesResponseMessage
+	98,  // 98: protowire.HoosatdMessage.getVirtualSelectedParentBlueScoreRequest:type_name -> protowire.GetVirtualSelectedParentBlueScoreRequestMessage
+	99,  // 99: protowire.HoosatdMessage.getVirtualSelectedParentBlueScoreResponse:type_name -> protowire.GetVirtualSelectedParentBlueScoreResponseMessage
+	100, // 100: protowire.HoosatdMessage.notifyVirtualSelectedParentBlueScoreChangedRequest:type_name -> protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
+	101, // 101: protowire.HoosatdMessage.notifyVirtualSelectedParentBlueScoreChangedResponse:type_name -> protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage
+	102, // 102: protowire.HoosatdMessage.virtualSelectedParentBlueScoreChangedNotification:type_name -> protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage
+	103, // 103: protowire.HoosatdMessage.banRequest:type_name -> protowire.BanRequestMessage
+	104, // 104: protowire.HoosatdMessage.banResponse:type_name -> protowire.BanResponseMessage
+	105, // 105: protowire.HoosatdMessage.unbanRequest:type_name -> protowire.UnbanRequestMessage
+	106, // 106: protowire.HoosatdMessage.unbanResponse:type_name -> protowire.UnbanResponseMessage
+	107, // 107: protowire.HoosatdMessage.getInfoRequest:type_name -> protowire.GetInfoRequestMessage
+	108, // 108: protowire.HoosatdMessage.getInfoResponse:type_name -> protowire.GetInfoResponseMessage
+	109, // 109: protowire.HoosatdMessage.stopNotifyingUtxosChangedRequest:type_name -> protowire.StopNotifyingUtxosChangedRequestMessage
+	110, // 110: protowire.HoosatdMessage.stopNotifyingUtxosChangedResponse:type_name -> protowire.StopNotifyingUtxosChangedResponseMessage
+	111, // 111: protowire.HoosatdMessage.notifyPruningPointUTXOSetOverrideRequest:type_name -> protowire.NotifyPruningPointUTXOSetOverrideRequestMessage
+	112, // 112: protowire.HoosatdMessage.notifyPruningPointUTXOSetOverrideResponse:type_name -> protowire.NotifyPruningPointUTXOSetOverrideResponseMessage
+	113, // 113: protowire.HoosatdMessage.pruningPointUTXOSetOverrideNotification:type_name -> protowire.PruningPointUTXOSetOverrideNotificationMessage
+	114, // 114: protowire.HoosatdMessage.stopNotifyingPruningPointUTXOSetOverrideRequest:type_name -> protowire.StopNotifyingPruningPointUTXOSetOverrideRequestMessage
+	115, // 115: protowire.HoosatdMessage.stopNotifyingPruningPointUTXOSetOverrideResponse:type_name -> protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage
+	116, // 116: protowire.HoosatdMessage.estimateNetworkHashesPerSecondRequest:type_name -> protowire.EstimateNetworkHashesPerSecondRequestMessage
+	117, // 117: protowire.HoosatdMessage.estimateNetworkHashesPerSecondResponse:type_name -> protowire.EstimateNetworkHashesPerSecondResponseMessage
+	118, // 118: protowire.HoosatdMessage.notifyVirtualDaaScoreChangedRequest:type_name -> protowire.NotifyVirtualDaaScoreChangedRequestMessage
+	119, // 119: protowire.HoosatdMessage.notifyVirtualDaaScoreChangedResponse:type_name -> protowire.NotifyVirtualDaaScoreChangedResponseMessage
+	120, // 120: protowire.HoosatdMessage.virtualDaaScoreChangedNotification:type_name -> protowire.VirtualDaaScoreChangedNotificationMessage
+	121, // 121: protowire.HoosatdMessage.getBalanceByAddressRequest:type_name -> protowire.GetBalanceByAddressRequestMessage
+	122, // 122: protowire.HoosatdMessage.getBalanceByAddressResponse:type_name -> protowire.GetBalanceByAddressResponseMessage
+	123, // 123: protowire.HoosatdMessage.getBalancesByAddressesRequest:type_name -> protowire.GetBalancesByAddressesRequestMessage
+	124, // 124: protowire.HoosatdMessage.getBalancesByAddressesResponse:type_name -> protowire.GetBalancesByAddressesResponseMessage
+	125, // 125: protowire.HoosatdMessage.notifyNewBlockTemplateRequest:type_name -> protowire.NotifyNewBlockTemplateRequestMessage
+	126, // 126: protowire.HoosatdMessage.notifyNewBlockTemplateResponse:type_name -> protowire.NotifyNewBlockTemplateResponseMessage
+	127, // 127: protowire.HoosatdMessage.newBlockTemplateNotification:type_name -> protowire.NewBlockTemplateNotificationMessage
+	128, // 128: protowire.HoosatdMessage.getMempoolEntriesByAddressesRequest:type_name -> protowire.GetMempoolEntriesByAddressesRequestMessage
+	129, // 129: protowire.HoosatdMessage.getMempoolEntriesByAddressesResponse:type_name -> protowire.GetMempoolEntriesByAddressesResponseMessage
+	130, // 130: protowire.HoosatdMessage.getCoinSupplyRequest:type_name -> protowire.GetCoinSupplyRequestMessage
+	131, // 131: protowire.HoosatdMessage.getCoinSupplyResponse:type_name -> protowire.GetCoinSupplyResponseMessage
+	0,   // 132: protowire.P2P.MessageStream:input_type -> protowire.HoosatdMessage
+	0,   // 133: protowire.RPC.MessageStream:input_type -> protowire.HoosatdMessage
+	0,   // 134: protowire.P2P.MessageStream:output_type -> protowire.HoosatdMessage
+	0,   // 135: protowire.RPC.MessageStream:output_type -> protowire.HoosatdMessage
+	134, // [134:136] is the sub-list for method output_type
+	132, // [132:134] is the sub-list for method input_type
+	132, // [132:132] is the sub-list for extension type_name
+	132, // [132:132] is the sub-list for extension extendee
+	0,   // [0:132] is the sub-list for field type_name
 }
 
 func init() { file_messages_proto_init() }
@@ -2662,6 +2700,8 @@ func file_messages_proto_init() {
 		(*HoosatdMessage_VirtualSelectedParentChainChangedNotification)(nil),
 		(*HoosatdMessage_GetBlockRequest)(nil),
 		(*HoosatdMessage_GetBlockResponse)(nil),
+		(*HoosatdMessage_GetBlockByTransactionIdRequest)(nil),
+		(*HoosatdMessage_GetBlockByTransactionIdResponse)(nil),
 		(*HoosatdMessage_GetSubnetworkRequest)(nil),
 		(*HoosatdMessage_GetSubnetworkResponse)(nil),
 		(*HoosatdMessage_GetVirtualSelectedParentChainFromBlockRequest)(nil),

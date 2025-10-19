@@ -16,6 +16,7 @@ var commandTypes = []reflect.Type{
 	reflect.TypeOf(protowire.HoosatdMessage_GetInfoRequest{}),
 
 	reflect.TypeOf(protowire.HoosatdMessage_GetBlockRequest{}),
+	reflect.TypeOf(protowire.HoosatdMessage_GetBlockByTransactionIdRequest{}),
 	reflect.TypeOf(protowire.HoosatdMessage_GetBlocksRequest{}),
 	reflect.TypeOf(protowire.HoosatdMessage_GetHeadersRequest{}),
 	reflect.TypeOf(protowire.HoosatdMessage_GetBlockCountRequest{}),
