@@ -179,8 +179,10 @@ func (v *transactionValidator) checkNativeTransactionPayload(tx *externalapi.Dom
 
 func (v *transactionValidator) checkTransactionSubnetwork(tx *externalapi.DomainTransaction,
 	localNodeSubnetworkID *externalapi.DomainSubnetworkID) error {
-	if !v.enableNonNativeSubnetworks && tx.SubnetworkID != subnetworks.SubnetworkIDNative &&
-		tx.SubnetworkID != subnetworks.SubnetworkIDCoinbase {
+	if !v.enableNonNativeSubnetworks &&
+		tx.SubnetworkID != subnetworks.SubnetworkIDNative &&
+		tx.SubnetworkID != subnetworks.SubnetworkIDCoinbase &&
+		tx.SubnetworkID != subnetworks.SubnetworkIDData {
 		return errors.Wrapf(ruleerrors.ErrSubnetworksDisabled, "transaction has non native or coinbase "+
 			"subnetwork ID")
 	}
