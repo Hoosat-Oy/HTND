@@ -177,9 +177,11 @@ func (v *blockValidator) checkCoinbaseSubsidy(stagingArea *model.StagingArea, bl
 				"wrong: expected %d but got %d, blocks version %d", blockHash, expectedSubsidy, subsidy, block.Header.Version())
 		}
 	} else {
-		if 1_000_000_000 > subsidy || subsidy > 2_000_000_000 {
-			return 0, errors.Wrapf(ruleerrors.ErrWrongCoinbaseSubsidy, "the subsidy specified on the coinbase of %s is "+
-				"wrong: expected %d but got %d, blocks version %d", blockHash, expectedSubsidy, subsidy, block.Header.Version())
+		if block.Header.DAAScore() >= dagconfig.MainnetParams.DeflationaryPhaseDaaScore+4 {
+			if 1_000_000_000 > subsidy || subsidy > 2_000_000_000 {
+				return 0, errors.Wrapf(ruleerrors.ErrWrongCoinbaseSubsidy, "the subsidy specified on the coinbase of %s is "+
+					"wrong: expected %d but got %d, blocks version %d", blockHash, expectedSubsidy, subsidy, block.Header.Version())
+			}
 		}
 	}
 
