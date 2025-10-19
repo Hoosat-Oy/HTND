@@ -307,11 +307,11 @@ var MainnetParams = Params{
 
 // TestnetParams defines the network parameters for the test Hoosat network.
 var TestnetParams = Params{
-	K:           []externalapi.KType{defaultGHOSTDAGK, defaultGHOSTDAGK, defaultGHOSTDAGK, defaultGHOSTDAGK, 18},
+	K:           []externalapi.KType{defaultGHOSTDAGK, defaultGHOSTDAGK, defaultGHOSTDAGK, defaultGHOSTDAGK, 40},
 	Name:        "hoosat-testnet",
 	Net:         appmessage.Testnet,
-	RPCPort:     "42422",
-	DefaultPort: "42423",
+	RPCPort:     "42420",
+	DefaultPort: "42421",
 	DNSSeeds: []string{
 		// This DNS seeder is run by Toni Lukkaroinen
 		"mainnet-dnsseed.hoosat.fi",
@@ -323,27 +323,28 @@ var TestnetParams = Params{
 	},
 
 	// DAG parameters
-	GenesisBlock:                    &testnetGenesisBlock,
-	GenesisHash:                     testnetGenesisHash,
-	PowMax:                          testnetPowMax,
+	GenesisBlock:                    &genesisBlock,
+	GenesisHash:                     genesisHash,
+	PowMax:                          mainPowMax,
 	BlockCoinbaseMaturity:           100,
 	SubsidyGenesisReward:            defaultSubsidyGenesisReward,
 	PreDeflationaryPhaseBaseSubsidy: defaultPreDeflationaryPhaseBaseSubsidy,
 	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
-	TargetTimePerBlock:              []time.Duration{defaultTargetTimePerBlock, defaultTargetTimePerBlock, defaultTargetTimePerBlock, defaultTargetTimePerBlock, 1 * time.Second},
-	FinalityDuration:                []time.Duration{defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, 1800 * time.Second},
-	DifficultyAdjustmentWindowSize:  []int{defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, 264},
+	DeflationaryPhaseCurveFactor:    defaultDeflationaryPhaseCurveFactor,
+	TargetTimePerBlock:              []time.Duration{defaultTargetTimePerBlock, defaultTargetTimePerBlock, defaultTargetTimePerBlock, defaultTargetTimePerBlock, 200 * time.Millisecond},
+	FinalityDuration:                []time.Duration{defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, 10800 * time.Second},
+	DifficultyAdjustmentWindowSize:  []int{defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, 2640},
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
-	POWScores:                       []uint64{5, 15, 25, 30},
-	PruningMultiplier:               []uint64{0, 0, 0, 0, 48},
-	MaxBlockMass:                    []uint64{defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, 5_000_000},
+	POWScores:                       []uint64{17500000, 21821800, 29335426, 43334184},
+	PruningMultiplier:               []uint64{0, 0, 0, 0, 1},
+	MaxBlockMass:                    []uint64{defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, 1_000_000},
 
 	// Consensus rule change deployments.
 	//
 	// The miner confirmation window is defined as:
 	//   target proof of work timespan / target proof of work spacing
-	RuleChangeActivationThreshold: 1512, // 75% of MinerConfirmationWindow
-	MinerConfirmationWindow:       2016,
+	RuleChangeActivationThreshold: 1916, // 95% of MinerConfirmationWindow
+	MinerConfirmationWindow:       2016, //
 
 	// Mempool parameters
 	RelayNonStdTxs: false,
@@ -353,10 +354,10 @@ var TestnetParams = Params{
 	AcceptUnroutable: false,
 
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.Bech32PrefixHoosatTest,
+	Prefix: util.Bech32PrefixHoosat,
 
 	// Address encoding magics
-	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
+	PrivateKeyID: 0x80, // starts with 5 (uncompressed) or K (compressed)
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks: false,
@@ -364,7 +365,7 @@ var TestnetParams = Params{
 	DisableDifficultyAdjustment: false,
 
 	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
-	MaxBlockParents:                         []externalapi.KType{defaultMaxBlockParents, defaultMaxBlockParents, defaultMaxBlockParents, defaultMaxBlockParents, 10},
+	MaxBlockParents:                         []externalapi.KType{defaultMaxBlockParents, defaultMaxBlockParents, defaultMaxBlockParents, defaultMaxBlockParents, 12},
 	MassPerTxByte:                           defaultMassPerTxByte,
 	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
 	MassPerSigOp:                            defaultMassPerSigOp,
@@ -372,9 +373,12 @@ var TestnetParams = Params{
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
+	DisallowDirectBlocksOnTopOfGenesis:      true,
 
-	MaxBlockLevel: 250,
-	MergeDepth:    []uint64{defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, defaultMergeDepth},
+	// This is technically 255, but we clamped it at 256 - block level of mainnet genesis
+	// This means that any block that has a level lower or equal to genesis will be level 0.
+	MaxBlockLevel: 225,
+	MergeDepth:    []uint64{defaultMergeDepth, defaultMergeDepth, defaultMergeDepth, 3600, 3600},
 }
 
 var TestnetParamsB5 = Params{
