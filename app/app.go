@@ -180,16 +180,16 @@ func openDB(cfg *config.Config) (database.Database, error) {
 		return nil, err
 	}
 
-	if strings.EqualFold(cfg.DbType, "pebble") {
-		log.Infof("Loading %s database from '%s'", cfg.DbType, dbPath)
-		db, err := pebble.NewPebbleDB(dbPath, leveldbCacheSizeMiB)
+	if strings.EqualFold(cfg.DbType, "leveldb") {
+		log.Infof("Loading LevelDB database  from '%s'", dbPath)
+		db, err := ldb.NewLevelDB(dbPath, leveldbCacheSizeMiB)
 		if err != nil {
 			return nil, err
 		}
 		return db, nil
 	} else {
-		log.Infof("Loading LevelDB database  from '%s'", dbPath)
-		db, err := ldb.NewLevelDB(dbPath, leveldbCacheSizeMiB)
+		log.Infof("Loading %s database from '%s'", cfg.DbType, dbPath)
+		db, err := pebble.NewPebbleDB(dbPath, leveldbCacheSizeMiB)
 		if err != nil {
 			return nil, err
 		}
