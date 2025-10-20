@@ -1,6 +1,17 @@
 package transactionvalidator
 
 import (
+	"bytes"
+	"encoding/ascii85"
+	"encoding/base64"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"image"
+	"os"
+	"regexp"
+	"strings"
+
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
@@ -32,6 +43,11 @@ func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.Do
 		return err
 	}
 	err = v.checkSubnetworkRegistryTransaction(tx)
+	if err != nil {
+		return err
+	}
+
+	err = v.checkDataTransactionPayload(tx)
 	if err != nil {
 		return err
 	}
@@ -174,6 +190,128 @@ func (v *transactionValidator) checkNativeTransactionPayload(tx *externalapi.Dom
 		return errors.Wrapf(ruleerrors.ErrInvalidPayload, "transaction in the native subnetwork "+
 			"includes a payload")
 	}
+	return nil
+}
+
+func IsValidJSONObject(data []byte) (bool, error) {
+	if len(data) == 0 {
+		return false, fmt.Errorf("empty input data")
+	}
+
+	var obj map[string]interface{}
+	err := json.Unmarshal(data, &obj)
+	if err != nil {
+		return false, fmt.Errorf("invalid JSON: %v", err)
+	}
+
+	if obj == nil {
+		return false, fmt.Errorf("input is not a JSON object")
+	}
+
+	if containsBinaryOrImage(obj) {
+		return false, fmt.Errorf("contains binary or image data")
+	}
+
+	return true, nil
+}
+
+func containsBinaryOrImage(data interface{}) bool {
+	switch v := data.(type) {
+	case map[string]interface{}:
+		for _, val := range v {
+			if containsBinaryOrImage(val) {
+				return true
+			}
+		}
+	case []interface{}:
+		for _, val := range v {
+			if containsBinaryOrImage(val) {
+				return true
+			}
+		}
+	case string:
+		if decoded, err := base64.StdEncoding.DecodeString(v); err == nil {
+			if isImage(decoded) || len(decoded) > 0 {
+				return true
+			}
+		}
+		if decoded, err := base64.URLEncoding.DecodeString(v); err == nil {
+			if isImage(decoded) || len(decoded) > 0 {
+				return true
+			}
+		}
+
+		if isHexString(v) {
+			if decoded, err := hex.DecodeString(strings.ToLower(v)); err == nil {
+				if isImage(decoded) || len(decoded) > 0 {
+					return true
+				}
+			}
+		}
+
+		if isAscii85String(v) {
+			decoded := make([]byte, len(v)*4/5+4)
+			n, _, err := ascii85.Decode(decoded, []byte(v), true)
+			if err == nil {
+				decoded = decoded[:n]
+				if isImage(decoded) || len(decoded) > 0 {
+					return true
+				}
+			}
+		}
+	case []byte: // Direct byte slices are considered binary
+		return true
+	}
+	return false
+}
+
+func isImage(data []byte) bool {
+	_, _, err := image.Decode(bytes.NewReader(data))
+	return err == nil
+}
+
+func isHexString(s string) bool {
+	if len(s)%2 != 0 {
+		return false
+	}
+	matched, _ := regexp.MatchString(`^[0-9a-fA-F]+$`, s)
+	return matched
+}
+
+func isAscii85String(s string) bool {
+	if len(s) < 5 {
+		return false
+	}
+	for _, r := range s {
+		if r < '!' || r > 'u' {
+			return false
+		}
+	}
+	return true
+}
+
+func (v *transactionValidator) checkDataTransactionPayload(tx *externalapi.DomainTransaction) error {
+	if tx.SubnetworkID != subnetworks.SubnetworkIDData || len(tx.Payload) <= 0 {
+		return nil
+	}
+
+	payloadString := strings.TrimSpace(string(tx.Payload))
+	if len(payloadString)%2 != 0 {
+		fmt.Fprintf(os.Stderr, "Error: Invalid hex string length\n")
+		return errors.Wrapf(ruleerrors.ErrInvalidPayload, "transaction in the native subnetwork "+
+			"includes a payload")
+	}
+
+	payload, err := hex.DecodeString(payloadString)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error decoding hex: %v\n", err)
+		os.Exit(1)
+	}
+
+	if isValid, err := IsValidJSONObject(payload); !isValid {
+		return errors.Wrapf(ruleerrors.ErrInvalidPayload, "data subnetwork transaction payload is not valid JSON: %v", err)
+	}
+
 	return nil
 }
 
