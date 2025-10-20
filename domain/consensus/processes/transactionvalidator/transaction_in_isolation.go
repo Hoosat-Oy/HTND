@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"image"
-	"os"
 	"regexp"
 	"strings"
 
@@ -295,20 +294,7 @@ func (v *transactionValidator) checkDataTransactionPayload(tx *externalapi.Domai
 		return nil
 	}
 
-	payloadString := strings.TrimSpace(string(tx.Payload))
-	if len(payloadString)%2 != 0 {
-		fmt.Fprintf(os.Stderr, "Error: Invalid hex string length\n")
-		return errors.Wrapf(ruleerrors.ErrInvalidPayload, "transaction in the native subnetwork "+
-			"includes a payload")
-	}
-
-	payload, err := hex.DecodeString(payloadString)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error decoding hex: %v\n", err)
-		os.Exit(1)
-	}
-
-	if isValid, err := IsValidJSONObject(payload); !isValid {
+	if isValid, err := IsValidJSONObject(tx.Payload); !isValid {
 		return errors.Wrapf(ruleerrors.ErrInvalidPayload, "data subnetwork transaction payload is not valid JSON: %v", err)
 	}
 
