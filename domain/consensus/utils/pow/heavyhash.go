@@ -141,7 +141,7 @@ func IntermediateComplexNonLinear(x float64) float64 {
 	if x == math.Pi/2 || x == 3*math.Pi/2 {
 		return 0 // Avoid singularity
 	}
-	return math.Sin(x) * math.Cos(x) * math.Tan(x)
+	return math.Sin(x) * math.Sin(x)
 }
 
 func IntermediateComplexNonLinear32(x float32) float32 {
@@ -199,8 +199,8 @@ func ComplexNonLinear(x float64) float64 {
 }
 
 func ComplexNonLinear110(x float64) float64 {
-	transformFactorOne := math.Mod(x*COMPLEX_TRANSFORM_MULTIPLIER, 8.0) / 8.0
-	transformFactorTwo := math.Mod(x*COMPLEX_TRANSFORM_MULTIPLIER, 4.0) / 4.0
+	transformFactorOne := (x*COMPLEX_TRANSFORM_MULTIPLIER)/8.0 - math.Floor((x*COMPLEX_TRANSFORM_MULTIPLIER)/8.0)
+	transformFactorTwo := (x*COMPLEX_TRANSFORM_MULTIPLIER)/4.0 - math.Floor((x*COMPLEX_TRANSFORM_MULTIPLIER)/4.0)
 	if transformFactorOne < 0.33 {
 		if transformFactorTwo < 0.25 {
 			return MediumComplexNonLinear(x + (1 + transformFactorTwo))
@@ -397,7 +397,7 @@ func ForComplex(forComplex float64) float64 {
 
 func TransformFactor(x float64) float64 {
 	const granularity = 1024.0 // Increase for finer granularity
-	return math.Mod(x, granularity) / granularity
+	return x/granularity - math.Floor(x/granularity)
 }
 
 func (mat *floatMatrix) HoohashMatrixMultiplicationV110(hash *externalapi.DomainHash, Nonce uint64) *externalapi.DomainHash {
