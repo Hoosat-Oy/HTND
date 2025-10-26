@@ -38,18 +38,26 @@ func (dm *difficultyManager) blockWindow(
 	windowSize int,
 ) (blockWindow, []*externalapi.DomainHash, error) {
 
-	window := make(blockWindow, 0, windowSize)
 	windowHashes, err := dm.dagTraversalManager.BlockWindow(stagingArea, startingNode, windowSize)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	for _, hash := range windowHashes {
-		header, err := dm.headerStore.BlockHeader(dm.databaseContext, stagingArea, hash)
-		if err != nil {
-			return nil, nil, err
-		}
-		block, err := dm.getDifficultyBlock(header, hash)
+	if len(windowHashes) == 0 {
+		return make(blockWindow, 0), windowHashes, nil
+	}
+
+	// OPTIMIZATION: Batch retrieve all headers at once instead of one by one
+	// This reduces database round trips from N to 1, significantly improving performance
+	headers, err := dm.headerStore.BlockHeaders(dm.databaseContext, stagingArea, windowHashes)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Build the window from the batch-retrieved headers
+	window := make(blockWindow, 0, len(headers))
+	for i, header := range headers {
+		block, err := dm.getDifficultyBlock(header, windowHashes[i])
 		if err != nil {
 			return nil, nil, err
 		}
@@ -57,12 +65,11 @@ func (dm *difficultyManager) blockWindow(
 	}
 
 	// Check if the last header has DAAScore == 43334187
+	// Note: This maintains the original behavior where the last header is processed twice
+	// (once in the loop above and once here), which may be intentional for difficulty calculation
 	if len(windowHashes) > 0 {
 		lastHash := windowHashes[len(windowHashes)-1]
-		lastHeader, err := dm.headerStore.BlockHeader(dm.databaseContext, stagingArea, lastHash)
-		if err != nil {
-			return nil, nil, err
-		}
+		lastHeader := headers[len(headers)-1]
 		if lastHeader.DAAScore() <= 43334187 {
 			lastBlock, err := dm.getDifficultyBlock(lastHeader, lastHash)
 			if err != nil {
