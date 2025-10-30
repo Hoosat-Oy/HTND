@@ -60,6 +60,7 @@ func (csm *consensusStateManager) updateVirtual(stagingArea *model.StagingArea, 
 
 	return selectedParentChainChanges, virtualUTXODiff, nil
 }
+
 func (csm *consensusStateManager) updateVirtualWithParents(
 	stagingArea *model.StagingArea, virtualParents []*externalapi.DomainHash) (externalapi.UTXODiff, error) {
 	err := csm.dagTopologyManager.SetParents(stagingArea, model.VirtualBlockHash, virtualParents)
