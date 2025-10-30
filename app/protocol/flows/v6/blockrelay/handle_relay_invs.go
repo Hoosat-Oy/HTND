@@ -251,6 +251,13 @@ func (flow *handleRelayInvsFlow) start() error {
 		log.Debugf("Processing block %s", inv.Hash)
 		oldVirtualInfo, err := flow.Domain().Consensus().GetVirtualInfo()
 		if err != nil {
+			// If virtual info is missing in the DB, treat it as a transient/missing data
+			// and skip processing this inv rather than returning an error that will
+			// bubble up and cause the flow to panic.
+			if database.IsNotFoundError(err) {
+				log.Infof("GetVirtualInfo returned not-found while processing inv %s; skipping inv", inv.Hash)
+				continue
+			}
 			return err
 		}
 		// We need the PoW hash for processBlock from P2P.
@@ -314,6 +321,10 @@ func (flow *handleRelayInvsFlow) start() error {
 
 		newVirtualInfo, err := flow.Domain().Consensus().GetVirtualInfo()
 		if err != nil {
+			if database.IsNotFoundError(err) {
+				log.Infof("GetVirtualInfo returned not-found while processing inv %s (newVirtualInfo); skipping inv", inv.Hash)
+				continue
+			}
 			return err
 		}
 
