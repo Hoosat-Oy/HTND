@@ -18,7 +18,7 @@ import (
 )
 
 func (c *gRPCConnection) connectionLoops() error {
-	errChan := make(chan error, 1) // buffered channel because one of the loops might try write after disconnect
+	errChan := make(chan error, 2) // buffered channel because one of the loops might try write after disconnect
 
 	spawn("gRPCConnection.receiveLoop", func() { errChan <- c.receiveLoop() })
 	spawn("gRPCConnection.sendLoop", func() { errChan <- c.sendLoop() })
