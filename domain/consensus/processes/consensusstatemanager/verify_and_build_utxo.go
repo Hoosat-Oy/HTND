@@ -147,7 +147,7 @@ func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData externalapi.Acceptan
 		}
 	}
 	// In block version 4 and below, the accepted transactions are sorted by their IDs, in Block Version 5 and above, the order is not important
-	if constants.BlockVersion < 5 {
+	if constants.GetBlockVersion() < 5 {
 		sort.Slice(acceptedTransactions, func(i, j int) bool {
 			return consensushashing.TransactionID(acceptedTransactions[i]).Less(
 				consensushashing.TransactionID(acceptedTransactions[j]))

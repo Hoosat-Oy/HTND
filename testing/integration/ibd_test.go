@@ -144,11 +144,11 @@ func TestIBDWithPruning(t *testing.T) {
 	// blocks with timestamps that are spaced far enough apart
 	// to avoid failing the timestamp threshold validation of
 	// ibd-with-headers-proof
-	overrideDAGParams.TargetTimePerBlock[constants.BlockVersion-1] = time.Minute
+	overrideDAGParams.TargetTimePerBlock[constants.GetBlockVersion()-1] = time.Minute
 
 	// This is done to make a pruning depth of 6 blocks
-	overrideDAGParams.FinalityDuration = []time.Duration{2 * overrideDAGParams.TargetTimePerBlock[constants.BlockVersion-1]}
-	overrideDAGParams.K[constants.BlockVersion-1] = 0
+	overrideDAGParams.FinalityDuration = []time.Duration{2 * overrideDAGParams.TargetTimePerBlock[constants.GetBlockVersion()-1]}
+	overrideDAGParams.K[constants.GetBlockVersion()-1] = 0
 	overrideDAGParams.PruningProofM = 20
 
 	expectedPruningDepth := uint64(6)
@@ -314,10 +314,10 @@ func TestBoundedMergeDepth(t *testing.T) {
 	}
 
 	t.Run("mergeDepth", func(t *testing.T) {
-		test(harnesses[0], harnesses[1], overrideDAGParams.MergeDepth[constants.BlockVersion-1], false)
+		test(harnesses[0], harnesses[1], overrideDAGParams.MergeDepth[constants.GetBlockVersion()-1], false)
 	})
 
 	t.Run("mergeDepth-1", func(t *testing.T) {
-		test(harnesses[2], harnesses[3], overrideDAGParams.MergeDepth[constants.BlockVersion-1]-1, true)
+		test(harnesses[2], harnesses[3], overrideDAGParams.MergeDepth[constants.GetBlockVersion()-1]-1, true)
 	})
 }

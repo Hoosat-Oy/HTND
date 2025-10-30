@@ -488,7 +488,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		genesisBlock: config.GenesisBlock,
 		genesisHash:  config.GenesisHash,
 
-		expectedDAAWindowDurationInMilliseconds: config.TargetTimePerBlock[constants.BlockVersion-1].Milliseconds() * int64(config.DifficultyAdjustmentWindowSize[constants.BlockVersion-1]),
+		expectedDAAWindowDurationInMilliseconds: config.TargetTimePerBlock[constants.GetBlockVersion()-1].Milliseconds() * int64(config.DifficultyAdjustmentWindowSize[constants.GetBlockVersion()-1]),
 
 		blockProcessor:        blockProcessor,
 		blockBuilder:          blockBuilder,
@@ -666,8 +666,8 @@ func dagStores(config *Config,
 	ghostdagDataStores := make([]model.GHOSTDAGDataStore, config.MaxBlockLevel+1)
 
 	ghostdagDataCacheSize := pruningWindowSizeForCaches * 2
-	if ghostdagDataCacheSize < config.DifficultyAdjustmentWindowSize[constants.BlockVersion-1] {
-		ghostdagDataCacheSize = config.DifficultyAdjustmentWindowSize[constants.BlockVersion-1]
+	if ghostdagDataCacheSize < config.DifficultyAdjustmentWindowSize[constants.GetBlockVersion()-1] {
+		ghostdagDataCacheSize = config.DifficultyAdjustmentWindowSize[constants.GetBlockVersion()-1]
 	}
 
 	for i := 0; i <= config.MaxBlockLevel; i++ {

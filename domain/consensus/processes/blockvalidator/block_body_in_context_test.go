@@ -18,8 +18,8 @@ import (
 func TestCheckBlockIsNotPruned(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		// This is done to reduce the pruning depth to 6 blocks
-		consensusConfig.FinalityDuration = []time.Duration{2 * consensusConfig.TargetTimePerBlock[constants.BlockVersion-1]}
-		consensusConfig.K[constants.BlockVersion-1] = 0
+		consensusConfig.FinalityDuration = []time.Duration{2 * consensusConfig.TargetTimePerBlock[constants.GetBlockVersion()-1]}
+		consensusConfig.K[constants.GetBlockVersion()-1] = 0
 
 		// When pruning, blocks in the DAA window of the pruning point and its
 		// anticone are kept for the sake of IBD. Setting this value to zero
@@ -84,8 +84,8 @@ func TestCheckBlockIsNotPruned(t *testing.T) {
 func TestCheckParentBlockBodiesExist(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		// This is done to reduce the pruning depth to 6 blocks
-		consensusConfig.FinalityDuration = []time.Duration{2 * consensusConfig.TargetTimePerBlock[constants.BlockVersion-1]}
-		consensusConfig.K[constants.BlockVersion-1] = 0
+		consensusConfig.FinalityDuration = []time.Duration{2 * consensusConfig.TargetTimePerBlock[constants.GetBlockVersion()-1]}
+		consensusConfig.K[constants.GetBlockVersion()-1] = 0
 
 		factory := consensus.NewFactory()
 

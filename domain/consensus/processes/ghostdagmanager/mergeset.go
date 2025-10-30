@@ -13,8 +13,8 @@ import (
 func (gm *ghostdagManager) mergeSetWithoutSelectedParent(stagingArea *model.StagingArea,
 	selectedParent *externalapi.DomainHash, blockParents []*externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 
-	mergeSetMap := make(map[externalapi.DomainHash]struct{}, gm.k[constants.BlockVersion-1])
-	mergeSetSlice := make([]*externalapi.DomainHash, 0, gm.k[constants.BlockVersion-1])
+	mergeSetMap := make(map[externalapi.DomainHash]struct{}, gm.k[constants.GetBlockVersion()-1])
+	mergeSetSlice := make([]*externalapi.DomainHash, 0, gm.k[constants.GetBlockVersion()-1])
 	selectedParentPast := make(map[externalapi.DomainHash]struct{})
 	queue := []*externalapi.DomainHash{}
 	// Queueing all parents (other than the selected parent itself) for processing.

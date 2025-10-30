@@ -80,7 +80,7 @@ func (dm *difficultyManager) StageDAADataAndReturnRequiredDifficulty(
 	onEnd := logger.LogAndMeasureExecutionTime(log, "StageDAADataAndReturnRequiredDifficulty")
 	defer onEnd()
 
-	targetsWindow, windowHashes, err := dm.blockWindow(stagingArea, blockHash, dm.difficultyAdjustmentWindowSize[constants.BlockVersion-1])
+	targetsWindow, windowHashes, err := dm.blockWindow(stagingArea, blockHash, dm.difficultyAdjustmentWindowSize[constants.GetBlockVersion()-1])
 	if err != nil {
 		return 0, err
 	}
@@ -95,7 +95,7 @@ func (dm *difficultyManager) StageDAADataAndReturnRequiredDifficulty(
 
 // RequiredDifficulty returns the difficulty required for some block
 func (dm *difficultyManager) RequiredDifficulty(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint32, error) {
-	targetsWindow, _, err := dm.blockWindow(stagingArea, blockHash, dm.difficultyAdjustmentWindowSize[constants.BlockVersion-1])
+	targetsWindow, _, err := dm.blockWindow(stagingArea, blockHash, dm.difficultyAdjustmentWindowSize[constants.GetBlockVersion()-1])
 	if err != nil {
 		return 0, err
 	}
@@ -115,7 +115,7 @@ func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(targetsWindow b
 	// We could instead clamp the timestamp difference to `targetTimePerBlock`,
 	// but then everything will cancel out and we'll get the target from the last block, which will be the same as genesis.
 	// We add 64 as a safety margin
-	if len(targetsWindow) < 2 || len(targetsWindow) < dm.difficultyAdjustmentWindowSize[constants.BlockVersion-1] {
+	if len(targetsWindow) < 2 || len(targetsWindow) < dm.difficultyAdjustmentWindowSize[constants.GetBlockVersion()-1] {
 		return dm.genesisBits, nil
 	}
 
@@ -132,14 +132,14 @@ func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(targetsWindow b
 	newTarget.
 		// We need to clamp the timestamp difference to 1 so that we'll never get a 0 target.
 		Mul(newTarget, div.SetInt64(math.MaxInt64(windowMaxTimeStamp-windowMinTimestamp, 1))).
-		Div(newTarget, div.SetInt64(dm.targetTimePerBlock[constants.BlockVersion-1].Milliseconds())).
+		Div(newTarget, div.SetInt64(dm.targetTimePerBlock[constants.GetBlockVersion()-1].Milliseconds())).
 		Div(newTarget, div.SetUint64(uint64(len(targetsWindow))))
 	// Check that newTarget is not above maximums possible target.
 	if newTarget.Cmp(dm.powMax) > 0 {
 		return difficulty.BigToCompact(dm.powMax), nil
 	}
 	// difficulty bombs
-	// if constants.BlockVersion >= 5 {
+	// if constants.GetBlockVersion() >= 5 {
 	// 	stagingArea := model.NewStagingArea()
 	// 	daaScore, _ := dm.daaBlocksStore.DAAScore(dm.databaseContext, stagingArea, blockHash)
 	// 	if daaScore >= 43334187 && daaScore <= 43335187 {

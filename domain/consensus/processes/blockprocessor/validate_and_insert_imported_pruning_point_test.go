@@ -42,8 +42,8 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 
 		// This is done to reduce the pruning depth to 6 blocks
 		finalityDepth := 5
-		consensusConfig.FinalityDuration = []time.Duration{time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock[constants.BlockVersion-1]}
-		consensusConfig.K[constants.BlockVersion-1] = 0
+		consensusConfig.FinalityDuration = []time.Duration{time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock[constants.GetBlockVersion()-1]}
+		consensusConfig.K[constants.GetBlockVersion()-1] = 0
 		consensusConfig.PruningProofM = 1
 
 		syncConsensuses := func(tcSyncerRef, tcSynceeRef *testapi.TestConsensus, updatePruningPointJustAfterImportingPruningPoint bool) {
@@ -457,8 +457,8 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		// This is done to reduce the pruning depth to 8 blocks
 		finalityDepth := 4
-		consensusConfig.FinalityDuration = []time.Duration{time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock[constants.BlockVersion-1]}
-		consensusConfig.K[constants.BlockVersion-1] = 0
+		consensusConfig.FinalityDuration = []time.Duration{time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock[constants.GetBlockVersion()-1]}
+		consensusConfig.K[constants.GetBlockVersion()-1] = 0
 
 		consensusConfig.BlockCoinbaseMaturity = 0
 
@@ -619,8 +619,8 @@ func BenchmarkGetPruningPointUTXOs(b *testing.B) {
 
 	// This is done to reduce the pruning depth to 200 blocks
 	finalityDepth := 100
-	consensusConfig.FinalityDuration = []time.Duration{time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock[constants.BlockVersion-1]}
-	consensusConfig.K[constants.BlockVersion-1] = 0
+	consensusConfig.FinalityDuration = []time.Duration{time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock[constants.GetBlockVersion()-1]}
+	consensusConfig.K[constants.GetBlockVersion()-1] = 0
 
 	consensusConfig.SkipProofOfWork = true
 	consensusConfig.BlockCoinbaseMaturity = 0

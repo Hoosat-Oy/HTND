@@ -70,7 +70,7 @@ func TestPruning(t *testing.T) {
 				t.Fatalf("TestPruning: failed decoding json: %v", err)
 			}
 
-			consensusConfig.FinalityDuration = []time.Duration{time.Duration(test.FinalityDepth) * consensusConfig.TargetTimePerBlock[constants.BlockVersion-1]}
+			consensusConfig.FinalityDuration = []time.Duration{time.Duration(test.FinalityDepth) * consensusConfig.TargetTimePerBlock[constants.GetBlockVersion()-1]}
 			consensusConfig.MergeSetSizeLimit = test.MergeSetSizeLimit
 			consensusConfig.DifficultyAdjustmentWindowSize = []int{400}
 
@@ -150,7 +150,7 @@ func TestPruning(t *testing.T) {
 			}
 			for _, blockHash := range pruningPointAndItsAnticone {
 				unprunedBlockHashesBelowPruningPoint[*blockHash] = struct{}{}
-				blockWindow, err := tc.DAGTraversalManager().BlockWindow(stagingArea, blockHash, consensusConfig.DifficultyAdjustmentWindowSize[constants.BlockVersion-1])
+				blockWindow, err := tc.DAGTraversalManager().BlockWindow(stagingArea, blockHash, consensusConfig.DifficultyAdjustmentWindowSize[constants.GetBlockVersion()-1])
 				if err != nil {
 					t.Fatalf("BlockWindow: %+v", err)
 				}

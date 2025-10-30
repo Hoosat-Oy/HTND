@@ -213,19 +213,19 @@ func (p *Params) NormalizeRPCServerAddress(addr string) (string, error) {
 */
 // FinalityDepth returns the finality duration represented in blocks
 func (p *Params) FinalityDepth() uint64 {
-	if constants.BlockVersion < 5 {
-		return uint64(p.FinalityDuration[constants.BlockVersion-1] / p.TargetTimePerBlock[constants.BlockVersion-1])
+	if constants.GetBlockVersion() < 5 {
+		return uint64(p.FinalityDuration[int(constants.GetBlockVersion())-1] / p.TargetTimePerBlock[int(constants.GetBlockVersion())-1])
 	} else {
-		return uint64(p.FinalityDuration[constants.BlockVersion-1].Seconds() / p.TargetTimePerBlock[constants.BlockVersion-1].Seconds())
+		return uint64(p.FinalityDuration[int(constants.GetBlockVersion())-1].Seconds() / p.TargetTimePerBlock[int(constants.GetBlockVersion())-1].Seconds())
 	}
 }
 
 // PruningDepth returns the pruning duration represented in blocks
 func (p *Params) PruningDepth() uint64 {
-	if constants.BlockVersion < 5 {
-		return 2*p.FinalityDepth() + 4*p.MergeSetSizeLimit*uint64(p.K[constants.BlockVersion-1]) + 2*uint64(p.K[constants.BlockVersion-1]) + 2
+	if constants.GetBlockVersion() < 5 {
+		return 2*p.FinalityDepth() + 4*p.MergeSetSizeLimit*uint64(p.K[int(constants.GetBlockVersion())-1]) + 2*uint64(p.K[int(constants.GetBlockVersion())-1]) + 2
 	} else {
-		return 2*p.FinalityDepth()*p.PruningMultiplier[constants.BlockVersion-1] + 4*p.MergeSetSizeLimit*uint64(p.K[constants.BlockVersion-1]) + 2*uint64(p.K[constants.BlockVersion-1]) + 2
+		return 2*p.FinalityDepth()*p.PruningMultiplier[int(constants.GetBlockVersion())-1] + 4*p.MergeSetSizeLimit*uint64(p.K[int(constants.GetBlockVersion())-1]) + 2*uint64(p.K[int(constants.GetBlockVersion())-1]) + 2
 	}
 }
 

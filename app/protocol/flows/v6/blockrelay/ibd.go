@@ -72,7 +72,7 @@ func (flow *handleIBDFlow) updateBlockVersionFromDAAScore(daaScore uint64) {
 			blockVersion += 1
 		}
 	}
-	constants.BlockVersion = blockVersion
+	constants.SetBlockVersion(blockVersion)
 }
 
 func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) error {

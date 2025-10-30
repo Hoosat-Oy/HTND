@@ -196,9 +196,9 @@ func (flow *handleRelayInvsFlow) start() error {
 					version = version + 1
 				}
 			}
-			constants.BlockVersion = version
-			if block.Header.Version() != constants.BlockVersion {
-				log.Infof("Cannot process %s, Wrong block version %d, it should be %d", consensushashing.BlockHash(block), block.Header.Version(), constants.BlockVersion)
+			constants.SetBlockVersion(version)
+			if block.Header.Version() != constants.GetBlockVersion() {
+				log.Infof("Cannot process %s, Wrong block version %d, it should be %d", consensushashing.BlockHash(block), block.Header.Version(), constants.GetBlockVersion())
 				log.Infof("Unprocessable block relayed by %s", flow.netConnection.NetAddress().String())
 				if block.Header.Version() >= constants.BanMinVersion {
 					flow.banConnection(false)
@@ -461,7 +461,7 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock) e
 		return nil
 	}
 
-	if block.Header.Version() != constants.BlockVersion {
+	if block.Header.Version() != constants.GetBlockVersion() {
 		log.Infof("Skipping orphan processing for block %s because it is wrong block version", blockHash)
 		return nil
 	}

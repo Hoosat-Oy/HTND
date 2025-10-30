@@ -104,9 +104,9 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 		// for overflow.
 		// log.Infof("Current total mass %d, candidate tx %s mass %d, max block mass %d",
 		// 	txsForBlockTemplate.totalMass, consensushashing.TransactionID(tx),
-		// 	selectedTx.Mass, btb.policy.BlockMaxMass[constants.BlockVersion-1])
+		// 	selectedTx.Mass, btb.policy.BlockMaxMass[constants.GetBlockVersion()-1])
 		if txsForBlockTemplate.totalMass+selectedTx.Mass < txsForBlockTemplate.totalMass ||
-			txsForBlockTemplate.totalMass+selectedTx.Mass > btb.policy.BlockMaxMass[constants.BlockVersion-1] {
+			txsForBlockTemplate.totalMass+selectedTx.Mass > btb.policy.BlockMaxMass[constants.GetBlockVersion()-1] {
 			log.Tracef("Tx %s would exceed the max block mass. "+
 				"As such, stopping.", consensushashing.TransactionID(tx))
 			break
@@ -155,7 +155,7 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 
 		markCandidateTxForDeletion(selectedTx)
 	}
-	if constants.BlockVersion < 5 {
+	if constants.GetBlockVersion() < 5 {
 		// in block version 4 and below, the transactions are sorted by their subnetwork ids, which is unnecessary in block version 5 and above
 		sort.Slice(selectedTxs, func(i, j int) bool {
 			return subnetworks.Less(selectedTxs[i].SubnetworkID, selectedTxs[j].SubnetworkID)

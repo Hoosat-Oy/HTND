@@ -64,7 +64,7 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 
 	txOuts := make([]*externalapi.DomainTransactionOutput, 0, len(ghostdagData.MergeSetBlues()))
 	acceptanceDataMap := acceptanceDataFromArrayToMap(acceptanceData)
-	if constants.BlockVersion == 1 {
+	if constants.GetBlockVersion() == 1 {
 		for _, blue := range ghostdagData.MergeSetBlues() {
 			txOut, hasReward, err := c.coinbaseOutputForBlueBlockV1(stagingArea, blue, acceptanceDataMap[*blue], daaAddedBlocksSet)
 			if err != nil {
@@ -85,7 +85,7 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 		if hasRedReward {
 			txOuts = append(txOuts, txOut)
 		}
-	} else if constants.BlockVersion >= 2 {
+	} else if constants.GetBlockVersion() >= 2 {
 		for _, blue := range ghostdagData.MergeSetBlues() {
 			txOut, devTx, hasReward, err := c.coinbaseOutputForBlueBlockV2(stagingArea, blue, acceptanceDataMap[*blue], daaAddedBlocksSet)
 			if err != nil {
@@ -110,7 +110,7 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 		}
 	}
 
-	subsidy, err := c.CalcBlockSubsidy(stagingArea, blockHash, constants.BlockVersion)
+	subsidy, err := c.CalcBlockSubsidy(stagingArea, blockHash, constants.GetBlockVersion())
 	if err != nil {
 		return nil, false, err
 	}

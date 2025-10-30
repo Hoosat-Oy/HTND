@@ -26,8 +26,8 @@ func TestGenerateFastPruningIBDTest(t *testing.T) {
 
 		// This is done to reduce the pruning depth to 6 blocks
 		finalityDepth := 200
-		consensusConfig.FinalityDuration = []time.Duration{time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock[constants.BlockVersion-1]}
-		consensusConfig.K[constants.BlockVersion-1] = 0
+		consensusConfig.FinalityDuration = []time.Duration{time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock[constants.GetBlockVersion()-1]}
+		consensusConfig.K[constants.GetBlockVersion()-1] = 0
 		consensusConfig.PruningProofM = 1
 		consensusConfig.MergeSetSizeLimit = 30
 

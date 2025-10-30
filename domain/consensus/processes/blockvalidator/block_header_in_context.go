@@ -123,7 +123,7 @@ func (v *blockValidator) updateBlockVersion(header externalapi.BlockHeader) {
 			version = version + 1
 		}
 	}
-	constants.BlockVersion = version
+	constants.SetBlockVersion(version)
 }
 
 func (v *blockValidator) hasValidatedHeader(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {

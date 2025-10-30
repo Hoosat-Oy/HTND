@@ -48,7 +48,7 @@ func (v *blockValidator) checkParentsLimit(header externalapi.BlockHeader) error
 		return errors.Wrapf(ruleerrors.ErrNoParents, "block has no parents")
 	}
 
-	if uint64(len(header.DirectParents())) > uint64(v.maxBlockParents[constants.BlockVersion-1]) {
+	if uint64(len(header.DirectParents())) > uint64(v.maxBlockParents[int(constants.GetBlockVersion())-1]) {
 		return errors.Wrapf(ruleerrors.ErrTooManyParents, "block header has %d parents, but the maximum allowed amount "+
 			"is %d", len(header.DirectParents()), v.maxBlockParents)
 	}
@@ -63,10 +63,10 @@ func (v *blockValidator) checkBlockVersion(header externalapi.BlockHeader) error
 			version = version + 1
 		}
 	}
-	constants.BlockVersion = version
-	if header.Version() != constants.BlockVersion {
+	constants.SetBlockVersion(version)
+	if header.Version() != constants.GetBlockVersion() {
 		return errors.Wrapf(
-			ruleerrors.ErrWrongBlockVersion, "The block version %d should be %d", header.Version(), constants.BlockVersion)
+			ruleerrors.ErrWrongBlockVersion, "The block version %d should be %d", header.Version(), constants.GetBlockVersion())
 	}
 	return nil
 }

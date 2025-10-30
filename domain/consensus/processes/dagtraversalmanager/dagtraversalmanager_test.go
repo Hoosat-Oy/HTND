@@ -14,7 +14,7 @@ import (
 
 func TestLowestChainBlockAboveOrEqualToBlueScore(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		consensusConfig.FinalityDuration = []time.Duration{10 * consensusConfig.TargetTimePerBlock[constants.BlockVersion-1]}
+		consensusConfig.FinalityDuration = []time.Duration{10 * consensusConfig.TargetTimePerBlock[constants.GetBlockVersion()-1]}
 		factory := consensus.NewFactory()
 		tc, tearDown, err := factory.NewTestConsensus(consensusConfig,
 			"TestLowestChainBlockAboveOrEqualToBlueScore")

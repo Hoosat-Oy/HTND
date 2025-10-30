@@ -60,7 +60,7 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 				return err
 			}
 
-			windowSize := context.Config().NetParams().DifficultyAdjustmentWindowSize[constants.BlockVersion-1]
+			windowSize := context.Config().NetParams().DifficultyAdjustmentWindowSize[constants.GetBlockVersion()-1]
 			daaWindowBlocks := make([]*externalapi.TrustedDataDataDAAHeader, 0, windowSize)
 			daaWindowHashesToIndex := make(map[externalapi.DomainHash]int, windowSize)
 			trustedDataDAABlockIndexes := make(map[externalapi.DomainHash][]uint64)
@@ -95,7 +95,7 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 					return err
 				}
 
-				trustedDataGHOSTDAGDataIndexes[*pointAndItsAnticone[i]] = make([]uint64, 0, context.Config().NetParams().K[constants.BlockVersion-1])
+				trustedDataGHOSTDAGDataIndexes[*pointAndItsAnticone[i]] = make([]uint64, 0, context.Config().NetParams().K[constants.GetBlockVersion()-1])
 				for y := 0; y < len(ghostdagDataBlockHashes); y++ {
 					index, exists := ghostdagDataHashToIndex[*ghostdagDataBlockHashes[y]]
 					if !exists {

@@ -313,7 +313,7 @@ func TestBlockWindow(t *testing.T) {
 		},
 	}
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		consensusConfig.K[constants.BlockVersion-1] = 1
+		consensusConfig.K[constants.GetBlockVersion()-1] = 1
 		factory := consensus.NewFactory()
 		tc, tearDown, err := factory.NewTestConsensus(consensusConfig, "TestBlockWindow")
 		if err != nil {

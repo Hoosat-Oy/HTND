@@ -69,9 +69,9 @@ func validateBlockVersion(context *rpccontext.Context, req *appmessage.SubmitBlo
 			version++
 		}
 	}
-	constants.BlockVersion = version
+	constants.SetBlockVersion(version)
 
-	if req.Block.Header.Version != uint32(constants.BlockVersion) {
+	if req.Block.Header.Version != uint32(constants.GetBlockVersion()) {
 		submitBlockRequestJSON, _ := json.MarshalIndent(req.Block, "", "    ")
 		return fmt.Errorf("wrong block version: %s", string(submitBlockRequestJSON))
 	}
@@ -80,7 +80,7 @@ func validateBlockVersion(context *rpccontext.Context, req *appmessage.SubmitBlo
 
 // validatePoW checks if the Proof of Work is valid for the block
 func validatePoW(context *rpccontext.Context, req *appmessage.SubmitBlockRequestMessage) error {
-	if constants.BlockVersion < constants.PoWIntegrityMinVersion {
+	if constants.GetBlockVersion() < constants.PoWIntegrityMinVersion {
 		return nil
 	}
 
@@ -135,7 +135,7 @@ func validateDAAScore(context *rpccontext.Context, block *externalapi.DomainBloc
 		return fmt.Errorf("failed to get virtual DAA score: %w", err)
 	}
 
-	daaWindowSize := uint64(context.Config.NetParams().DifficultyAdjustmentWindowSize[constants.BlockVersion-1])
+	daaWindowSize := uint64(context.Config.NetParams().DifficultyAdjustmentWindowSize[int(constants.GetBlockVersion())-1])
 	if virtualDAAScore > daaWindowSize && block.Header.DAAScore() < virtualDAAScore-daaWindowSize {
 		return fmt.Errorf("block DAA score %d is too far behind virtual's DAA score %d",
 			block.Header.DAAScore(), virtualDAAScore)

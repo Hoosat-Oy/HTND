@@ -181,7 +181,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 	}
 
 	if !newPruningPoint.Equal(currentPruningPoint) {
-		if constants.BlockVersion < 5 {
+		if constants.GetBlockVersion() < 5 {
 			currentPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningPoint, false)
 			if err != nil {
 				return err
@@ -440,7 +440,7 @@ func (pm *pruningManager) calculateBlocksToKeep(stagingArea *model.StagingArea,
 	blocksToKeep := make(map[externalapi.DomainHash]struct{})
 	for _, blockHash := range pruningPointAndItsAnticone {
 		blocksToKeep[*blockHash] = struct{}{}
-		blockWindow, err := pm.dagTraversalManager.BlockWindow(stagingArea, blockHash, pm.difficultyAdjustmentWindowSize[constants.BlockVersion-1])
+		blockWindow, err := pm.dagTraversalManager.BlockWindow(stagingArea, blockHash, pm.difficultyAdjustmentWindowSize[constants.GetBlockVersion()-1])
 		if err != nil {
 			return nil, err
 		}
@@ -1112,7 +1112,7 @@ func (pm *pruningManager) updatePruningPoint() error {
 		}
 	}
 	log.Infof("Deletion Depth: %d", pm.deletionDepth)
-	// if constants.BlockVersion >= 5 {
+	// if constants.GetBlockVersion() >= 5 {
 	// 	delete, deletionPoint := pm.CheckIfShouldDeletePastBlocks(stagingArea, pruningPoint)
 	// 	if delete {
 	// 		err = pm.deletePastBlocks(stagingArea, deletionPoint)
@@ -1340,10 +1340,10 @@ func (pm *pruningManager) isPruningPointInPruningDepth(stagingArea *model.Stagin
 }
 
 func (pm *pruningManager) TrustedBlockAssociatedGHOSTDAGDataBlockHashes(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	blockHashes := make([]*externalapi.DomainHash, 0, pm.k[constants.BlockVersion-1])
+	blockHashes := make([]*externalapi.DomainHash, 0, pm.k[constants.GetBlockVersion()-1])
 	current := blockHash
 	isTrustedData := false
-	for i := externalapi.KType(0); i <= pm.k[constants.BlockVersion-1]; i++ {
+	for i := externalapi.KType(0); i <= pm.k[constants.GetBlockVersion()-1]; i++ {
 		ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current, isTrustedData)
 		if database.IsNotFoundError(err) {
 			log.Infof("TrustedBlockAssociatedGHOSTDAGDataBlockHashes failed to retrieve with %s\n", current)

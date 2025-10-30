@@ -235,7 +235,7 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 			blockVersion += 1
 		}
 	}
-	constants.BlockVersion = blockVersion
+	constants.SetBlockVersion(blockVersion)
 
 	return blockheader.NewImmutableBlockHeader(
 		blockVersion,
@@ -320,7 +320,7 @@ func (bb *blockBuilder) calculateAcceptedIDMerkleRoot(acceptanceData externalapi
 		}
 	}
 	// In block version 4 and below, the accepted transactions are sorted by their IDs, in Block Version 5 and above, the order is not important
-	if constants.BlockVersion < 5 {
+	if constants.GetBlockVersion() < 5 {
 		sort.Slice(acceptedTransactions, func(i, j int) bool {
 			acceptedTransactionIID := consensushashing.TransactionID(acceptedTransactions[i])
 			acceptedTransactionJID := consensushashing.TransactionID(acceptedTransactions[j])

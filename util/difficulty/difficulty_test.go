@@ -23,7 +23,7 @@ func TestGetHashrateString(t *testing.T) {
 	}
 	testutils.ForAllNets(t, false, func(t *testing.T, consensusConfig *consensus.Config) {
 		targetGenesis := difficulty.CompactToBig(consensusConfig.GenesisBlock.Header.Bits())
-		hashrate := difficulty.GetHashrateString(targetGenesis, consensusConfig.TargetTimePerBlock[constants.BlockVersion-1])
+		hashrate := difficulty.GetHashrateString(targetGenesis, consensusConfig.TargetTimePerBlock[constants.GetBlockVersion()-1])
 		if hashrate != results[consensusConfig.Name] {
 			t.Errorf("Expected %s, found %s", results[consensusConfig.Name], hashrate)
 		}

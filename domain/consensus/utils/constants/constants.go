@@ -1,18 +1,33 @@
 package constants
 
-import "math"
+import (
+	"math"
+	"sync/atomic"
+)
 
 var (
-	// BlockVersion represents the current block
+	// BlockVersion represents the current block version. Use GetBlockVersion/SetBlockVersion
+	// to access it atomically.
 	// 1 Pyrinhash
 	// 2 HoohashV1
 	// 3 HoohashV1.0.1
 	// 4 HoohashV1.0.1 + Pow hash validation network wide
 	// 5 HoohashV1.1.0 + Pow hash validation network wide
-	BlockVersion           uint16 = 1
+	blockVersion uint32 = 1
+
 	PoWIntegrityMinVersion uint16 = 4
 	BanMinVersion          uint16 = 5
 )
+
+// GetBlockVersion returns the current block version (atomic load).
+func GetBlockVersion() uint16 {
+	return uint16(atomic.LoadUint32(&blockVersion))
+}
+
+// SetBlockVersion sets the current block version (atomic store).
+func SetBlockVersion(v uint16) {
+	atomic.StoreUint32(&blockVersion, uint32(v))
+}
 
 var BannedAddresses = []string{
 	"",

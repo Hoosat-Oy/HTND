@@ -195,7 +195,7 @@ func (mdm *mergeDepthManager) calculateMergeDepthRoot(stagingArea *model.Staging
 		return nil, err
 	}
 
-	if ghostdagData.BlueScore() < mdm.mergeDepth[constants.BlockVersion-1] {
+	if ghostdagData.BlueScore() < mdm.mergeDepth[constants.GetBlockVersion()-1] {
 		log.Debugf("%s blue score lower then merge depth - returning genesis as merge depth root", blockHash)
 		return mdm.genesisHash, nil
 	}
@@ -208,7 +208,7 @@ func (mdm *mergeDepthManager) calculateMergeDepthRoot(stagingArea *model.Staging
 	if err != nil {
 		return nil, err
 	}
-	if ghostdagData.BlueScore() < pruningPointGhostdagData.BlueScore()+mdm.mergeDepth[constants.BlockVersion-1] {
+	if ghostdagData.BlueScore() < pruningPointGhostdagData.BlueScore()+mdm.mergeDepth[constants.GetBlockVersion()-1] {
 		log.Debugf("%s blue score less than merge depth over pruning point - returning virtual genesis as merge depth root", blockHash)
 		return model.VirtualGenesisBlockHash, nil
 	}
@@ -243,7 +243,7 @@ func (mdm *mergeDepthManager) calculateMergeDepthRoot(stagingArea *model.Staging
 		current = pruningPoint
 	}
 
-	requiredBlueScore := ghostdagData.BlueScore() - mdm.mergeDepth[constants.BlockVersion-1]
+	requiredBlueScore := ghostdagData.BlueScore() - mdm.mergeDepth[constants.GetBlockVersion()-1]
 	log.Debugf("%s's merge depth root is the one having the highest blue score lower then %d", blockHash, requiredBlueScore)
 
 	var next *externalapi.DomainHash

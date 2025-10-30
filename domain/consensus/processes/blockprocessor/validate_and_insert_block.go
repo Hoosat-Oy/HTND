@@ -181,7 +181,7 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 	}
 
 	log.Debug(logger.NewLogClosure(func() string {
-		hashrate := difficulty.GetHashrateString(difficulty.CompactToBig(block.Header.Bits()), bp.targetTimePerBlock[constants.BlockVersion-1])
+		hashrate := difficulty.GetHashrateString(difficulty.CompactToBig(block.Header.Bits()), bp.targetTimePerBlock[constants.GetBlockVersion()-1])
 		return fmt.Sprintf("Block %s validated and inserted, network hashrate: %s", blockHash, hashrate)
 	}))
 

@@ -133,7 +133,7 @@ func (btb *blockTemplateBuilder) BuildBlockTemplate(
 			gasLimit:          gasLimit,
 		})
 	}
-	if constants.BlockVersion < 5 {
+	if constants.GetBlockVersion() < 5 {
 		sort.Slice(candidateTxs, func(i, j int) bool {
 			return subnetworks.Less(candidateTxs[i].SubnetworkID, candidateTxs[j].SubnetworkID)
 		})
@@ -206,7 +206,7 @@ func (btb *blockTemplateBuilder) ModifyBlockTemplate(newCoinbaseData *consensuse
 // The higher the number the more likely it is that the transaction will be
 // included in the block.
 func (btb *blockTemplateBuilder) calcTxValue(tx *consensusexternalapi.DomainTransaction) float64 {
-	massLimit := btb.policy.BlockMaxMass[constants.BlockVersion-1]
+	massLimit := btb.policy.BlockMaxMass[constants.GetBlockVersion()-1]
 
 	mass := tx.Mass
 	fee := tx.Fee

@@ -54,7 +54,7 @@ type Config struct {
 
 // DefaultConfig returns the default mempool configuration
 func DefaultConfig(dagParams *dagconfig.Params) *Config {
-	targetBlocksPerSecond := time.Second.Seconds() / dagParams.TargetTimePerBlock[constants.BlockVersion-1].Seconds()
+	targetBlocksPerSecond := time.Second.Seconds() / dagParams.TargetTimePerBlock[constants.GetBlockVersion()-1].Seconds()
 
 	return &Config{
 		MaximumTransactionCount:               defaultMaximumTransactionCount,
@@ -66,7 +66,7 @@ func DefaultConfig(dagParams *dagconfig.Params) *Config {
 		MaximumOrphanTransactionMass:          defaultMaximumOrphanTransactionMass,
 		MaximumOrphanTransactionCount:         defaultMaximumOrphanTransactionCount,
 		AcceptNonStandard:                     dagParams.RelayNonStdTxs,
-		MaximumMassPerBlock:                   dagParams.MaxBlockMass[constants.BlockVersion-1],
+		MaximumMassPerBlock:                   dagParams.MaxBlockMass[constants.GetBlockVersion()-1],
 		MinimumRelayTransactionFee:            defaultMinimumRelayTransactionFee,
 		MinimumStandardTransactionVersion:     defaultMinimumStandardTransactionVersion,
 		MaximumStandardTransactionVersion:     defaultMaximumStandardTransactionVersion,

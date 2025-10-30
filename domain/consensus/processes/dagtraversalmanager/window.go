@@ -8,7 +8,7 @@ import (
 )
 
 func (dtm *dagTraversalManager) DAABlockWindow(stagingArea *model.StagingArea, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	return dtm.BlockWindow(stagingArea, highHash, dtm.difficultyAdjustmentWindowSize[constants.BlockVersion-1])
+	return dtm.BlockWindow(stagingArea, highHash, dtm.difficultyAdjustmentWindowSize[constants.GetBlockVersion()-1])
 }
 
 // BlockWindow returns a blockWindow of the given size that contains the

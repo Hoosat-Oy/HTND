@@ -95,7 +95,7 @@ func TestGHOSTDAG(t *testing.T) {
 			if err != nil {
 				t.Fatalf("TestGHOSTDAG:failed decoding json: %v", err)
 			}
-			consensusConfig.K[constants.BlockVersion-1] = test.K
+			consensusConfig.K[constants.GetBlockVersion()-1] = test.K
 
 			genesisHash := *StringToDomainHash(test.GenesisID)
 
@@ -111,7 +111,7 @@ func TestGHOSTDAG(t *testing.T) {
 					blockID := StringToDomainHash(testBlockData.ID)
 					dagTopology.parentsMap[*blockID] = StringToDomainHashSlice(testBlockData.Parents)
 					blockHeadersStore.dagMap[*blockID] = blockheader.NewImmutableBlockHeader(
-						constants.BlockVersion,
+						constants.GetBlockVersion(),
 						[]externalapi.BlockLevelParents{StringToDomainHashSlice(testBlockData.Parents)},
 						nil,
 						nil,
