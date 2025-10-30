@@ -171,9 +171,12 @@ var (
 	// by subnetwork
 	ErrInvalidGas = newRuleError("ErrInvalidGas")
 
-	// ErrInvalidPayload transaction includes a payload in a subnetwork that doesn't allow
+	// ErrInvalidPayload transaction includes a payload in a data subnetwork that doesn't allow
 	// a Payload
 	ErrInvalidPayload = newRuleError("ErrInvalidPayload")
+
+	// ErrTooLargePayload transaction includes a payload in a data subnetwork which is too large payload.
+	ErrTooLargePayload = newRuleError("ErrTooLargePayload")
 
 	// ErrWrongSigOpCount transaction input specifies an incorrect SigOpCount
 	ErrWrongSigOpCount = newRuleError("ErrWrongSigOpCount")

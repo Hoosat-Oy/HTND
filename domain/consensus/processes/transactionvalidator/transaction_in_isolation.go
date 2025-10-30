@@ -294,6 +294,10 @@ func (v *transactionValidator) checkDataTransactionPayload(tx *externalapi.Domai
 		return nil
 	}
 
+	if len(tx.Payload) > 10_000 {
+		return errors.Wrapf(ruleerrors.ErrTooLargePayload, "data subnetwork transaction payload is too large!")
+	}
+
 	if isValid, err := IsValidJSONObject(tx.Payload); !isValid {
 		return errors.Wrapf(ruleerrors.ErrInvalidPayload, "data subnetwork transaction payload is not valid JSON: %v", err)
 	}
