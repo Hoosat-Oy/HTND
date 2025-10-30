@@ -82,15 +82,24 @@ func (m *Manager) handleIncomingMessages(router *router.Router, incomingRoute *r
 		}
 		handler, ok := handlers[request.Command()]
 		if !ok {
-			return err
+			log.Warnf("No handler for RPC message %s", request.Command())
+			// skip unknown message and continue processing further requests
+			continue
 		}
+
 		response, err := handler(m.context, router, request)
 		if err != nil {
-			return err
+			// Log the error but don't terminate the whole RPC goroutine for a single bad request.
+			log.Warnf("RPC handler for %s returned error: %v", request.Command(), err)
+			// Attempt to continue to next request instead of returning the error which would cause a panic upstream.
+			continue
 		}
+
 		err = outgoingRoute.Enqueue(response)
 		if err != nil {
-			return err
+			log.Warnf("Failed to enqueue RPC response for %s: %v", request.Command(), err)
+			// continue processing further requests
+			continue
 		}
 	}
 }

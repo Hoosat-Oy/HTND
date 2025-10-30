@@ -6,11 +6,10 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/transactionhelper"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/txscript"
+	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
 	"github.com/Hoosat-Oy/HTND/util"
 	"github.com/Hoosat-Oy/HTND/version"
-	"github.com/pkg/errors"
-	"github.com/syndtr/goleveldb/leveldb"
 )
 
 // HandleGetBlockTemplate handles the respectively named RPC command
@@ -33,14 +32,13 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 
 	templateBlock, isNearlySynced, err := context.Domain.MiningManager().GetBlockTemplate(coinbaseData)
 	if err != nil {
-		if errors.Is(err, leveldb.ErrNotFound) {
-			// One case of this has error has been reported to happen after around 62 million HTN blocks.
+		if database.IsNotFoundError(err) {
+			// One case of this error has been reported to happen after around 62 million HTN blocks.
 			errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
-			errorMessage.Error = appmessage.RPCErrorf("Could not build block template wih coinbasedata (%d), because missing block header. Try again.")
+			errorMessage.Error = appmessage.RPCErrorf("Could not build block template with given coinbase data: missing block header (transient). Try again.")
 			return errorMessage, nil
-		} else {
-			return nil, err
 		}
+		return nil, err
 	}
 
 	if uint64(len(templateBlock.Transactions[transactionhelper.CoinbaseTransactionIndex].Payload)) > context.Config.NetParams().MaxCoinbasePayloadLength {

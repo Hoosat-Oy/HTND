@@ -17,11 +17,11 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/hashset"
 	"github.com/Hoosat-Oy/HTND/infrastructure/config"
+	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/connmanager"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
-	"github.com/syndtr/goleveldb/leveldb"
 )
 
 // orphanResolutionRange is the maximum amount of blockLocator hashes
@@ -274,7 +274,7 @@ func (flow *handleRelayInvsFlow) start() error {
 				flow.banConnection(true)
 				continue
 			}
-			if errors.Is(err, leveldb.ErrNotFound) {
+			if database.IsNotFoundError(err) {
 				log.Infof("Ignoring block %s due to missing UTXO diff key", inv.Hash)
 				flow.banConnection(false)
 				continue
