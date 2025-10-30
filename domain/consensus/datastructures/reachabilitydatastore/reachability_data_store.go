@@ -7,7 +7,6 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/lrucache"
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
 	"github.com/Hoosat-Oy/HTND/util/staging"
-	"github.com/pkg/errors"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -73,8 +72,6 @@ func (rds *reachabilityDataStore) IsStaged(stagingArea *model.StagingArea) bool 
 	return rds.stagingShard(stagingArea).isStaged()
 }
 
-var errNotFound = errors.Wrap(database.ErrNotFound, "reachability data not found")
-
 // ReachabilityData returns the reachabilityData associated with the given blockHash
 func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (model.ReachabilityData, error) {
 	stagingShard := rds.stagingShard(stagingArea)
@@ -83,10 +80,8 @@ func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader, sta
 		return reachabilityData, nil
 	}
 
-	if reachabilityData, ok := rds.reachabilityDataCache.Get(blockHash); ok {
-		if reachabilityData == nil {
-			return nil, errNotFound
-		}
+	reachabilityData, ok := rds.reachabilityDataCache.Get(blockHash)
+	if ok && reachabilityData != nil {
 		return reachabilityData.(model.ReachabilityData), nil
 	}
 
@@ -98,12 +93,12 @@ func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader, sta
 		return nil, err
 	}
 
-	reachabilityData, err := rds.deserializeReachabilityData(reachabilityDataBytes)
+	deserializedReachabilityData, err := rds.deserializeReachabilityData(reachabilityDataBytes)
 	if err != nil {
 		return nil, err
 	}
 	rds.reachabilityDataCache.Add(blockHash, reachabilityData)
-	return reachabilityData, nil
+	return deserializedReachabilityData, nil
 }
 
 func (rds *reachabilityDataStore) HasReachabilityData(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
