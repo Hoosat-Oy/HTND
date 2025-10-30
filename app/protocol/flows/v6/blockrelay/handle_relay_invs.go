@@ -130,7 +130,16 @@ func (flow *handleRelayInvsFlow) start() error {
 		log.Debugf("Got relay inv for block %s", inv.Hash)
 		blockInfo, err := flow.Domain().Consensus().GetBlockInfo(inv.Hash)
 		if err != nil {
-			return err
+			// Treat database not-found as "block doesn't exist" rather than a fatal flow error.
+			// Returning database not-found here would bubble up and cause FlowContext.HandleError
+			// to panic (since it's not a protocol error). It's safer to proceed as if the
+			// block does not exist and continue processing.
+			if database.IsNotFoundError(err) {
+				log.Infof("GetBlockInfo returned not-found for %s; treating as non-existing block", inv.Hash)
+				continue
+			} else {
+				return err
+			}
 		}
 		if blockInfo.Exists && blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
 			if blockInfo.BlockStatus == externalapi.StatusInvalid {
