@@ -5,6 +5,8 @@
 package txscript
 
 import (
+	"sync"
+
 	"github.com/kaspanet/go-secp256k1"
 )
 
@@ -30,6 +32,7 @@ type sigCacheEntryECDSA struct {
 // optimization which speeds up the validation of transactions within a block,
 // if they've already been seen and verified within the mempool.
 type SigCacheECDSA struct {
+	lock       *sync.RWMutex
 	validSigs  map[secp256k1.Hash]sigCacheEntryECDSA
 	maxEntries uint
 }
@@ -41,6 +44,7 @@ type SigCacheECDSA struct {
 // cache to exceed the max.
 func NewSigCacheECDSA(maxEntries uint) *SigCacheECDSA {
 	return &SigCacheECDSA{
+		lock:       &sync.RWMutex{},
 		validSigs:  make(map[secp256k1.Hash]sigCacheEntryECDSA, maxEntries),
 		maxEntries: maxEntries,
 	}
@@ -52,6 +56,8 @@ func NewSigCacheECDSA(maxEntries uint) *SigCacheECDSA {
 // NOTE: This function is safe for concurrent access. Readers won't be blocked
 // unless there exists a writer, adding an entry to the SigCache.
 func (s *SigCacheECDSA) Exists(sigHash secp256k1.Hash, sig *secp256k1.ECDSASignature, pubKey *secp256k1.ECDSAPublicKey) bool {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
 	entry, ok := s.validSigs[sigHash]
 
 	return ok && entry.pubKey.IsEqual(pubKey) && entry.sig.IsEqual(sig)
@@ -65,6 +71,8 @@ func (s *SigCacheECDSA) Exists(sigHash secp256k1.Hash, sig *secp256k1.ECDSASigna
 // NOTE: This function is safe for concurrent access. Writers will block
 // simultaneous readers until function execution has concluded.
 func (s *SigCacheECDSA) Add(sigHash secp256k1.Hash, sig *secp256k1.ECDSASignature, pubKey *secp256k1.ECDSAPublicKey) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	if s.maxEntries == 0 {
 		return
 	}
