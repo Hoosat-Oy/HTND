@@ -1,10 +1,15 @@
 package lrucacheuint64tohash
 
-import "github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
+import (
+	"sync"
+
+	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
+)
 
 // LRUCache is a least-recently-used cache from
 // uint64 to DomainHash
 type LRUCache struct {
+	lock     *sync.RWMutex
 	cache    map[uint64]*externalapi.DomainHash
 	capacity int
 }
@@ -18,6 +23,7 @@ func New(capacity int, preallocate bool) *LRUCache {
 		cache = make(map[uint64]*externalapi.DomainHash)
 	}
 	return &LRUCache{
+		lock:     &sync.RWMutex{},
 		cache:    cache,
 		capacity: capacity,
 	}
@@ -25,6 +31,8 @@ func New(capacity int, preallocate bool) *LRUCache {
 
 // Add adds an entry to the LRUCache
 func (c *LRUCache) Add(key uint64, value *externalapi.DomainHash) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
 	c.cache[key] = value
 
 	if len(c.cache) > c.capacity {
@@ -34,6 +42,8 @@ func (c *LRUCache) Add(key uint64, value *externalapi.DomainHash) {
 
 // Get returns the entry for the given key, or (nil, false) otherwise
 func (c *LRUCache) Get(key uint64) (*externalapi.DomainHash, bool) {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
 	value, ok := c.cache[key]
 	if !ok {
 		return nil, false
@@ -43,6 +53,8 @@ func (c *LRUCache) Get(key uint64) (*externalapi.DomainHash, bool) {
 
 // Has returns whether the LRUCache contains the given key
 func (c *LRUCache) Has(key uint64) bool {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
 	_, ok := c.cache[key]
 	return ok
 }
@@ -50,6 +62,8 @@ func (c *LRUCache) Has(key uint64) bool {
 // Remove removes the entry for the the given key. Does nothing if
 // the entry does not exist
 func (c *LRUCache) Remove(key uint64) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
 	delete(c.cache, key)
 }
 
@@ -59,5 +73,5 @@ func (c *LRUCache) evictRandom() {
 		keyToEvict = key
 		break
 	}
-	c.Remove(keyToEvict)
+	delete(c.cache, keyToEvict)
 }
