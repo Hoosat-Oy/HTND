@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync/atomic"
 
+	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
 
 	"github.com/Hoosat-Oy/HTND/app/protocol/protocolerrors"
@@ -24,6 +25,15 @@ var (
 func (*FlowContext) HandleError(err error, flowName string, isStopping *uint32, errChan chan<- error) {
 	isErrRouteClosed := errors.Is(err, router.ErrRouteClosed)
 	if !isErrRouteClosed {
+		// Treat database not-found errors as recoverable/non-fatal for flows.
+		// Returning such an error from a flow would otherwise cause HandleError to panic
+		// because it's not a ProtocolError. In practice missing DB entries can appear
+		// due to races / partial state while processing P2P messages; handle them
+		// gracefully by logging and NOT escalating them to the protocol manager.
+		if database.IsNotFoundError(err) {
+			log.Infof("Non-fatal DB not found in %s: %v", flowName, err)
+			return
+		}
 		if protocolErr := (protocolerrors.ProtocolError{}); !errors.As(err, &protocolErr) {
 			panic(err)
 		}
@@ -45,5 +55,5 @@ func (*FlowContext) HandleError(err error, flowName string, isStopping *uint32, 
 
 // IsRecoverableError returns whether the error is recoverable
 func (*FlowContext) IsRecoverableError(err error) bool {
-	return err == nil || errors.Is(err, router.ErrRouteClosed) || errors.As(err, &protocolerrors.ProtocolError{})
+	return err == nil || errors.Is(err, router.ErrRouteClosed) || errors.As(err, &protocolerrors.ProtocolError{}) || database.IsNotFoundError(err)
 }

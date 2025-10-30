@@ -73,7 +73,8 @@ func (uds *utxoDiffStore) UTXODiff(dbContext model.DBReader, stagingArea *model.
 
 	utxoDiffBytes, err := dbContext.Get(uds.utxoDiffHashAsKey(blockHash))
 	if database.IsNotFoundError(err) {
-		log.Infof("UTXODiff failed to retrieve with %s, %s\n", blockHash, uds.utxoDiffHashAsKey(blockHash))
+		// Print the hash and the raw DB key bytes in hex for easier debugging
+		log.Infof("UTXODiff failed to retrieve with %s, key=%x\n", blockHash, uds.utxoDiffHashAsKey(blockHash).Bytes())
 		return nil, err
 	}
 	if err != nil {
@@ -102,7 +103,8 @@ func (uds *utxoDiffStore) UTXODiffChild(dbContext model.DBReader, stagingArea *m
 
 	utxoDiffChildBytes, err := dbContext.Get(uds.utxoDiffChildHashAsKey(blockHash))
 	if database.IsNotFoundError(err) {
-		log.Infof("UTXODiffChild failed to retrieve with %s, %s\n", blockHash, uds.utxoDiffHashAsKey(blockHash))
+		// Previously this logged the wrong key; show the child key bytes in hex
+		log.Infof("UTXODiffChild failed to retrieve with %s, key=%x\n", blockHash, uds.utxoDiffChildHashAsKey(blockHash).Bytes())
 		return nil, err
 	}
 	if err != nil {
