@@ -57,7 +57,7 @@ func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.Do
 	}
 
 	// TODO: fill it with the node's subnetwork id.
-	err = v.checkTransactionSubnetwork(tx, nil)
+	err = v.checkTransactionSubnetwork(tx, nil, povDAAScore)
 	if err != nil {
 		return err
 	}
@@ -306,11 +306,15 @@ func (v *transactionValidator) checkDataTransactionPayload(tx *externalapi.Domai
 }
 
 func (v *transactionValidator) checkTransactionSubnetwork(tx *externalapi.DomainTransaction,
-	localNodeSubnetworkID *externalapi.DomainSubnetworkID) error {
+	localNodeSubnetworkID *externalapi.DomainSubnetworkID, DAAScore uint64) error {
 	if !v.enableNonNativeSubnetworks &&
 		tx.SubnetworkID != subnetworks.SubnetworkIDNative &&
 		tx.SubnetworkID != subnetworks.SubnetworkIDCoinbase &&
 		tx.SubnetworkID != subnetworks.SubnetworkIDData {
+		return errors.Wrapf(ruleerrors.ErrSubnetworksDisabled, "transaction has non native or coinbase "+
+			"subnetwork ID")
+	}
+	if DAAScore <= (88_130_846+12_960_000) && tx.SubnetworkID == subnetworks.SubnetworkIDData {
 		return errors.Wrapf(ruleerrors.ErrSubnetworksDisabled, "transaction has non native or coinbase "+
 			"subnetwork ID")
 	}
