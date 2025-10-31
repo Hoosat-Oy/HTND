@@ -46,33 +46,33 @@ type miningManager struct {
 
 // GetBlockTemplate obtains a block template for a miner to consume
 func (mm *miningManager) GetBlockTemplate(coinbaseData *externalapi.DomainCoinbaseData) (block *externalapi.DomainBlock, isNearlySynced bool, err error) {
-	// mm.cacheLock.Lock()
-	// immutableCachedTemplate := mm.getImmutableCachedTemplate()
-	// // We first try and use a cached template
-	// if immutableCachedTemplate != nil {
-	// 	mm.cacheLock.Unlock()
-	// 	if immutableCachedTemplate.CoinbaseData.Equal(coinbaseData) {
-	// 		return immutableCachedTemplate.Block, immutableCachedTemplate.IsNearlySynced, nil
-	// 	}
-	// 	// Coinbase data is new -- make the minimum changes required
-	// 	// Note we first clone the block template since it is modified by the call
-	// 	modifiedBlockTemplate, err := mm.blockTemplateBuilder.ModifyBlockTemplate(coinbaseData, immutableCachedTemplate.Clone())
-	// 	if err != nil {
-	// 		return nil, false, err
-	// 	}
+	mm.cacheLock.Lock()
+	immutableCachedTemplate := mm.getImmutableCachedTemplate()
+	// We first try and use a cached template
+	if immutableCachedTemplate != nil {
+		mm.cacheLock.Unlock()
+		if immutableCachedTemplate.CoinbaseData.Equal(coinbaseData) {
+			return immutableCachedTemplate.Block, immutableCachedTemplate.IsNearlySynced, nil
+		}
+		// Coinbase data is new -- make the minimum changes required
+		// Note we first clone the block template since it is modified by the call
+		modifiedBlockTemplate, err := mm.blockTemplateBuilder.ModifyBlockTemplate(coinbaseData, immutableCachedTemplate.Clone())
+		if err != nil {
+			return nil, false, err
+		}
 
-	// 	// No point in updating cache since we have no reason to believe this coinbase will be used more
-	// 	// than the previous one, and we want to maintain the original template caching time
-	// 	return modifiedBlockTemplate.Block, modifiedBlockTemplate.IsNearlySynced, nil
-	// }
-	// defer mm.cacheLock.Unlock()
+		// No point in updating cache since we have no reason to believe this coinbase will be used more
+		// than the previous one, and we want to maintain the original template caching time
+		return modifiedBlockTemplate.Block, modifiedBlockTemplate.IsNearlySynced, nil
+	}
+	defer mm.cacheLock.Unlock()
 	// No relevant cache, build a template
 	blockTemplate, err := mm.blockTemplateBuilder.BuildBlockTemplate(coinbaseData)
 	if err != nil {
 		return nil, false, err
 	}
 	// Cache the built template
-	// mm.setImmutableCachedTemplate(blockTemplate)
+	mm.setImmutableCachedTemplate(blockTemplate)
 	return blockTemplate.Block, blockTemplate.IsNearlySynced, nil
 }
 
