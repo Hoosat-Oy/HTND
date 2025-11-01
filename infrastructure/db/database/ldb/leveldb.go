@@ -35,6 +35,8 @@ func NewLevelDB(path string, cacheSizeMiB int) (*LevelDB, error) {
 		}
 		log.Warnf("LevelDB recovered from corruption for path %s",
 			path)
+		// Reset original open error after successful recovery so we don't report it below.
+		err = nil
 	}
 
 	// If the database cannot be opened for any other
