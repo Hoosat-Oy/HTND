@@ -2,13 +2,12 @@ package transactionvalidator
 
 import (
 	"bytes"
-	"encoding/ascii85"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"image"
-	"regexp"
+	"math"
 	"strings"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
@@ -197,8 +196,17 @@ func IsValidJSONObject(data []byte) (bool, error) {
 		return false, fmt.Errorf("empty input data")
 	}
 
+	// Quick pre-validation: check for suspicious binary signatures in the raw data
+	if containsSuspiciousBinarySignatures(data) {
+		return false, fmt.Errorf("contains suspicious binary file signatures")
+	}
+
+	// Parse JSON with streaming decoder for better performance on large inputs
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.UseNumber() // Preserve number precision and avoid float64 conversion
+
 	var obj map[string]interface{}
-	err := json.Unmarshal(data, &obj)
+	err := decoder.Decode(&obj)
 	if err != nil {
 		return false, fmt.Errorf("invalid JSON: %v", err)
 	}
@@ -207,82 +215,250 @@ func IsValidJSONObject(data []byte) (bool, error) {
 		return false, fmt.Errorf("input is not a JSON object")
 	}
 
-	if containsBinaryOrImage(obj) {
-		return false, fmt.Errorf("contains binary or image data")
+	// Optimized binary/file detection with early termination
+	if hasEncodedFileContent(obj, 0) {
+		return false, fmt.Errorf("contains encoded file or binary data")
 	}
 
 	return true, nil
 }
 
-func containsBinaryOrImage(data interface{}) bool {
-	switch v := data.(type) {
-	case map[string]interface{}:
-		for _, val := range v {
-			if containsBinaryOrImage(val) {
-				return true
-			}
-		}
-	case []interface{}:
-		for _, val := range v {
-			if containsBinaryOrImage(val) {
-				return true
-			}
-		}
-	case string:
-		if decoded, err := base64.StdEncoding.DecodeString(v); err == nil {
-			if isImage(decoded) || len(decoded) > 0 {
-				return true
-			}
-		}
-		if decoded, err := base64.URLEncoding.DecodeString(v); err == nil {
-			if isImage(decoded) || len(decoded) > 0 {
-				return true
-			}
-		}
+// containsSuspiciousBinarySignatures checks for common file signatures in raw data
+func containsSuspiciousBinarySignatures(data []byte) bool {
+	if len(data) < 4 {
+		return false
+	}
 
-		if isHexString(v) {
-			if decoded, err := hex.DecodeString(strings.ToLower(v)); err == nil {
-				if isImage(decoded) || len(decoded) > 0 {
-					return true
-				}
-			}
-		}
+	// Common file signatures to detect
+	signatures := [][]byte{
+		{0xFF, 0xD8, 0xFF},       // JPEG
+		{0x89, 0x50, 0x4E, 0x47}, // PNG
+		{0x47, 0x49, 0x46, 0x38}, // GIF
+		{0x42, 0x4D},             // BMP
+		{0x50, 0x4B, 0x03, 0x04}, // ZIP/JAR/APK
+		{0x50, 0x4B, 0x05, 0x06}, // ZIP (empty)
+		{0x50, 0x4B, 0x07, 0x08}, // ZIP (spanned)
+		{0x52, 0x61, 0x72, 0x21}, // RAR
+		{0x7F, 0x45, 0x4C, 0x46}, // ELF executable
+		{0x4D, 0x5A},             // PE executable
+		{0xCA, 0xFE, 0xBA, 0xBE}, // Mach-O (32-bit)
+		{0xFE, 0xED, 0xFA, 0xCE}, // Mach-O (32-bit reverse)
+		{0xFE, 0xED, 0xFA, 0xCF}, // Mach-O (64-bit reverse)
+		{0xCF, 0xFA, 0xED, 0xFE}, // Mach-O (64-bit)
+		{0x25, 0x50, 0x44, 0x46}, // PDF
+		{0xD0, 0xCF, 0x11, 0xE0}, // MS Office
+		{0x4F, 0x67, 0x67, 0x53}, // Ogg
+		{0x49, 0x44, 0x33},       // MP3
+		{0xFF, 0xFB},             // MP3
+		{0x66, 0x74, 0x79, 0x70}, // MP4/MOV
+		{0x00, 0x00, 0x01, 0x00}, // ICO
+		{0x52, 0x49, 0x46, 0x46}, // RIFF (WAV/AVI)
+	}
 
-		if isAscii85String(v) {
-			decoded := make([]byte, len(v)*4/5+4)
-			n, _, err := ascii85.Decode(decoded, []byte(v), true)
-			if err == nil {
-				decoded = decoded[:n]
-				if isImage(decoded) || len(decoded) > 0 {
-					return true
-				}
-			}
+	for _, sig := range signatures {
+		if len(data) >= len(sig) && bytes.HasPrefix(data, sig) {
+			return true
 		}
-	case []byte: // Direct byte slices are considered binary
-		return true
 	}
 	return false
 }
 
-func isImage(data []byte) bool {
+// hasEncodedFileContent recursively checks JSON object for encoded binary content with depth limit
+func hasEncodedFileContent(data interface{}, depth int) bool {
+	// Prevent deep recursion that could cause stack overflow
+	const maxDepth = 10
+	if depth > maxDepth {
+		return true // Suspicious deeply nested structure
+	}
+
+	switch v := data.(type) {
+	case map[string]interface{}:
+		// Limit the number of keys we check for performance
+		const maxKeys = 100
+		keyCount := 0
+		for key, val := range v {
+			keyCount++
+			if keyCount > maxKeys {
+				return true // Too many keys, suspicious
+			}
+
+			// Check for suspicious key names
+			if isSuspiciousKey(key) {
+				return true
+			}
+
+			if hasEncodedFileContent(val, depth+1) {
+				return true
+			}
+		}
+	case []interface{}:
+		// Limit array size for performance
+		const maxArraySize = 100
+		if len(v) > maxArraySize {
+			return true // Suspicious large array
+		}
+
+		for _, val := range v {
+			if hasEncodedFileContent(val, depth+1) {
+				return true
+			}
+		}
+	case string:
+		return isEncodedBinaryString(v)
+	case []byte:
+		return true // Direct byte slices are binary
+	}
+	return false
+}
+
+// isSuspiciousKey checks for key names that commonly indicate file content
+func isSuspiciousKey(key string) bool {
+	suspiciousKeys := []string{
+		"image", "img", "photo", "picture", "file", "attachment", "binary",
+		"data", "content", "payload", "buffer", "blob", "executable", "exe",
+		"zip", "archive", "compressed", "encoded", "base64", "hex",
+	}
+
+	lowerKey := strings.ToLower(key)
+	for _, suspicious := range suspiciousKeys {
+		if strings.Contains(lowerKey, suspicious) {
+			return true
+		}
+	}
+	return false
+}
+
+// isEncodedBinaryString optimized check for encoded binary content
+func isEncodedBinaryString(s string) bool {
+	// Quick length checks for performance
+	if len(s) == 0 {
+		return false
+	}
+
+	// Strings over a certain size are more likely to be encoded files
+	const suspiciousLength = 64
+	if len(s) > suspiciousLength {
+		// Check entropy - high entropy suggests encoded binary
+		if hasHighEntropy(s) {
+			return true
+		}
+	}
+
+	// Fast base64 detection
+	if isLikelyBase64(s) {
+		decoded, err := base64.StdEncoding.DecodeString(s)
+		if err == nil && len(decoded) > suspiciousLength { // Only check larger decoded content
+			if hasFileSignature(decoded) || isLikelyImage(decoded) {
+				return true
+			}
+		}
+
+		// Try URL encoding
+		decoded, err = base64.URLEncoding.DecodeString(s)
+		if err == nil && len(decoded) > suspiciousLength {
+			if hasFileSignature(decoded) || isLikelyImage(decoded) {
+				return true
+			}
+		}
+	}
+
+	// Optimized hex string check
+	if isLikelyHexString(s) && len(s) > suspiciousLength { // Only check longer hex strings
+		decoded, err := hex.DecodeString(strings.ToLower(s))
+		if err == nil {
+			if hasFileSignature(decoded) || isLikelyImage(decoded) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// hasHighEntropy checks if string has high entropy (indicating encoded data)
+func hasHighEntropy(s string) bool {
+	if len(s) < 16 {
+		return false
+	}
+
+	// Count character frequency
+	freq := make(map[rune]int)
+	for _, r := range s {
+		freq[r]++
+	}
+
+	// Calculate Shannon entropy
+	entropy := 0.0
+	length := float64(len(s))
+	for _, count := range freq {
+		p := float64(count) / length
+		if p > 0 {
+			entropy -= p * math.Log2(p)
+		}
+	}
+
+	// High entropy threshold (close to random) - adjusted for more realistic detection
+	return entropy > 2.5
+}
+
+// isLikelyBase64 fast check for base64 patterns
+func isLikelyBase64(s string) bool {
+	if len(s) < 4 || len(s)%4 != 0 {
+		return false
+	}
+
+	// Check for base64 character set and padding
+	validChars := 0
+	for _, r := range s {
+		if (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') ||
+			(r >= '0' && r <= '9') || r == '+' || r == '/' || r == '=' {
+			validChars++
+		}
+	}
+
+	// Must be mostly valid base64 chars
+	return float64(validChars)/float64(len(s)) > 0.95
+}
+
+// hasFileSignature checks if data starts with known file signatures
+func hasFileSignature(data []byte) bool {
+	return containsSuspiciousBinarySignatures(data)
+}
+
+// isLikelyImage optimized image detection
+func isLikelyImage(data []byte) bool {
+	if len(data) < 10 {
+		return false
+	}
+
+	// Quick signature checks before expensive image.Decode
+	imageSignatures := [][]byte{
+		{0xFF, 0xD8, 0xFF},       // JPEG
+		{0x89, 0x50, 0x4E, 0x47}, // PNG
+		{0x47, 0x49, 0x46, 0x38}, // GIF
+		{0x42, 0x4D},             // BMP
+	}
+
+	for _, sig := range imageSignatures {
+		if bytes.HasPrefix(data, sig) {
+			return true
+		}
+	}
+
+	// Only do expensive decode for potential images
 	_, _, err := image.Decode(bytes.NewReader(data))
 	return err == nil
 }
 
-func isHexString(s string) bool {
-	if len(s)%2 != 0 {
+// isLikelyHexString optimized hex string detection
+func isLikelyHexString(s string) bool {
+	if len(s) < 8 || len(s)%2 != 0 {
 		return false
 	}
-	matched, _ := regexp.MatchString(`^[0-9a-fA-F]+$`, s)
-	return matched
-}
 
-func isAscii85String(s string) bool {
-	if len(s) < 5 {
-		return false
-	}
+	// Quick character set check
 	for _, r := range s {
-		if r < '!' || r > 'u' {
+		if !((r >= '0' && r <= '9') || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F')) {
 			return false
 		}
 	}
