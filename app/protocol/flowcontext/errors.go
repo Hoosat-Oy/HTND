@@ -34,7 +34,15 @@ func (*FlowContext) HandleError(err error, flowName string, isStopping *uint32, 
 			log.Infof("Non-fatal DB not found in %s: %v", flowName, err)
 			return
 		}
-		if protocolErr := (protocolerrors.ProtocolError{}); !errors.As(err, &protocolErr) {
+
+		// Check if this is a wire-format parsing error and treat it as a protocol error
+		// instead of panicking. This allows graceful disconnection from peers sending
+		// malformed data.
+		if isWireFormatError(err) {
+			log.Errorf("Wire format error from peer in %s, disconnecting: %v", flowName, err)
+			// Convert to a ProtocolError that should ban the peer
+			err = protocolerrors.Errorf(true, "invalid wire-format data: %s", err.Error())
+		} else if protocolErr := (protocolerrors.ProtocolError{}); !errors.As(err, &protocolErr) {
 			panic(err)
 		}
 		if errors.Is(err, ErrPingTimeout) {
@@ -53,7 +61,19 @@ func (*FlowContext) HandleError(err error, flowName string, isStopping *uint32, 
 	}
 }
 
+// isWireFormatError checks if an error is related to wire format parsing
+func isWireFormatError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := err.Error()
+	return strings.Contains(errStr, "proto: cannot parse invalid wire-format data") ||
+		strings.Contains(errStr, "invalid wire-format") ||
+		strings.Contains(errStr, "proto: ") && strings.Contains(errStr, "wire-format") ||
+		strings.Contains(errStr, "protobuf") && strings.Contains(errStr, "parse")
+}
+
 // IsRecoverableError returns whether the error is recoverable
 func (*FlowContext) IsRecoverableError(err error) bool {
-	return err == nil || errors.Is(err, router.ErrRouteClosed) || errors.As(err, &protocolerrors.ProtocolError{}) || database.IsNotFoundError(err)
+	return err == nil || errors.Is(err, router.ErrRouteClosed) || errors.As(err, &protocolerrors.ProtocolError{}) || database.IsNotFoundError(err) || isWireFormatError(err)
 }
