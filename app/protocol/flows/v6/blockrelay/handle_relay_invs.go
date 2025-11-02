@@ -264,34 +264,34 @@ func (flow *handleRelayInvsFlow) start() error {
 		missingParents, err := flow.processBlock(block, false)
 		if err != nil {
 			if errors.Is(err, ruleerrors.ErrPrunedBlock) {
-				log.Infof("Ignoring pruned block %s", inv.Hash)
+				log.Infof("Ignoring pruned block %s from %s", inv.Hash, flow.netConnection.Address())
 				continue
 			}
 			if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-				log.Infof("Ignoring duplicate block %s", inv.Hash)
+				log.Infof("Ignoring duplicate block %s from %s", inv.Hash, flow.netConnection.Address())
 				continue
 			}
 			if errors.Is(err, ruleerrors.ErrWrongBlockVersion) {
-				log.Infof("Ignoring block %s with invalid version", inv.Hash)
+				log.Infof("Ignoring block %s with invalid version from %s", inv.Hash, flow.netConnection.Address())
 				continue
 			}
 			if errors.Is(err, ruleerrors.ErrCoinbaseTooManyOutputs) {
-				log.Infof("Ignoring block %s with with too many coinbase outputs and banning instantly.", inv.Hash)
+				log.Infof("Ignoring block %s with with too many coinbase outputs and banning instantly. From %s", inv.Hash, flow.netConnection.Address())
 				flow.banConnection(true)
 				continue
 			}
 			if errors.Is(err, ruleerrors.ErrWrongCoinbaseSubsidy) {
-				log.Infof("Ignoring block %s with with wrong coinbase subsidy and banning instantly.", inv.Hash)
+				log.Infof("Ignoring block %s with with wrong coinbase subsidy and banning instantly. From %s", inv.Hash, flow.netConnection.Address())
 				flow.banConnection(true)
 				continue
 			}
 			if errors.Is(err, ruleerrors.ErrInvalidAncestorBlock) {
-				log.Infof("Invalid ancestor block %s", inv.Hash)
+				log.Infof("Invalid ancestor block %s from %s", inv.Hash, flow.netConnection.Address())
 				flow.banConnection(true)
 				continue
 			}
 			if database.IsNotFoundError(err) {
-				log.Infof("Ignoring block %s due to missing UTXO diff key", inv.Hash)
+				log.Infof("Ignoring block %s due to missing UTXO diff key. From %s", inv.Hash, flow.netConnection.Address())
 				flow.banConnection(false)
 				continue
 			}
