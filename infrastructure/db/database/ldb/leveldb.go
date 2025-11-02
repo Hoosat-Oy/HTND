@@ -18,8 +18,10 @@ type LevelDB struct {
 func NewLevelDB(path string, cacheSizeMiB int) (*LevelDB, error) {
 	// Open leveldb. If it doesn't exist, create it.
 	options := Options()
-	options.BlockCacheCapacity = cacheSizeMiB * opt.MiB
-	options.WriteBuffer = (cacheSizeMiB * opt.MiB) / 2
+	if cacheSizeMiB > 0 {
+		options.BlockCacheCapacity = cacheSizeMiB * opt.MiB
+		options.WriteBuffer = (cacheSizeMiB * opt.MiB) / 2
+	}
 	ldb, err := leveldb.OpenFile(path, &options)
 
 	// If the database is corrupted, attempt to recover.
