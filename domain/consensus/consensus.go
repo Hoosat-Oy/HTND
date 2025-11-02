@@ -372,6 +372,19 @@ func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.Do
 	return block, true, nil
 }
 
+func (s *consensus) HasBlock(blockHash *externalapi.DomainHash) (bool, error) {
+	stagingArea := model.NewStagingArea()
+
+	exists, err := s.blockStore.HasBlock(s.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		if errors.Is(err, database.ErrNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+	return exists, nil
+}
+
 func (s *consensus) GetBlockEvenIfHeaderOnly(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
 	stagingArea := model.NewStagingArea()
 

@@ -128,6 +128,14 @@ func (flow *handleRelayInvsFlow) start() error {
 		}
 
 		log.Debugf("Got relay inv for block %s", inv.Hash)
+		exists, err := flow.Domain().Consensus().HasBlock(inv.Hash)
+		if err != nil {
+			return err
+		}
+		if exists {
+			log.Debug("Don't process, Ignoring duplicate block %s, from %s", inv.Hash, flow.netConnection.Address())
+			continue
+		}
 		blockInfo, err := flow.Domain().Consensus().GetBlockInfo(inv.Hash)
 		if err != nil {
 			// Treat database not-found as "block doesn't exist" rather than a fatal flow error.

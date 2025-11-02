@@ -12,7 +12,7 @@ type Consensus interface {
 	BuildPruningPointProof() (*PruningPointProof, error)
 	ValidatePruningPointProof(pruningPointProof *PruningPointProof) error
 	ApplyPruningPointProof(pruningPointProof *PruningPointProof) error
-
+	HasBlock(blockHash *DomainHash) (bool, error)
 	GetBlock(blockHash *DomainHash) (*DomainBlock, bool, error)
 	GetBlockEvenIfHeaderOnly(blockHash *DomainHash) (*DomainBlock, error)
 	GetBlockHeader(blockHash *DomainHash) (BlockHeader, error)
