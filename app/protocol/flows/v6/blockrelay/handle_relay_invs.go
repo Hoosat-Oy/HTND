@@ -602,10 +602,10 @@ func (flow *handleRelayInvsFlow) AddOrphanRootsToQueue(orphan *externalapi.Domai
 	invMessages := make([]invRelayBlock, 0, len(orphanRoots))
 	for _, root := range orphanRoots {
 		if flow.isOrphanRootInQueue(root) {
-			log.Infof("Skip adding duplicate missing ancestor %s to the invs queue", root)
+			log.Debugf("Skip adding duplicate missing ancestor %s to the invs queue", root)
 			continue
 		}
-		log.Infof("Adding missing ancestor %s to the invs queue", root)
+		log.Debugf("Adding missing ancestor %s to the invs queue", root)
 		invMessages = append(invMessages, invRelayBlock{Hash: root, IsOrphanRoot: true})
 	}
 
