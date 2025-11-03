@@ -276,7 +276,7 @@ func (flow *handleRelayInvsFlow) start() error {
 				continue
 			}
 			if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-				log.Infof("Ignoring duplicate block %s from %s", inv.Hash, flow.netConnection.Address())
+				log.Debugf("Ignoring duplicate block %s from %s", inv.Hash, flow.netConnection.Address())
 				continue
 			}
 			if errors.Is(err, ruleerrors.ErrWrongBlockVersion) {
