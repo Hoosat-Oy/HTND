@@ -435,7 +435,7 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 
 	blockStatus, err := s.blockStatusStore.Get(s.databaseContext, stagingArea, blockHash)
 	if database.IsNotFoundError(err) {
-		log.Infof("GetBlockInfo failed to retrieve with %s\n", blockHash)
+		log.Debugf("GetBlockInfo failed to retrieve with %s\n", blockHash)
 		return nil, err
 	}
 	if err != nil {
@@ -450,7 +450,7 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 
 	ghostdagData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, blockHash, false)
 	if database.IsNotFoundError(err) {
-		log.Infof("GetBlockInfo failed to retrieve with %s\n", blockHash)
+		log.Debugf("GetBlockInfo failed to retrieve with %s\n", blockHash)
 		return nil, err
 	}
 	if err != nil {
