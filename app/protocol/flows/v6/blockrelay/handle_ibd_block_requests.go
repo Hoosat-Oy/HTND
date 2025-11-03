@@ -42,7 +42,7 @@ func HandleIBDBlockRequests(context HandleIBDBlockRequestsContext, incomingRoute
 
 				// TODO (Partial nodes): Convert block to partial block if needed
 
-				log.Infof("Relaying block %s through IBD to peer %s", hash, peer.Address())
+				log.Debugf("Relaying block %s through IBD to peer %s", hash, peer.Address())
 				blockMessage := appmessage.DomainBlockToMsgBlock(block)
 				ibdBlockMessage := appmessage.NewMsgIBDBlock(blockMessage)
 				err = outgoingRoute.Enqueue(ibdBlockMessage)
