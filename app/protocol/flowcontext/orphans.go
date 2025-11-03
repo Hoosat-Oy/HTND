@@ -150,7 +150,7 @@ func (f *FlowContext) unorphanBlock(orphanHash externalapi.DomainHash) (bool, er
 		return false, err
 	}
 
-	log.Infof("Unorphaned block %s", orphanHash)
+	log.Debugf("Unorphaned block %s", orphanHash)
 	return true, nil
 }
 
