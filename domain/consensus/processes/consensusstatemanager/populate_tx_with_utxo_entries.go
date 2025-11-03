@@ -1,6 +1,7 @@
 package consensusstatemanager
 
 import (
+	"runtime"
 	"sync"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
@@ -23,17 +24,27 @@ func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualO
 	var (
 		missingOutpoints []*externalapi.DomainOutpoint
 		missingMu        sync.Mutex // Protects missingOutpoints
-		outpointsMu      sync.Mutex // Protects transaction.Inputs
 		errMu            sync.Mutex // Protects error collection
 		firstErr         error      // Stores the first error encountered
 		wg               sync.WaitGroup
 	)
 
-	// Process each input in a separate goroutine
+	// Use a bounded worker pool to process inputs concurrently without overwhelming the DB.
+	parallelism := runtime.NumCPU()
+	if parallelism < 1 {
+		parallelism = 1
+	}
+	sem := make(chan struct{}, parallelism)
+
+	// Process each input in a separate goroutine (bounded by sem)
 	for i := 0; i < len(transaction.Inputs); i++ {
 		wg.Add(1)
 		go func(index int) {
+			// Acquire a worker slot
+			sem <- struct{}{}
 			defer wg.Done()
+			// Release the worker slot
+			defer func() { <-sem }()
 
 			// Skip if error already occurred
 			errMu.Lock()
@@ -64,9 +75,7 @@ func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualO
 			}
 
 			// Check virtual's UTXO set
-			outpointsMu.Lock()
 			utxoEntry, hasUTXOEntry, err := csm.consensusStateStore.UTXOByOutpoint(csm.databaseContext, stagingArea, &transaction.Inputs[index].PreviousOutpoint)
-			outpointsMu.Unlock()
 			if !hasUTXOEntry {
 				missingMu.Lock()
 				missingOutpoints = append(missingOutpoints, &transaction.Inputs[index].PreviousOutpoint)
@@ -105,44 +114,53 @@ func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualO
 func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromUTXOSet(
 	pruningPoint *externalapi.DomainBlock, iterator externalapi.ReadOnlyUTXOSetIterator) error {
 
-	// Collect the required outpoints from the block
-	outpointsForPopulation := make(map[externalapi.DomainOutpoint]interface{})
+	// Build an index from required outpoints to the inputs that need them.
+	// This lets us assign UTXO entries directly while scanning the iterator,
+	// and avoid a second pass over all transactions.
+	outpointsToInputs := make(map[externalapi.DomainOutpoint][]*externalapi.DomainTransactionInput)
+	uniqueNeeded := 0
 	for _, transaction := range pruningPoint.Transactions {
-		for _, input := range transaction.Inputs {
-			outpointsForPopulation[input.PreviousOutpoint] = struct{}{}
+		for i := range transaction.Inputs {
+			in := transaction.Inputs[i]
+			// Add pointer to the input so we can fill it directly when found.
+			slice := outpointsToInputs[in.PreviousOutpoint]
+			if slice == nil {
+				uniqueNeeded++
+			}
+			outpointsToInputs[in.PreviousOutpoint] = append(slice, in)
 		}
 	}
 
-	// Collect the UTXO entries from the iterator
-	outpointsToUTXOEntries := make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry, len(outpointsForPopulation))
+	// Walk the iterator once and satisfy inputs as we find matching outpoints.
+	// Break early as soon as all required outpoints were found.
+	found := 0
 	for ok := iterator.First(); ok; ok = iterator.Next() {
 		outpoint, utxoEntry, err := iterator.Get()
 		if err != nil {
 			return err
 		}
-		outpointValue := *outpoint
-		if _, ok := outpointsForPopulation[outpointValue]; ok {
-			outpointsToUTXOEntries[outpointValue] = utxoEntry
-		}
-		if len(outpointsForPopulation) == len(outpointsToUTXOEntries) {
-			break
-		}
-	}
-
-	// Populate the block with the collected UTXO entries
-	var missingOutpoints []*externalapi.DomainOutpoint
-	for _, transaction := range pruningPoint.Transactions {
-		for _, input := range transaction.Inputs {
-			utxoEntry, ok := outpointsToUTXOEntries[input.PreviousOutpoint]
-			if !ok {
-				missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
-				continue
+		if inputs, ok := outpointsToInputs[*outpoint]; ok {
+			for _, in := range inputs {
+				in.UTXOEntry = utxoEntry
 			}
-			input.UTXOEntry = utxoEntry
+			delete(outpointsToInputs, *outpoint)
+			found++
+			if found == uniqueNeeded {
+				break
+			}
 		}
 	}
 
-	if len(missingOutpoints) > 0 {
+	// Collect any inputs still missing a UTXO entry.
+	if len(outpointsToInputs) > 0 {
+		var missingOutpoints []*externalapi.DomainOutpoint
+		for _, inputs := range outpointsToInputs {
+			for _, in := range inputs {
+				// Report per-missing-input, matching previous behavior
+				// where each missing input contributed an outpoint.
+				missingOutpoints = append(missingOutpoints, &in.PreviousOutpoint)
+			}
+		}
 		return ruleerrors.NewErrMissingTxOut(missingOutpoints)
 	}
 	return nil

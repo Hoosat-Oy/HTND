@@ -351,12 +351,12 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 		return err
 	}
 
-	err = s.transactionValidator.ValidateTransactionInContextIgnoringUTXO(stagingArea, transaction, model.VirtualBlockHash, virtualPastMedianTime)
+	err = s.transactionValidator.ValidateTransactionInContextIgnoringUTXO(stagingArea, transaction, model.VirtualBlockHash, virtualPastMedianTime, daaScore)
 	if err != nil {
 		return err
 	}
 	return s.transactionValidator.ValidateTransactionInContextAndPopulateFee(
-		stagingArea, transaction, model.VirtualBlockHash)
+		stagingArea, transaction, model.VirtualBlockHash, daaScore)
 }
 
 func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, bool, error) {

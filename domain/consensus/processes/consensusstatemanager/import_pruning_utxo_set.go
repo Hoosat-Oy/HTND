@@ -105,7 +105,7 @@ func (csm *consensusStateManager) importPruningPointUTXOSet(stagingArea *model.S
 		}
 		log.Tracef("Validating transaction %s and populating it with mass and fee", transactionID)
 		err = csm.transactionValidator.ValidateTransactionInContextAndPopulateFee(
-			stagingArea, transaction, newPruningPoint)
+			stagingArea, transaction, newPruningPoint, newPruningPointBlock.Header.DAAScore())
 		if err != nil {
 			return err
 		}

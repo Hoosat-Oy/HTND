@@ -58,6 +58,62 @@ type SighashReusedValues struct {
 	payloadHash         *externalapi.DomainHash
 }
 
+// PrecomputeSighashReusedValues pre-calculates and returns a SighashReusedValues instance
+// with all reusable hashes initialized for the given transaction. These precomputed values
+// are independent of input index and specific SigHashType variants (the latter decide at
+// usage-time whether to use zero-hash, a single output hash, or the precomputed value).
+// Using a fully-initialized instance enables parallel signature verification safely.
+func PrecomputeSighashReusedValues(tx *externalapi.DomainTransaction) *SighashReusedValues {
+	reused := &SighashReusedValues{}
+
+	// previousOutputsHash: hash of all input previous outpoints
+	{
+		hashWriter := hashes.NewTransactionSigningHashWriter()
+		for _, txIn := range tx.Inputs {
+			hashOutpoint(hashWriter, txIn.PreviousOutpoint)
+		}
+		reused.previousOutputsHash = hashWriter.Finalize()
+	}
+
+	// sequencesHash: hash of all input sequences
+	{
+		hashWriter := hashes.NewTransactionSigningHashWriter()
+		for _, txIn := range tx.Inputs {
+			infallibleWriteElement(hashWriter, txIn.Sequence)
+		}
+		reused.sequencesHash = hashWriter.Finalize()
+	}
+
+	// sigOpCountsHash: hash of all input SigOpCount values
+	{
+		hashWriter := hashes.NewTransactionSigningHashWriter()
+		for _, txIn := range tx.Inputs {
+			infallibleWriteElement(hashWriter, txIn.SigOpCount)
+		}
+		reused.sigOpCountsHash = hashWriter.Finalize()
+	}
+
+	// outputsHash: hash of all outputs (SigHashAll case)
+	{
+		hashWriter := hashes.NewTransactionSigningHashWriter()
+		for _, txOut := range tx.Outputs {
+			hashTxOut(hashWriter, txOut)
+		}
+		reused.outputsHash = hashWriter.Finalize()
+	}
+
+	// payloadHash: hash of payload for non-native subnetworks; zero-hash otherwise
+	if tx.SubnetworkID.Equal(&subnetworks.SubnetworkIDNative) {
+		reused.payloadHash = externalapi.NewZeroHash()
+	} else {
+		hashWriter := hashes.NewTransactionSigningHashWriter()
+		infallibleWriteElement(hashWriter, tx.Payload)
+		reused.payloadHash = hashWriter.Finalize()
+	}
+
+	return reused
+}
+
 // CalculateSignatureHashSchnorr will, given a script and hash type calculate the signature hash
 // to be used for signing and verification for Schnorr.
 // This returns error only if one of the provided parameters are consensus-invalid.

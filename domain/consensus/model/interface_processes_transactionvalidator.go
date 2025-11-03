@@ -9,8 +9,8 @@ import (
 type TransactionValidator interface {
 	ValidateTransactionInIsolation(transaction *externalapi.DomainTransaction, povDAAScore uint64) error
 	ValidateTransactionInContextIgnoringUTXO(stagingArea *StagingArea, tx *externalapi.DomainTransaction,
-		povBlockHash *externalapi.DomainHash, povBlockPastMedianTime int64) error
+		povBlockHash *externalapi.DomainHash, povBlockPastMedianTime int64, povDAAScore uint64) error
 	ValidateTransactionInContextAndPopulateFee(stagingArea *StagingArea,
-		tx *externalapi.DomainTransaction, povBlockHash *externalapi.DomainHash) error
+		tx *externalapi.DomainTransaction, povBlockHash *externalapi.DomainHash, povDAAScore uint64) error
 	PopulateMass(transaction *externalapi.DomainTransaction)
 }

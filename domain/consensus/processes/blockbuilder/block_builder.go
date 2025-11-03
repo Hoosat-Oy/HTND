@@ -175,12 +175,18 @@ func (bb *blockBuilder) validateTransaction(
 		return err
 	}
 
-	err = bb.transactionValidator.ValidateTransactionInContextIgnoringUTXO(stagingArea, transaction, model.VirtualBlockHash, virtualPastMedianTime)
+	// Fetch the virtual DAA score to pass as POV DAA score
+	virtualDAAScore, err := bb.daaBlocksStore.DAAScore(bb.databaseContext, stagingArea, model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}
 
-	return bb.transactionValidator.ValidateTransactionInContextAndPopulateFee(stagingArea, transaction, model.VirtualBlockHash)
+	err = bb.transactionValidator.ValidateTransactionInContextIgnoringUTXO(stagingArea, transaction, model.VirtualBlockHash, virtualPastMedianTime, virtualDAAScore)
+	if err != nil {
+		return err
+	}
+
+	return bb.transactionValidator.ValidateTransactionInContextAndPopulateFee(stagingArea, transaction, model.VirtualBlockHash, virtualDAAScore)
 }
 
 func (bb *blockBuilder) newBlockCoinbaseTransaction(stagingArea *model.StagingArea,

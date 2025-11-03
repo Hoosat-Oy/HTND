@@ -246,7 +246,7 @@ func (csm *consensusStateManager) maybeAcceptTransaction(stagingArea *model.Stag
 	} else {
 		log.Tracef("Validating transaction %s in block %s", transactionID, blockHash)
 		err = csm.transactionValidator.ValidateTransactionInContextAndPopulateFee(
-			stagingArea, transaction, blockHash)
+			stagingArea, transaction, blockHash, blockDAAScore)
 		if err != nil {
 			if !errors.As(err, &(ruleerrors.RuleError{})) {
 				return false, 0, err

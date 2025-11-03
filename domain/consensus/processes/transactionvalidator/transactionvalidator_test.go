@@ -249,8 +249,14 @@ func TestValidateTransactionInContextAndPopulateFee(t *testing.T) {
 			},
 		}
 
+		// Fetch the DAA score for povBlockHash once for these tests
+		daaScore, err := tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), stagingArea, povBlockHash)
+		if err != nil {
+			t.Fatalf("Failed to get DAA score: %+v", err)
+		}
+
 		for _, test := range tests {
-			err := tc.TransactionValidator().ValidateTransactionInContextAndPopulateFee(stagingArea, test.tx, test.povBlockHash)
+			err := tc.TransactionValidator().ValidateTransactionInContextAndPopulateFee(stagingArea, test.tx, test.povBlockHash, daaScore)
 
 			if test.isValid {
 				if err != nil {

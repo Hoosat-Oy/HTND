@@ -151,7 +151,7 @@ func (v *blockValidator) checkBlockTransactions(
 		return err
 	}
 	for _, tx := range block.Transactions {
-		if err = v.transactionValidator.ValidateTransactionInContextIgnoringUTXO(stagingArea, tx, blockHash, pastMedianTime); err != nil {
+		if err = v.transactionValidator.ValidateTransactionInContextIgnoringUTXO(stagingArea, tx, blockHash, pastMedianTime, block.Header.DAAScore()); err != nil {
 			return err
 		}
 	}

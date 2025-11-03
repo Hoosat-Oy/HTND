@@ -2,6 +2,9 @@ package transactionvalidator
 
 import (
 	"math"
+	"runtime"
+	"sort"
+	"sync"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
@@ -48,13 +51,9 @@ func (v *transactionValidator) IsFinalizedTransaction(tx *externalapi.DomainTran
 
 // ValidateTransactionInContextIgnoringUTXO validates the transaction with consensus context but ignoring UTXO
 func (v *transactionValidator) ValidateTransactionInContextIgnoringUTXO(stagingArea *model.StagingArea, tx *externalapi.DomainTransaction,
-	povBlockHash *externalapi.DomainHash, povBlockPastMedianTime int64) error {
+	povBlockHash *externalapi.DomainHash, povBlockPastMedianTime int64, povDAAScore uint64) error {
 
-	povBlockDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, stagingArea, povBlockHash)
-	if err != nil {
-		return err
-	}
-	if isFinalized := v.IsFinalizedTransaction(tx, povBlockDAAScore, povBlockPastMedianTime); !isFinalized {
+	if isFinalized := v.IsFinalizedTransaction(tx, povDAAScore, povBlockPastMedianTime); !isFinalized {
 		return errors.Wrapf(ruleerrors.ErrUnfinalizedTx, "unfinalized transaction %v", tx)
 	}
 
@@ -66,9 +65,9 @@ func (v *transactionValidator) ValidateTransactionInContextIgnoringUTXO(stagingA
 //
 // Note: if the function fails, there's no guarantee that the transaction fee field will remain unaffected.
 func (v *transactionValidator) ValidateTransactionInContextAndPopulateFee(stagingArea *model.StagingArea,
-	tx *externalapi.DomainTransaction, povBlockHash *externalapi.DomainHash) error {
+	tx *externalapi.DomainTransaction, povBlockHash *externalapi.DomainHash, povDAAScore uint64) error {
 
-	err := v.checkTransactionCoinbaseMaturity(stagingArea, povBlockHash, tx)
+	err := v.checkTransactionCoinbaseMaturity(stagingArea, povBlockHash, tx, povDAAScore)
 	if err != nil {
 		return err
 	}
@@ -85,7 +84,7 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateFee(stagin
 
 	tx.Fee = totalSompiIn - totalSompiOut
 
-	err = v.checkTransactionSequenceLock(stagingArea, povBlockHash, tx)
+	err = v.checkTransactionSequenceLock(stagingArea, povBlockHash, tx, povDAAScore)
 	if err != nil {
 		return err
 	}
@@ -104,12 +103,7 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateFee(stagin
 }
 
 func (v *transactionValidator) checkTransactionCoinbaseMaturity(stagingArea *model.StagingArea,
-	povBlockHash *externalapi.DomainHash, tx *externalapi.DomainTransaction) error {
-
-	povDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, stagingArea, povBlockHash)
-	if err != nil {
-		return err
-	}
+	povBlockHash *externalapi.DomainHash, tx *externalapi.DomainTransaction, povDAAScore uint64) error {
 
 	var missingOutpoints []*externalapi.DomainOutpoint
 	for i := 0; i < len(tx.Inputs); i++ {
@@ -201,7 +195,7 @@ func (v *transactionValidator) checkTransactionOutputAmounts(tx *externalapi.Dom
 }
 
 func (v *transactionValidator) checkTransactionSequenceLock(stagingArea *model.StagingArea,
-	povBlockHash *externalapi.DomainHash, tx *externalapi.DomainTransaction) error {
+	povBlockHash *externalapi.DomainHash, tx *externalapi.DomainTransaction, povDAAScore uint64) error {
 
 	// A transaction can only be included within a block
 	// once the sequence locks of *all* its inputs are
@@ -211,12 +205,7 @@ func (v *transactionValidator) checkTransactionSequenceLock(stagingArea *model.S
 		return err
 	}
 
-	daaScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, stagingArea, povBlockHash)
-	if err != nil {
-		return err
-	}
-
-	if !v.sequenceLockActive(sequenceLock, daaScore) {
+	if !v.sequenceLockActive(sequenceLock, povDAAScore) {
 		return errors.Wrapf(ruleerrors.ErrUnfinalizedTx, "block contains "+
 			"transaction whose input sequence "+
 			"locks are not met")
@@ -226,41 +215,88 @@ func (v *transactionValidator) checkTransactionSequenceLock(stagingArea *model.S
 }
 
 func (v *transactionValidator) validateTransactionScripts(tx *externalapi.DomainTransaction) error {
-	var missingOutpoints []*externalapi.DomainOutpoint
-	sighashReusedValues := &consensushashing.SighashReusedValues{}
+	// Precompute sighash reusable values to enable safe parallel verification.
+	sighashReusedValues := consensushashing.PrecomputeSighashReusedValues(tx)
+
+	type missingItem struct {
+		idx int
+		op  *externalapi.DomainOutpoint
+	}
+
+	var (
+		firstErrMu sync.Mutex
+		firstErr   error
+		missing    []missingItem
+		missingMu  sync.Mutex
+		wg         sync.WaitGroup
+	)
+
+	// Bounded parallel execution across inputs
+	parallelism := runtime.NumCPU()
+	if parallelism < 1 {
+		parallelism = 1
+	}
+	sem := make(chan struct{}, parallelism)
 
 	for i := 0; i < len(tx.Inputs); i++ {
-		// Create a new script engine for the script pair.
-		sigScript := tx.Inputs[i].SignatureScript
-		utxoEntry := tx.Inputs[i].UTXOEntry
-		if utxoEntry == nil {
-			missingOutpoints = append(missingOutpoints, &tx.Inputs[i].PreviousOutpoint)
-			continue
-		}
+		idx := i
+		wg.Add(1)
+		go func() {
+			sem <- struct{}{}
+			defer func() { <-sem; wg.Done() }()
 
-		scriptPubKey := utxoEntry.ScriptPublicKey()
-		vm, err := txscript.NewEngine(scriptPubKey, tx, i, txscript.ScriptNoFlags, v.sigCache, v.sigCacheECDSA, sighashReusedValues)
-		if err != nil {
-			return errors.Wrapf(ruleerrors.ErrScriptMalformed, "failed to parse input "+
-				"%d which references output %s - "+
-				"%s (input script bytes %x, prev "+
-				"output script bytes %x)",
-				i,
-				tx.Inputs[i].PreviousOutpoint, err, sigScript, scriptPubKey)
-		}
+			// Short-circuit if an error already occurred
+			firstErrMu.Lock()
+			if firstErr != nil {
+				firstErrMu.Unlock()
+				return
+			}
+			firstErrMu.Unlock()
 
-		// Execute the script pair.
-		if err := vm.Execute(); err != nil {
-			return errors.Wrapf(ruleerrors.ErrScriptValidation, "failed to validate input "+
-				"%d which references output %s - "+
-				"%s (input script bytes %x, prev output "+
-				"script bytes %x)",
-				i,
-				tx.Inputs[i].PreviousOutpoint, err, sigScript, scriptPubKey)
-		}
+			sigScript := tx.Inputs[idx].SignatureScript
+			utxoEntry := tx.Inputs[idx].UTXOEntry
+			if utxoEntry == nil {
+				missingMu.Lock()
+				missing = append(missing, missingItem{idx: idx, op: &tx.Inputs[idx].PreviousOutpoint})
+				missingMu.Unlock()
+				return
+			}
+
+			scriptPubKey := utxoEntry.ScriptPublicKey()
+			vm, err := txscript.NewEngine(scriptPubKey, tx, idx, txscript.ScriptNoFlags, v.sigCache, v.sigCacheECDSA, sighashReusedValues)
+			if err != nil {
+				firstErrMu.Lock()
+				if firstErr == nil {
+					firstErr = errors.Wrapf(ruleerrors.ErrScriptMalformed, "failed to parse input %d which references output %s - %s (input script bytes %x, prev output script bytes %x)", idx, tx.Inputs[idx].PreviousOutpoint, err, sigScript, scriptPubKey)
+				}
+				firstErrMu.Unlock()
+				return
+			}
+
+			if err := vm.Execute(); err != nil {
+				firstErrMu.Lock()
+				if firstErr == nil {
+					firstErr = errors.Wrapf(ruleerrors.ErrScriptValidation, "failed to validate input %d which references output %s - %s (input script bytes %x, prev output script bytes %x)", idx, tx.Inputs[idx].PreviousOutpoint, err, sigScript, scriptPubKey)
+				}
+				firstErrMu.Unlock()
+				return
+			}
+		}()
 	}
-	if len(missingOutpoints) > 0 {
-		return ruleerrors.NewErrMissingTxOut(missingOutpoints)
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return firstErr
+	}
+
+	if len(missing) > 0 {
+		sort.Slice(missing, func(i, j int) bool { return missing[i].idx < missing[j].idx })
+		outpoints := make([]*externalapi.DomainOutpoint, 0, len(missing))
+		for _, m := range missing {
+			outpoints = append(outpoints, m.op)
+		}
+		return ruleerrors.NewErrMissingTxOut(outpoints)
 	}
 	return nil
 }
