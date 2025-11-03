@@ -28,7 +28,7 @@ func SendVirtualSelectedParentInv(context SendVirtualSelectedParentInvContext,
 		return nil
 	}
 
-	log.Infof("Sending virtual selected parent hash %s to peer %s", virtualSelectedParent, peer)
+	log.Debugf("Sending virtual selected parent hash %s to peer %s", virtualSelectedParent, peer)
 
 	virtualSelectedParentInv := appmessage.NewMsgInvBlock(virtualSelectedParent)
 	return outgoingRoute.Enqueue(virtualSelectedParentInv)

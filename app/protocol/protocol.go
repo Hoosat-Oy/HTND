@@ -134,7 +134,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 		log.Debugf("HandleReady for peer %s", peer)
 		removeHandshakeRoutes(router)
 
-		log.Infof("Registered p2p flows and running them for peer %s", peer)
+		log.Debugf("Registered p2p flows and running them for peer %s", peer)
 		flowsWaitGroup := &sync.WaitGroup{}
 		err = m.runFlows(flows, peer, errChan, flowsWaitGroup)
 		if err != nil {
