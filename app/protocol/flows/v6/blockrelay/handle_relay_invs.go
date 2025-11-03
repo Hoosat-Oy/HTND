@@ -368,9 +368,9 @@ func (flow *handleRelayInvsFlow) start() error {
 			}
 		}
 		txslen := len(block.Transactions)
-		log.Infof("Accepted relayed block from node %s", flow.netConnection.Address())
-		log.Infof("Accepted block %s via relay with %d tx", inv.Hash, txslen)
-		log.Infof("Accepted PoW hash %s", block.PoWHash)
+		log.Debugf("Accepted relayed block from node %s", flow.netConnection.Address())
+		log.Debugf("Accepted block %s via relay with %d tx", inv.Hash, txslen)
+		log.Debugf("Accepted PoW hash %s", block.PoWHash)
 		err = flow.OnNewBlock(block)
 		if err != nil {
 			return err
