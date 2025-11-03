@@ -31,7 +31,7 @@ func (*FlowContext) HandleError(err error, flowName string, isStopping *uint32, 
 		// due to races / partial state while processing P2P messages; handle them
 		// gracefully by logging and NOT escalating them to the protocol manager.
 		if database.IsNotFoundError(err) {
-			log.Infof("Non-fatal DB not found in %s: %v", flowName, err)
+			log.Debugf("Non-fatal DB not found in %s: %v", flowName, err)
 			return
 		}
 

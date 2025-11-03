@@ -37,7 +37,7 @@ func (rt *reachabilityManager) futureCoveringSet(stagingArea *model.StagingArea,
 func (rt *reachabilityManager) interval(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
 	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, stagingArea, blockHash)
 	if database.IsNotFoundError(err) {
-		log.Infof("Reachabilitymanager interval failed to retrieve with %s\n", blockHash)
+		log.Debugf("Reachabilitymanager interval failed to retrieve with %s\n", blockHash)
 		return nil, err
 	}
 	if err != nil {
