@@ -490,7 +490,7 @@ func (v *transactionValidator) checkTransactionSubnetwork(tx *externalapi.Domain
 		return errors.Wrapf(ruleerrors.ErrSubnetworksDisabled, "transaction has non native or coinbase "+
 			"subnetwork ID")
 	}
-	if DAAScore <= (88_130_846+12_960_000) && tx.SubnetworkID == subnetworks.SubnetworkIDData {
+	if DAAScore <= (89_872_005+2_592_000) && tx.SubnetworkID == subnetworks.SubnetworkIDData {
 		return errors.Wrapf(ruleerrors.ErrSubnetworksDisabled, "transaction has non native or coinbase "+
 			"subnetwork ID")
 	}
