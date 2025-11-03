@@ -97,7 +97,7 @@ func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader, sta
 	if err != nil {
 		return nil, err
 	}
-	rds.reachabilityDataCache.Add(blockHash, reachabilityData)
+	rds.reachabilityDataCache.Add(blockHash, deserializedReachabilityData)
 	return deserializedReachabilityData, nil
 }
 
