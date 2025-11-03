@@ -485,17 +485,17 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock) e
 
 	// Return if the block has been orphaned from elsewhere already
 	if flow.IsOrphan(blockHash) {
-		log.Infof("Skipping orphan processing for block %s because it is already an orphan", blockHash)
+		log.Debugf("Skipping orphan processing for block %s because it is already an orphan", blockHash)
 		return nil
 	}
 
 	if block.Header.Version() != constants.GetBlockVersion() {
-		log.Infof("Skipping orphan processing for block %s because it is wrong block version", blockHash)
+		log.Debugf("Skipping orphan processing for block %s because it is wrong block version", blockHash)
 		return nil
 	}
 
 	if block.PoWHash == "" && block.Header.Version() >= constants.PoWIntegrityMinVersion {
-		log.Infof("Skipping orphan processing for block %s because it is missing pow hash", blockHash)
+		log.Debugf("Skipping orphan processing for block %s because it is missing pow hash", blockHash)
 		return nil
 	}
 
