@@ -419,6 +419,17 @@ func (s *consensus) GetBlockHeader(blockHash *externalapi.DomainHash) (externala
 	return blockHeader, nil
 }
 
+// GetBlockHeaders returns headers for the given hashes using a single staging area to minimize overhead.
+func (s *consensus) GetBlockHeaders(blockHashes []*externalapi.DomainHash) ([]externalapi.BlockHeader, error) {
+	stagingArea := model.NewStagingArea()
+
+	headers, err := s.blockHeaderStore.BlockHeaders(s.databaseContext, stagingArea, blockHashes)
+	if err != nil {
+		return nil, err
+	}
+	return headers, nil
+}
+
 func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalapi.BlockInfo, error) {
 	stagingArea := model.NewStagingArea()
 

@@ -16,6 +16,9 @@ type Consensus interface {
 	GetBlock(blockHash *DomainHash) (*DomainBlock, bool, error)
 	GetBlockEvenIfHeaderOnly(blockHash *DomainHash) (*DomainBlock, error)
 	GetBlockHeader(blockHash *DomainHash) (BlockHeader, error)
+	// GetBlockHeaders returns the headers for the given block hashes using a single internal read context.
+	// This is significantly more efficient than calling GetBlockHeader repeatedly for many hashes.
+	GetBlockHeaders(blockHashes []*DomainHash) ([]BlockHeader, error)
 	GetBlockInfo(blockHash *DomainHash) (*BlockInfo, error)
 	GetBlockRelations(blockHash *DomainHash) (parents []*DomainHash, children []*DomainHash, err error)
 	GetBlockAcceptanceData(blockHash *DomainHash) (AcceptanceData, error)

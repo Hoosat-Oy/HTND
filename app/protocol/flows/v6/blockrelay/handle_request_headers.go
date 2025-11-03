@@ -88,13 +88,14 @@ func (flow *handleRequestHeadersFlow) start() error {
 			}
 			log.Debugf("Got %d header hashes above lowHash %s", len(blockHashes), lowHash)
 
-			blockHeaders := make([]*appmessage.MsgBlockHeader, len(blockHashes))
-			for i, blockHash := range blockHashes {
-				blockHeader, err := consensus.GetBlockHeader(blockHash)
-				if err != nil {
-					return err
-				}
-				blockHeaders[i] = appmessage.DomainBlockHeaderToBlockHeader(blockHeader)
+			// Fetch headers in a single batch to reduce consensus read overhead
+			domainHeaders, err := consensus.GetBlockHeaders(blockHashes)
+			if err != nil {
+				return err
+			}
+			blockHeaders := make([]*appmessage.MsgBlockHeader, len(domainHeaders))
+			for i, dh := range domainHeaders {
+				blockHeaders[i] = appmessage.DomainBlockHeaderToBlockHeader(dh)
 			}
 
 			log.Infof("Relaying %d headers through IBD to peer %s", len(blockHeaders), flow.peer.Address())

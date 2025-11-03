@@ -56,13 +56,14 @@ func (flow *handleRequestAnticoneFlow) start() error {
 		}
 		log.Debugf("Got %d header hashes in past(%s) cap anticone(%s)", len(blockHashes), contextHash, blockHash)
 
-		blockHeaders := make([]*appmessage.MsgBlockHeader, len(blockHashes))
-		for i, blockHash := range blockHashes {
-			blockHeader, err := flow.Domain().Consensus().GetBlockHeader(blockHash)
-			if err != nil {
-				return err
-			}
-			blockHeaders[i] = appmessage.DomainBlockHeaderToBlockHeader(blockHeader)
+		// Fetch headers in a single batch to reduce consensus read overhead
+		domainHeaders, err := flow.Domain().Consensus().GetBlockHeaders(blockHashes)
+		if err != nil {
+			return err
+		}
+		blockHeaders := make([]*appmessage.MsgBlockHeader, len(domainHeaders))
+		for i, dh := range domainHeaders {
+			blockHeaders[i] = appmessage.DomainBlockHeaderToBlockHeader(dh)
 		}
 
 		// We sort the headers in bottom-up topological order before sending
