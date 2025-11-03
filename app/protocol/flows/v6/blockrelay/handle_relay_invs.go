@@ -143,7 +143,7 @@ func (flow *handleRelayInvsFlow) start() error {
 			// to panic (since it's not a protocol error). It's safer to proceed as if the
 			// block does not exist and continue processing.
 			if database.IsNotFoundError(err) {
-				log.Infof("GetBlockInfo returned not-found for %s; treating as non-existing block", inv.Hash)
+				log.Debugf("GetBlockInfo returned not-found for %s; treating as non-existing block", inv.Hash)
 				continue
 			} else {
 				return err
@@ -151,7 +151,7 @@ func (flow *handleRelayInvsFlow) start() error {
 		}
 		if blockInfo.Exists && blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
 			if blockInfo.BlockStatus == externalapi.StatusInvalid {
-				log.Infof("Sent inv of an invalid block %s", inv.Hash)
+				log.Debugf("Sent inv of an invalid block %s", inv.Hash)
 				flow.banConnection(false)
 				continue
 			}
