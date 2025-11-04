@@ -300,7 +300,6 @@ func (flow *handleRelayInvsFlow) start() error {
 			}
 			if database.IsNotFoundError(err) {
 				log.Infof("Ignoring block %s due to missing UTXO diff key. From %s", inv.Hash, flow.netConnection.Address())
-				flow.banConnection(false)
 				continue
 			}
 			if errors.Is(err, ruleerrors.ErrInvalidPoW) {
