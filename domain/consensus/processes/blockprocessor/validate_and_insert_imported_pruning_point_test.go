@@ -135,7 +135,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 					})
 				}
 
-				err = synceeStaging.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
+				err = synceeStaging.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, true)
 				if err != nil {
 					t.Fatalf("ValidateAndInsertBlockWithTrustedData: %+v", err)
 				}

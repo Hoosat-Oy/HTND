@@ -112,7 +112,7 @@ func syncConsensuses(syncer, syncee externalapi.Consensus) error {
 			})
 		}
 
-		err = syncee.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
+		err = syncee.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, true)
 		if err != nil {
 			return err
 		}
