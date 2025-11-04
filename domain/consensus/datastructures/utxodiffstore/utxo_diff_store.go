@@ -1,8 +1,6 @@
 package utxodiffstore
 
 import (
-	"time"
-
 	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/database/serialization"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
@@ -15,12 +13,6 @@ import (
 
 var utxoDiffBucketName = []byte("utxo-diffs")
 var utxoDiffChildBucketName = []byte("utxo-diff-children")
-
-// Retry configuration constants
-const (
-	maxRetryAttempts  = 3
-	initialRetryDelay = 10 * time.Millisecond
-)
 
 // utxoDiffStore represents a store of UTXODiffs
 type utxoDiffStore struct {
@@ -79,35 +71,13 @@ func (uds *utxoDiffStore) UTXODiff(dbContext model.DBReader, stagingArea *model.
 		return utxoDiff.(externalapi.UTXODiff), nil
 	}
 
-	var utxoDiffBytes []byte
-	var err error
-	retryDelay := initialRetryDelay
-
-	// Retry logic for database retrieval
-	for attempt := 1; attempt <= maxRetryAttempts; attempt++ {
-		utxoDiffBytes, err = dbContext.Get(uds.utxoDiffHashAsKey(blockHash))
-
-		if err == nil {
-			// Success, break out of retry loop
-			break
-		}
-
-		if database.IsNotFoundError(err) {
-			if attempt < maxRetryAttempts {
-				log.Infof("UTXODiff not found for %s (attempt %d/%d), retrying after %v, key=%x",
-					blockHash, attempt, maxRetryAttempts, retryDelay, uds.utxoDiffHashAsKey(blockHash).Bytes())
-				time.Sleep(retryDelay)
-				retryDelay *= 2 // Exponential backoff
-				continue
-			} else {
-				// Final attempt failed, log and return error
-				log.Infof("UTXODiff failed to retrieve with %s after %d attempts, key=%x",
-					blockHash, maxRetryAttempts, uds.utxoDiffHashAsKey(blockHash).Bytes())
-				return nil, err
-			}
-		}
-
-		// For non-NotFound errors, don't retry
+	utxoDiffBytes, err := dbContext.Get(uds.utxoDiffHashAsKey(blockHash))
+	if database.IsNotFoundError(err) {
+		// Print the hash and the raw DB key bytes in hex for easier debugging
+		log.Infof("UTXODiff failed to retrieve with %s, key=%x\n", blockHash, uds.utxoDiffHashAsKey(blockHash).Bytes())
+		return nil, err
+	}
+	if err != nil {
 		return nil, err
 	}
 
@@ -131,35 +101,13 @@ func (uds *utxoDiffStore) UTXODiffChild(dbContext model.DBReader, stagingArea *m
 		return utxoDiffChild.(*externalapi.DomainHash), nil
 	}
 
-	var utxoDiffChildBytes []byte
-	var err error
-	retryDelay := initialRetryDelay
-
-	// Retry logic for database retrieval
-	for attempt := 1; attempt <= maxRetryAttempts; attempt++ {
-		utxoDiffChildBytes, err = dbContext.Get(uds.utxoDiffChildHashAsKey(blockHash))
-
-		if err == nil {
-			// Success, break out of retry loop
-			break
-		}
-
-		if database.IsNotFoundError(err) {
-			if attempt < maxRetryAttempts {
-				log.Infof("UTXODiffChild not found for %s (attempt %d/%d), retrying after %v, key=%x",
-					blockHash, attempt, maxRetryAttempts, retryDelay, uds.utxoDiffChildHashAsKey(blockHash).Bytes())
-				time.Sleep(retryDelay)
-				retryDelay *= 2 // Exponential backoff
-				continue
-			} else {
-				// Final attempt failed, log and return error
-				log.Infof("UTXODiffChild failed to retrieve with %s after %d attempts, key=%x",
-					blockHash, maxRetryAttempts, uds.utxoDiffChildHashAsKey(blockHash).Bytes())
-				return nil, err
-			}
-		}
-
-		// For non-NotFound errors, don't retry
+	utxoDiffChildBytes, err := dbContext.Get(uds.utxoDiffChildHashAsKey(blockHash))
+	if database.IsNotFoundError(err) {
+		// Previously this logged the wrong key; show the child key bytes in hex
+		log.Infof("UTXODiffChild failed to retrieve with %s, key=%x\n", blockHash, uds.utxoDiffChildHashAsKey(blockHash).Bytes())
+		return nil, err
+	}
+	if err != nil {
 		return nil, err
 	}
 
