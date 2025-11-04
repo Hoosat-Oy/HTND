@@ -15,24 +15,7 @@ import (
 )
 
 // HandleGetBlockTemplate handles the respectively named RPC command
-func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (response appmessage.Message, err error) {
-	// only convert specific not-found panics to an RPC error with backtrace; rethrow others
-	type notFoundPanic struct{ cause error }
-
-	defer func() {
-		if r := recover(); r != nil {
-			if nf, ok := r.(notFoundPanic); ok {
-				stack := debug.Stack()
-				log.Warnf("Backtrace:\n%s", stack)
-				errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
-				errorMessage.Error = appmessage.RPCErrorf("GetBlockTemplate failed with database not found error: %v\n", nf.cause)
-				response = errorMessage
-				err = nil
-				return
-			}
-			panic(r)
-		}
-	}()
+func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	getBlockTemplateRequest := request.(*appmessage.GetBlockTemplateRequestMessage)
 
 	payAddress, err := util.DecodeAddress(getBlockTemplateRequest.PayAddress, context.Config.ActiveNetParams.Prefix)
@@ -52,8 +35,11 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 	templateBlock, isNearlySynced, err := context.Domain.MiningManager().GetBlockTemplate(coinbaseData)
 	if err != nil {
 		if database.IsNotFoundError(err) {
-			// Panic and let the deferred recover above send a backtrace to the caller
-			panic(notFoundPanic{cause: err})
+			stack := debug.Stack()
+			log.Infof("GetBlockTemplate gave database error not found , Backtrace:\n%s", stack)
+			errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
+			errorMessage.Error = appmessage.RPCErrorf("Could not build block template with given coinbase data: missing block header (transient). Try again.")
+			return errorMessage, nil
 		}
 		return nil, err
 	}
