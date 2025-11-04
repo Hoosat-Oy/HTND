@@ -36,7 +36,9 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 	if err != nil {
 		if database.IsNotFoundError(err) {
 			stack := debug.Stack()
-			log.Infof("GetBlockTemplate gave database error not found , Backtrace:\n%s", stack)
+			log.Infof("GetBlockTemplate gave database error not found: %v", templateBlock)
+			log.Infof("The node was %t synced", isNearlySynced)
+			log.Infof("Backtrace:\n%s", stack)
 			errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
 			errorMessage.Error = appmessage.RPCErrorf("Could not build block template with given coinbase data: missing block header (transient). Try again.")
 			return errorMessage, nil
