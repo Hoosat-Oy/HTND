@@ -290,7 +290,7 @@ func (flow *handleIBDFlow) processBlockWithTrustedData(
 		blockWithTrustedData.GHOSTDAGData = append(blockWithTrustedData.GHOSTDAGData, appmessage.GHOSTDAGHashPairToDomainGHOSTDAGHashPair(data.GHOSTDAGData[index]))
 	}
 
-	err := consensus.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
+	err := consensus.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, true)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			return protocolerrors.Wrapf(true, err, "failed validating block with trusted data")
