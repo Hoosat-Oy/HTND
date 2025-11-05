@@ -9,16 +9,32 @@ import (
 	"github.com/cockroachdb/pebble/v2/sstable"
 )
 
-// Options returns a pebble.Options struct optimized for Kaspa's block rate (10 blocks/s, 10,000 tx/block).
+// Options returns a pebble.Options struct optimized for HTND's block rate and data patterns.
 // Tuned for v2.1.0: Full Experimental struct literal to match expanded fields.
+//
+// Environment variables for tuning (all optional):
+//
+//	HTND_BLOOM_FILTER_LEVEL - Bloom filter bits per key (default: 14 for ~0.1% false positive)
+//	HTND_PEBBLE_CACHE_MB - Cache size in MB (default: 4096 MB)
+//	HTND_MEMTABLE_SIZE_MB - MemTable size in MB (default: 32 MB)
+//	HTND_MEMTABLE_THRESHOLD - Number of memtables before stalling writes (default: 24)
+//	HTND_L0_COMPACTION_THRESHOLD - L0 compaction trigger (default: 12)
+//	HTND_L0_STOP_WRITES_THRESHOLD - L0 write stall threshold (default: 32)
+//
+// Legacy environment variables (for backward compatibility):
+//
+//	BLOOM_FILTER_LEVEL, PEBBLE_CACHE_MB
 func Options() *pebble.Options {
-	// Read-heavy tuning defaults (safe, conservative)
-	// - Bloom filter FP target ~0.3% (12 bits per key)
-	// - 8 KiB data blocks across levels for fast point lookups
-	// - 4 KiB index blocks to reduce index IO on seeks
+	// Note: Each increase in bloom filter level roughly halves the false positive rate:
+	// - Level 10: ~1% false positive rate (10 bits per key)
+	// - Level 12: ~0.4% false positive rate (12 bits per key)
+	// - Level 14: ~0.1% false positive rate (14 bits per key)
+	// - Level 16: ~0.025% false positive rate (16 bits per key)
+	// Trade-off: Higher levels use more memory but significantly improve read performance
 
-	// Bloom filters significantly cut false-positive reads on point lookups
-	bloomFilterLevel := int(10)
+	// Increased default bloom filter level for better key lookup performance
+	// This is especially important for virtual block hash lookups during IBD
+	bloomFilterLevel := int(16)
 	if v := os.Getenv("HTND_BLOOM_FILTER_LEVEL"); v != "" {
 		if levl, err := strconv.Atoi(v); err == nil && levl > 0 {
 			bloomFilterLevel = int(levl)
@@ -32,14 +48,26 @@ func Options() *pebble.Options {
 
 	// Define MemTable size and thresholds. Larger memtables and higher thresholds
 	// reduce flush frequency and write stalls at the cost of more peak RAM usage.
-	// These are conservative for modern machines and can be adjusted via code if needed.
+	// These are conservative for modern machines and can be adjusted via env vars.
 	memTableSize := int64(32 * 1024 * 1024) // 32 MiB (less frequent flushes)
-	memTableStopWritesThreshold := 24       // allow more memtables before stalling
+	if v := os.Getenv("HTND_MEMTABLE_SIZE_MB"); v != "" {
+		if mb, err := strconv.Atoi(v); err == nil && mb > 0 {
+			memTableSize = int64(mb) * 1024 * 1024
+		}
+	}
+
+	memTableStopWritesThreshold := 24 // allow more memtables before stalling
+	if v := os.Getenv("HTND_MEMTABLE_THRESHOLD"); v != "" {
+		if threshold, err := strconv.Atoi(v); err == nil && threshold > 0 {
+			memTableStopWritesThreshold = threshold
+		}
+	}
+
 	baseFileSize := memTableSize * int64(memTableStopWritesThreshold)
 
-	// Cache size: default 1 GiB, overridable via env for deployments
+	// Cache size: increased default to 4 GiB for better key lookup performance
 	// Use HTND_PEBBLE_CACHE_MB or PEBBLE_CACHE_MB if set.
-	cacheBytes := int64(2 * 1024 * 1024 * 1024) // 2 GiB default
+	cacheBytes := int64(4 * 1024 * 1024 * 1024) // 4 GiB default
 	if v := os.Getenv("HTND_PEBBLE_CACHE_MB"); v != "" {
 		if mb, err := strconv.Atoi(v); err == nil && mb > 0 {
 			cacheBytes = int64(mb) * 1024 * 1024
@@ -64,23 +92,43 @@ func Options() *pebble.Options {
 			baseFileSize * 64, // L6 [6]
 		},
 
+		// Additional stability options
+		MaxManifestFileSize:       128 * 1024 * 1024, // 128 MB manifest files
+		MaxOpenFiles:              16384,             // Increased file handle limit
+		L0CompactionFileThreshold: 1024,              // More aggressive L0 compaction
+
 		// Cache: scale to available RAM (overridable via env)
 		Cache: pebble.NewCache(cacheBytes),
 
 		// Write/flush tuning
 		MemTableSize:                uint64(memTableSize),
 		MemTableStopWritesThreshold: memTableStopWritesThreshold,
-		// Relax L0 thresholds so we compact less aggressively under bursts.
-		// This works in tandem with larger memtables to reduce churn.
-		L0CompactionThreshold: 20,
-		L0StopWritesThreshold: 48,
+		// More conservative L0 thresholds to ensure data consistency during IBD
+		// Reduced thresholds help prevent key lookup failures during heavy write loads
+		L0CompactionThreshold: func() int {
+			if v := os.Getenv("HTND_L0_COMPACTION_THRESHOLD"); v != "" {
+				if threshold, err := strconv.Atoi(v); err == nil && threshold > 0 {
+					return threshold
+				}
+			}
+			return 12
+		}(),
+		L0StopWritesThreshold: func() int {
+			if v := os.Getenv("HTND_L0_STOP_WRITES_THRESHOLD"); v != "" {
+				if threshold, err := strconv.Atoi(v); err == nil && threshold > 0 {
+					return threshold
+				}
+			}
+			return 32
+		}(),
 
 		// v2: Dynamic compaction concurrency
 		CompactionConcurrencyRange: func() (lower, upper int) { return 2, 4 },
 
-		// WAL for durability
+		// Enhanced WAL settings for better durability and consistency
 		DisableWAL:      false,
-		WALBytesPerSync: 1 * 1024 * 1024,
+		WALBytesPerSync: 512 * 1024,      // More frequent syncs for better consistency
+		BytesPerSync:    1 * 1024 * 1024, // Regular file syncing
 
 		// v2: Levels as [7]LevelOptions (BlockSize, Compression func, FilterPolicy)
 		Levels: [7]pebble.LevelOptions{

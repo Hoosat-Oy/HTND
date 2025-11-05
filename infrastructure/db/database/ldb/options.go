@@ -10,15 +10,25 @@ import (
 
 // Options returns a leveldb opt.Options struct optimized for Kaspa's high block rate (33 blocks/s, 1000 tx/block).
 func Options() opt.Options {
+	bloomFilterLevel := int(16)
+	if v := os.Getenv("HTND_BLOOM_FILTER_LEVEL"); v != "" {
+		if levl, err := strconv.Atoi(v); err == nil && levl > 0 {
+			bloomFilterLevel = int(levl)
+		}
+	} else if v := os.Getenv("BLOOM_FILTER_LEVEL"); v != "" {
+		if levl, err := strconv.Atoi(v); err == nil && levl > 0 {
+			bloomFilterLevel = int(levl)
+		}
+	}
 	opts := opt.Options{
-		Compression:            opt.SnappyCompression,     // Balances speed and storage efficiency
-		NoSync:                 false,                     // Ensures data integrity for high-value blockchain data
-		WriteBuffer:            64 * opt.MiB,              // Larger buffer to handle bursty writes
-		BlockCacheCapacity:     1024 * opt.MiB,            // Larger cache for frequent reads
-		Filter:                 filter.NewBloomFilter(10), // Bloom filter for efficient key lookups
-		OpenFilesCacheCapacity: 1024,                      // Higher file handle cache for concurrent access
-		CompactionTableSize:    32 * opt.MiB,              // Larger SST files to reduce compaction frequency
-		CompactionTotalSize:    1024 * opt.MiB,            // Larger total size before compaction to reduce I/O
+		Compression:            opt.SnappyCompression,                   // Balances speed and storage efficiency
+		NoSync:                 false,                                   // Ensures data integrity for high-value blockchain data
+		WriteBuffer:            64 * opt.MiB,                            // Larger buffer to handle bursty writes
+		BlockCacheCapacity:     1024 * opt.MiB,                          // Larger cache for frequent reads
+		Filter:                 filter.NewBloomFilter(bloomFilterLevel), // Bloom filter for efficient key lookups
+		OpenFilesCacheCapacity: 1024,                                    // Higher file handle cache for concurrent access
+		CompactionTableSize:    32 * opt.MiB,                            // Larger SST files to reduce compaction frequency
+		CompactionTotalSize:    1024 * opt.MiB,                          // Larger total size before compaction to reduce I/O
 		// Reduce likelihood of long write pauses during heavy sequential ingestion
 		// by letting LevelDB accumulate more L0 tables before applying hard backpressure.
 		// Default WriteL0PauseTrigger is ~12; raising it helps avoid stalls at the cost of
