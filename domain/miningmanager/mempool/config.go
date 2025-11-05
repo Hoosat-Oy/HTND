@@ -30,7 +30,7 @@ const (
 	// Compound transaction rate limiting defaults
 	defaultCompoundTxRateLimitEnabled       = true
 	defaultMaxCompoundTxPerAddressPerMinute = uint64(10) // Max 10 compound transactions per address per minute as in 10 blocks of 300 blocks.
-	defaultCompoundTxRateLimitWindowMinutes = uint64(5)  // 5-minute sliding window
+	defaultCompoundTxRateLimitWindowMinutes = uint64(1)  // 1-minute sliding window
 	defaultCompoundTxMinInputsThreshold     = uint64(10) // Consider transactions with 10+ inputs as potential compound
 
 	// Standard transaction version range might be different from what consensus accepts, therefore
