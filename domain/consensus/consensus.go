@@ -982,9 +982,14 @@ func (s *consensus) ResolveVirtual(progressReportCallback func(uint64, uint64)) 
 			progressReportCallback(virtualDAAScoreStart, virtualDAAScore)
 		}
 
-		_, isCompletelyResolved, err := s.resolveVirtualChunkWithLock(virtualResolveChunk)
+		virtualChangeSet, isCompletelyResolved, err := s.resolveVirtualChunkWithLock(virtualResolveChunk)
 		if err != nil {
 			return err
+		}
+		// If no change set was produced and we are not completely resolved, it likely means
+		// resolution was deferred (e.g., missing UTXO diff). Avoid a tight loop and exit gracefully.
+		if virtualChangeSet == nil && !isCompletelyResolved {
+			return nil
 		}
 		if isCompletelyResolved {
 			break
