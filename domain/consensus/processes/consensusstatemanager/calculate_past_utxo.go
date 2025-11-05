@@ -117,6 +117,10 @@ func (csm *consensusStateManager) restorePastUTXO(
 		}
 
 		exists, err := csm.utxoDiffStore.HasUTXODiffChild(csm.databaseContext, stagingArea, nextBlockHash)
+		if exists && utxoDiff == nil {
+			log.Infof("Block %s does not have a UTXO diff, but has UTXO diff child, "+
+				"meaning we have not reached the virtual", nextBlockHash)
+		}
 		if err != nil {
 			return nil, err
 		}
