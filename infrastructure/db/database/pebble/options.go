@@ -18,7 +18,17 @@ func Options() *pebble.Options {
 	// - 4 KiB index blocks to reduce index IO on seeks
 
 	// Bloom filters significantly cut false-positive reads on point lookups
-	bloomFilter := bloom.FilterPolicy(12)
+	bloomFilterLevel := int(6)
+	if v := os.Getenv("HTND_BLOOM_FILTER_LEVEL"); v != "" {
+		if levl, err := strconv.Atoi(v); err == nil && levl > 0 {
+			bloomFilterLevel = int(levl)
+		}
+	} else if v := os.Getenv("BLOOM_FILTER_LEVEL"); v != "" {
+		if levl, err := strconv.Atoi(v); err == nil && levl > 0 {
+			bloomFilterLevel = int(levl)
+		}
+	}
+	bloomFilter := bloom.FilterPolicy(bloomFilterLevel)
 
 	// Define MemTable size and thresholds. Larger memtables and higher thresholds
 	// reduce flush frequency and write stalls at the cost of more peak RAM usage.
