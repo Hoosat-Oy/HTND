@@ -107,20 +107,20 @@ func (csm *consensusStateManager) restorePastUTXO(
 	for {
 		log.Debugf("Collecting UTXO diff for block %s", nextBlockHash)
 		utxoDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, stagingArea, nextBlockHash)
-		if err != nil && !database.IsNotFoundError(err) {
+		if database.IsNotFoundError(err) {
+			log.Debugf("Block %s does not have a UTXO diff, "+
+				"meaning we reached the virtual", nextBlockHash)
+			break
+		}
+		if err != nil {
 			return nil, err
 		}
-		if utxoDiff != nil {
-			utxoDiffs = append(utxoDiffs, utxoDiff)
-			log.Debugf("Collected UTXO diff for block %s: toAdd: %d, toRemove: %d",
-				nextBlockHash, utxoDiff.ToAdd().Len(), utxoDiff.ToRemove().Len())
-		}
+		utxoDiffs = append(utxoDiffs, utxoDiff)
+		log.Debugf("Collected UTXO diff for block %s: toAdd: %d, toRemove: %d",
+			nextBlockHash, utxoDiff.ToAdd().Len(), utxoDiff.ToRemove().Len())
 
 		exists, err := csm.utxoDiffStore.HasUTXODiffChild(csm.databaseContext, stagingArea, nextBlockHash)
-		if exists && utxoDiff == nil {
-			log.Infof("Block %s does not have a UTXO diff, but has UTXO diff child, "+
-				"meaning we have not reached the virtual", nextBlockHash)
-		}
+
 		if err != nil {
 			return nil, err
 		}
