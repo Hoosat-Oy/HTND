@@ -57,7 +57,7 @@ func (mp *mempool) validateTransactionInContext(transaction *externalapi.DomainT
 	// Check wallet freezing
 	if isFrozen, frozenAddresses := mp.walletFreezingManager.isWalletFrozen(transaction); isFrozen {
 		txID := consensushashing.TransactionID(transaction)
-		log.Warnf("Rejected transaction %s from frozen wallet(s) (addresses: %v, outputs: %d)",
+		log.Debugf("Rejected transaction %s from frozen wallet(s) (addresses: %v, outputs: %d)",
 			txID, frozenAddresses, len(transaction.Outputs))
 		return transactionRuleError(RejectFreezedWallet,
 			fmt.Sprintf("Transaction rejected from frozen wallet addresses: %v", frozenAddresses))
@@ -66,30 +66,11 @@ func (mp *mempool) validateTransactionInContext(transaction *externalapi.DomainT
 	// Check compound transaction rate limiting
 	if isRateLimited, rateLimitedAddresses := mp.compoundTxRateLimiter.isRateLimited(transaction); isRateLimited {
 		txID := consensushashing.TransactionID(transaction)
-		log.Warnf("Rejected compound transaction %s from mempool due to rate limiting (addresses: %v, inputs: %d)",
+		log.Debugf("Rejected compound transaction %s from mempool due to rate limiting (addresses: %v, inputs: %d)",
 			txID, rateLimitedAddresses, len(transaction.Inputs))
 		return transactionRuleError(RejectRateLimit,
 			fmt.Sprintf("Compound transaction rate limit exceeded for addresses: %v", rateLimitedAddresses))
 	}
-
-	// for _, input := range transaction.Inputs {
-	// 	inputTransaction, _, found := mp.GetTransaction(&input.PreviousOutpoint.TransactionID, true, true)
-	// 	if found {
-	// 		for _, output := range inputTransaction.Outputs {
-	// 			_, extractedAddress, err := txscript.ExtractScriptPubKeyAddress(output.ScriptPublicKey, &dagconfig.MainnetParams)
-	// 			if err != nil {
-	// 				continue
-	// 			}
-	// 			var address = extractedAddress.EncodeAddress()
-	// 			for _, bannedAddresses := range constants.BannedAddresses {
-	// 				if address == bannedAddresses {
-	// 					log.Warnf("Rejected freezed wallet %s tx %s from mempool (%d outputs)", address, consensushashing.TransactionID(transaction), len(transaction.Outputs))
-	// 					return transactionRuleError(RejectFreezedWallet, fmt.Sprintf("Rejected freezed wallet %s tx %s from mempool", address, consensushashing.TransactionID(transaction)))
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
 
 	numExtraOuts := len(transaction.Outputs) - len(transaction.Inputs)
 	if !hasCoinbaseInput && numExtraOuts > 2 && transaction.Fee < uint64(numExtraOuts)*constants.SompiPerHoosat {
