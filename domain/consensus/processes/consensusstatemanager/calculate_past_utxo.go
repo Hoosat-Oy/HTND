@@ -107,7 +107,7 @@ func (csm *consensusStateManager) restorePastUTXO(
 	for {
 		log.Debugf("Collecting UTXO diff for block %s", nextBlockHash)
 		utxoDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, stagingArea, nextBlockHash)
-		if err != nil {
+		if err != nil && !database.IsNotFoundError(err) {
 			return nil, err
 		}
 		utxoDiffs = append(utxoDiffs, utxoDiff)
