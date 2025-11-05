@@ -89,8 +89,8 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 	mempoolConfig.MaximumOrphanTransactionCount = cfg.MaxOrphanTxs
 	mempoolConfig.MinimumRelayTransactionFee = cfg.MinRelayTxFee
 
-	// Configure compound transaction rate limiting
-	mempoolConfig.CompoundTxRateLimitEnabled = !cfg.DisableCompoundTxRateLimit
+	// Configure compound transaction rate limiting (always enabled)
+	mempoolConfig.CompoundTxRateLimitEnabled = true
 	if cfg.MaxCompoundTxPerMinute > 0 {
 		mempoolConfig.MaxCompoundTxPerAddressPerMinute = cfg.MaxCompoundTxPerMinute
 	}
@@ -101,8 +101,8 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 		mempoolConfig.CompoundTxMinInputsThreshold = cfg.CompoundTxInputsThreshold
 	}
 
-	// Configure wallet freezing
-	mempoolConfig.WalletFreezingEnabled = !cfg.DisableWalletFreezing
+	// Configure wallet freezing (always enabled)
+	mempoolConfig.WalletFreezingEnabled = true
 	if len(cfg.FrozenAddresses) > 0 {
 		mempoolConfig.FrozenAddresses = cfg.FrozenAddresses
 	}
