@@ -24,6 +24,7 @@ type mempool struct {
 	transactionsPool      *transactionsPool
 	orphansPool           *orphansPool
 	compoundTxRateLimiter *compoundTxRateLimiter
+	walletFreezingManager *walletFreezingManager
 }
 
 // New constructs a new mempool
@@ -37,6 +38,7 @@ func New(config *Config, consensusReference consensusreference.ConsensusReferenc
 	mp.transactionsPool = newTransactionsPool(mp)
 	mp.orphansPool = newOrphansPool(mp)
 	mp.compoundTxRateLimiter = newCompoundTxRateLimiter(config)
+	mp.walletFreezingManager = newWalletFreezingManager(config)
 
 	return mp
 }
@@ -230,4 +232,40 @@ func (mp *mempool) RemoveTransaction(transactionID *externalapi.DomainTransactio
 	defer mp.mtx.Unlock()
 
 	return mp.removeTransaction(transactionID, removeRedeemers)
+}
+
+// FreezeWallet adds an address to the frozen wallets list
+func (mp *mempool) FreezeWallet(address string) error {
+	mp.mtx.Lock()
+	defer mp.mtx.Unlock()
+
+	mp.walletFreezingManager.freezeWallet(address)
+	log.Infof("Wallet address %s has been frozen", address)
+	return nil
+}
+
+// UnfreezeWallet removes an address from the frozen wallets list
+func (mp *mempool) UnfreezeWallet(address string) error {
+	mp.mtx.Lock()
+	defer mp.mtx.Unlock()
+
+	mp.walletFreezingManager.unfreezeWallet(address)
+	log.Infof("Wallet address %s has been unfrozen", address)
+	return nil
+}
+
+// IsFrozen checks if a specific address is frozen
+func (mp *mempool) IsFrozen(address string) bool {
+	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
+
+	return mp.walletFreezingManager.isFrozen(address)
+}
+
+// GetFrozenWallets returns a list of all frozen wallet addresses
+func (mp *mempool) GetFrozenWallets() []string {
+	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
+
+	return mp.walletFreezingManager.getFrozenWallets()
 }

@@ -40,4 +40,10 @@ type Mempool interface {
 		includeOrphanPool bool) int
 	RevalidateHighPriorityTransactions() (validTransactions []*externalapi.DomainTransaction, err error)
 	IsTransactionOutputDust(output *externalapi.DomainTransactionOutput) bool
+
+	// Wallet freezing methods
+	FreezeWallet(address string) error
+	UnfreezeWallet(address string) error
+	IsFrozen(address string) bool
+	GetFrozenWallets() []string
 }

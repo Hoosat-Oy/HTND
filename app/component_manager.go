@@ -101,6 +101,12 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 		mempoolConfig.CompoundTxMinInputsThreshold = cfg.CompoundTxInputsThreshold
 	}
 
+	// Configure wallet freezing
+	mempoolConfig.WalletFreezingEnabled = !cfg.DisableWalletFreezing
+	if len(cfg.FrozenAddresses) > 0 {
+		mempoolConfig.FrozenAddresses = cfg.FrozenAddresses
+	}
+
 	domain, err := domain.New(&consensusConfig, mempoolConfig, db)
 	if err != nil {
 		return nil, err

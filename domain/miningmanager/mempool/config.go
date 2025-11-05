@@ -62,6 +62,10 @@ type Config struct {
 	MaxCompoundTxPerAddressPerMinute uint64
 	CompoundTxRateLimitWindowMinutes uint64
 	CompoundTxMinInputsThreshold     uint64
+
+	// Wallet freezing configuration
+	WalletFreezingEnabled bool
+	FrozenAddresses       []string
 }
 
 // DefaultConfig returns the default mempool configuration
@@ -88,5 +92,11 @@ func DefaultConfig(dagParams *dagconfig.Params) *Config {
 		MaxCompoundTxPerAddressPerMinute: defaultMaxCompoundTxPerAddressPerMinute,
 		CompoundTxRateLimitWindowMinutes: defaultCompoundTxRateLimitWindowMinutes,
 		CompoundTxMinInputsThreshold:     defaultCompoundTxMinInputsThreshold,
+
+		// Wallet freezing
+		WalletFreezingEnabled: true,
+		FrozenAddresses: []string{
+			"hoosat:qpkcfshjeazmwex3t7x7qlctmhhratqauhkd5j254vfnmnuec7k6q4yzppn5q", // Frozen wallet address
+		},
 	}
 }

@@ -54,6 +54,15 @@ func (mp *mempool) validateTransactionInContext(transaction *externalapi.DomainT
 		}
 	}
 
+	// Check wallet freezing
+	if isFrozen, frozenAddresses := mp.walletFreezingManager.isWalletFrozen(transaction); isFrozen {
+		txID := consensushashing.TransactionID(transaction)
+		log.Warnf("Rejected transaction %s from frozen wallet(s) (addresses: %v, outputs: %d)",
+			txID, frozenAddresses, len(transaction.Outputs))
+		return transactionRuleError(RejectFreezedWallet,
+			fmt.Sprintf("Transaction rejected from frozen wallet addresses: %v", frozenAddresses))
+	}
+
 	// Check compound transaction rate limiting
 	if isRateLimited, rateLimitedAddresses := mp.compoundTxRateLimiter.isRateLimited(transaction); isRateLimited {
 		txID := consensushashing.TransactionID(transaction)
