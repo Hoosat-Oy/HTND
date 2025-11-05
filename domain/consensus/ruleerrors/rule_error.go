@@ -214,11 +214,6 @@ var (
 
 	ErrMalformedUTXO = newRuleError("ErrMalformedUTXO")
 
-	// ErrMissingUTXODiff (structured) indicates that the UTXO diff for a block could not be found in the store.
-	// This typically represents a recoverable state (e.g., out-of-order commits or pruned context)
-	// and should not be conflated with missing parents. Use errors.As(err, *ruleerrors.ErrMissingUTXODiff)
-	// with the structured error type defined below.
-
 	ErrWrongPruningPointHash = newRuleError("ErrWrongPruningPointHash")
 
 	//ErrPruningPointViolation indicates that the pruning point isn't in the block past.
@@ -359,22 +354,5 @@ func NewErrInvalidTransactionsInNewBlock(invalidTransactions []InvalidTransactio
 	return errors.WithStack(RuleError{
 		message: "ErrInvalidTransactionsInNewBlock",
 		inner:   ErrInvalidTransactionsInNewBlock{invalidTransactions},
-	})
-}
-
-// ErrMissingUTXODiff indicates a required UTXO diff for a block hash is missing.
-type ErrMissingUTXODiff struct {
-	BlockHash *externalapi.DomainHash
-}
-
-func (e ErrMissingUTXODiff) Error() string {
-	return fmt.Sprintf("missing UTXO diff for block %s", e.BlockHash)
-}
-
-// NewErrMissingUTXODiff creates a new ErrMissingUTXODiff wrapped in a RuleError
-func NewErrMissingUTXODiff(blockHash *externalapi.DomainHash) error {
-	return errors.WithStack(RuleError{
-		message: "ErrMissingUTXODiff",
-		inner:   ErrMissingUTXODiff{BlockHash: blockHash},
 	})
 }

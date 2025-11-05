@@ -6,7 +6,6 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
-	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
 	"github.com/Hoosat-Oy/HTND/util/staging"
 	"github.com/pkg/errors"
@@ -165,12 +164,6 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*ex
 	processingPointStatus, reversalData, err := csm.resolveBlockStatus(
 		resolveStagingArea, processingPoint, true)
 	if err != nil {
-		// Gracefully defer virtual resolution if UTXO diffs are temporarily missing
-		var missingUTXODiffErr *ruleerrors.ErrMissingUTXODiff
-		if errors.As(err, &missingUTXODiffErr) {
-			log.Debugf("ResolveVirtual: deferring due to missing UTXO diff at %s", processingPoint)
-			return nil, false, nil
-		}
 		return nil, false, err
 	}
 
@@ -210,11 +203,6 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*ex
 	}
 	virtualUTXODiff, err := csm.updateVirtualWithParents(updateVirtualStagingArea, virtualParents)
 	if err != nil {
-		var missingUTXODiffErr *ruleerrors.ErrMissingUTXODiff
-		if errors.As(err, &missingUTXODiffErr) {
-			log.Debugf("ResolveVirtual: deferring updateVirtual due to missing UTXO diff while updating parents")
-			return nil, false, nil
-		}
 		return nil, false, err
 	}
 

@@ -34,10 +34,6 @@ func (csm *consensusStateManager) resolveBlockStatus(stagingArea *model.StagingA
 		log.Debugf("There are not unverified blocks in %s's selected parent chain. "+
 			"This means that the block already has a UTXO-verified status.", blockHash)
 		status, err := csm.blockStatusStore.Get(csm.databaseContext, stagingArea, blockHash)
-		if database.IsNotFoundError(err) {
-			log.Infof("resolveBlockStatusfailed to retrieve with %s\n", blockHash)
-			return 0, nil, err
-		}
 		if err != nil {
 			return 0, nil, err
 		}

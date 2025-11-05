@@ -4,10 +4,8 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
-	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/utxo"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
-	"github.com/pkg/errors"
 )
 
 // AddBlock submits the given block to be added to the
@@ -49,8 +47,7 @@ func (csm *consensusStateManager) AddBlock(stagingArea *model.StagingArea, block
 				var blockStatus externalapi.BlockStatus
 				blockStatus, reversalData, err = csm.resolveBlockStatus(stagingArea, blockHash, true)
 				if err != nil {
-					var missingUTXODiffErr *ruleerrors.ErrMissingUTXODiff
-					if errors.As(err, &missingUTXODiffErr) {
+					if database.IsNotFoundError(err) {
 						// Gracefully handle missing UTXO diffs: leave the block as pending verification
 						// and skip updating virtual for now.
 						log.Debugf("Deferring status resolution for %s due to missing UTXO diff: %s", blockHash, err)

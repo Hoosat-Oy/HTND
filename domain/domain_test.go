@@ -58,7 +58,7 @@ func TestCreateStagingConsensus(t *testing.T) {
 					},
 				},
 			}
-			err = domainInstance.StagingConsensus().ValidateAndInsertBlockWithTrustedData(genesisWithTrustedData, true)
+			err = domainInstance.StagingConsensus().ValidateAndInsertBlockWithTrustedData(genesisWithTrustedData, false)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertBlockWithTrustedData: %+v", err)
 			}
@@ -75,7 +75,7 @@ func TestCreateStagingConsensus(t *testing.T) {
 			t.Fatalf("BuildBlock: %+v", err)
 		}
 
-		err = domainInstance.StagingConsensus().ValidateAndInsertBlock(block, true, true)
+		err = domainInstance.StagingConsensus().ValidateAndInsertBlock(block, true, false)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertBlock: %+v", err)
 		}
@@ -121,7 +121,7 @@ func TestCreateStagingConsensus(t *testing.T) {
 		}
 
 		addGenesisToStagingConsensus()
-		err = domainInstance.StagingConsensus().ValidateAndInsertBlock(block, true, true)
+		err = domainInstance.StagingConsensus().ValidateAndInsertBlock(block, true, false)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertBlock: %+v", err)
 		}
