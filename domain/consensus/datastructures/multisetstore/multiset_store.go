@@ -45,8 +45,8 @@ func (ms *multisetStore) Get(dbContext model.DBReader, stagingArea *model.Stagin
 	if multiset, ok := stagingShard.toAdd[*blockHash]; ok {
 		return multiset.Clone(), nil
 	}
-
-	if multiset, ok := ms.cache.Get(blockHash); ok {
+	multiset, ok := ms.cache.Get(blockHash)
+	if ok && multiset != nil {
 		return multiset.(model.Multiset).Clone(), nil
 	}
 
@@ -55,12 +55,12 @@ func (ms *multisetStore) Get(dbContext model.DBReader, stagingArea *model.Stagin
 		return nil, err
 	}
 
-	multiset, err := ms.deserializeMultiset(multisetBytes)
+	multisetDeserialized, err := ms.deserializeMultiset(multisetBytes)
 	if err != nil {
 		return nil, err
 	}
-	ms.cache.Add(blockHash, multiset)
-	return multiset.Clone(), nil
+	ms.cache.Add(blockHash, multisetDeserialized)
+	return multisetDeserialized.Clone(), nil
 }
 
 // Delete deletes the multiset associated with the given blockHash

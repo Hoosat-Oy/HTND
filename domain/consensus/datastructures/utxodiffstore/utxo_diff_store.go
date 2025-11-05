@@ -62,12 +62,13 @@ func (uds *utxoDiffStore) isBlockHashStaged(stagingShard *utxoDiffStagingShard, 
 // UTXODiff gets the utxoDiff associated with the given blockHash
 func (uds *utxoDiffStore) UTXODiff(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (externalapi.UTXODiff, error) {
 	stagingShard := uds.stagingShard(stagingArea)
-	utxoDiff, ok := stagingShard.utxoDiffToAdd[*blockHash]
-	if ok {
+
+	if utxoDiff, ok := stagingShard.utxoDiffToAdd[*blockHash]; ok {
 		return utxoDiff, nil
 	}
 
-	if utxoDiff, ok := uds.utxoDiffCache.Get(blockHash); ok {
+	utxoDiff, ok := uds.utxoDiffCache.Get(blockHash)
+	if ok && utxoDiff != nil {
 		return utxoDiff.(externalapi.UTXODiff), nil
 	}
 
@@ -76,12 +77,12 @@ func (uds *utxoDiffStore) UTXODiff(dbContext model.DBReader, stagingArea *model.
 		return nil, err
 	}
 
-	utxoDiff, err = uds.deserializeUTXODiff(utxoDiffBytes)
+	utxoDiffDeserialized, err := uds.deserializeUTXODiff(utxoDiffBytes)
 	if err != nil {
 		return nil, err
 	}
-	uds.utxoDiffCache.Add(blockHash, utxoDiff)
-	return utxoDiff, nil
+	uds.utxoDiffCache.Add(blockHash, utxoDiffDeserialized)
+	return utxoDiffDeserialized, nil
 }
 
 // UTXODiffChild gets the utxoDiff child associated with the given blockHash

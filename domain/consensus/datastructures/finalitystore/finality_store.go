@@ -36,8 +36,8 @@ func (fs *finalityStore) FinalityPoint(dbContext model.DBReader, stagingArea *mo
 	if finalityPointHash, ok := stagingShard.toAdd[*blockHash]; ok {
 		return finalityPointHash, nil
 	}
-
-	if finalityPointHash, ok := fs.cache.Get(blockHash); ok {
+	finalityPointHash, ok := fs.cache.Get(blockHash)
+	if ok && finalityPointHash != nil {
 		return finalityPointHash.(*externalapi.DomainHash), nil
 	}
 
@@ -49,13 +49,13 @@ func (fs *finalityStore) FinalityPoint(dbContext model.DBReader, stagingArea *mo
 	if err != nil {
 		return nil, err
 	}
-	finalityPointHash, err := externalapi.NewDomainHashFromByteSlice(finalityPointHashBytes)
+	finalityPointHashDeserialized, err := externalapi.NewDomainHashFromByteSlice(finalityPointHashBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	fs.cache.Add(blockHash, finalityPointHash)
-	return finalityPointHash, nil
+	fs.cache.Add(blockHash, finalityPointHashDeserialized)
+	return finalityPointHashDeserialized, nil
 }
 
 func (fs *finalityStore) IsStaged(stagingArea *model.StagingArea) bool {

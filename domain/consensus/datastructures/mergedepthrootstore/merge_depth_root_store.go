@@ -36,8 +36,8 @@ func (mdrs *mergeDepthRootStore) MergeDepthRoot(dbContext model.DBReader, stagin
 	if root, ok := stagingShard.toAdd[*blockHash]; ok {
 		return root, nil
 	}
-
-	if root, ok := mdrs.cache.Get(blockHash); ok {
+	root, ok := mdrs.cache.Get(blockHash)
+	if ok && root != nil {
 		return root.(*externalapi.DomainHash), nil
 	}
 
@@ -45,13 +45,13 @@ func (mdrs *mergeDepthRootStore) MergeDepthRoot(dbContext model.DBReader, stagin
 	if err != nil {
 		return nil, err
 	}
-	root, err := externalapi.NewDomainHashFromByteSlice(rootBytes)
+	rootDeserialzied, err := externalapi.NewDomainHashFromByteSlice(rootBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	mdrs.cache.Add(blockHash, root)
-	return root, nil
+	mdrs.cache.Add(blockHash, rootDeserialzied)
+	return rootDeserialzied, nil
 }
 
 func (mdrs *mergeDepthRootStore) IsStaged(stagingArea *model.StagingArea) bool {

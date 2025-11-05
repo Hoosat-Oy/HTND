@@ -44,8 +44,8 @@ func (bss *blockStatusStore) Get(dbContext model.DBReader, stagingArea *model.St
 	if status, ok := stagingShard.toAdd[*blockHash]; ok {
 		return status, nil
 	}
-
-	if status, ok := bss.cache.Get(blockHash); ok {
+	status, ok := bss.cache.Get(blockHash)
+	if ok && status != nil {
 		return status.(externalapi.BlockStatus), nil
 	}
 
@@ -55,12 +55,12 @@ func (bss *blockStatusStore) Get(dbContext model.DBReader, stagingArea *model.St
 		return 0, err
 	}
 
-	status, err := bss.deserializeBlockStatus(statusBytes)
+	statusDeserialized, err := bss.deserializeBlockStatus(statusBytes)
 	if err != nil {
 		return 0, err
 	}
-	bss.cache.Add(blockHash, status)
-	return status, nil
+	bss.cache.Add(blockHash, statusDeserialized)
+	return statusDeserialized, nil
 }
 
 // Exists returns true if the blockStatus for the given blockHash exists

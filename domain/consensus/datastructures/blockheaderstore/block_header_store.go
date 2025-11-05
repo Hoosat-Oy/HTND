@@ -88,26 +88,26 @@ func (bhs *blockHeaderStore) blockHeader(dbContext model.DBReader, stagingShard 
 	if header, ok := stagingShard.toAdd[*blockHash]; ok {
 		return header, nil
 	}
-
-	if header, ok := bhs.cache.Get(blockHash); ok {
+	header, ok := bhs.cache.Get(blockHash)
+	if ok && header != nil {
 		return header.(externalapi.BlockHeader), nil
 	}
 
 	headerBytes, err := dbContext.Get(bhs.hashAsKey(blockHash))
-	// if database.IsNotFoundError(err) {
-	// 	log.Infof("blockHeader failed to retrieve with %s\n", blockHash)
-	// 	return nil, err
-	// }
+	if database.IsNotFoundError(err) {
+		log.Debugf("blockHeader failed to retrieve with %s\n", blockHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	header, err := bhs.deserializeHeader(headerBytes)
+	headerDeserialized, err := bhs.deserializeHeader(headerBytes)
 	if err != nil {
 		return nil, err
 	}
-	bhs.cache.Add(blockHash, header)
-	return header, nil
+	bhs.cache.Add(blockHash, headerDeserialized)
+	return headerDeserialized, nil
 }
 
 // HasBlock returns whether a block header with a given hash exists in the store.

@@ -84,26 +84,26 @@ func (bs *blockStore) block(dbContext model.DBReader, stagingShard *blockStaging
 	if block, ok := stagingShard.toAdd[*blockHash]; ok {
 		return block.Clone(), nil
 	}
-
-	if block, ok := bs.cache.Get(blockHash); ok {
+	block, ok := bs.cache.Get(blockHash)
+	if ok && block != nil {
 		return block.(*externalapi.DomainBlock).Clone(), nil
 	}
 
 	blockBytes, err := dbContext.Get(bs.hashAsKey(blockHash))
-	// if database.IsNotFoundError(err) {
-	// 	log.Infof("Block failed to retrieve with %s\n", blockHash)
-	// 	return nil, err
-	// }
+	if database.IsNotFoundError(err) {
+		log.Debugf("Block failed to retrieve with %s\n", blockHash)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	block, err := bs.deserializeBlock(blockBytes)
+	blockDeserialized, err := bs.deserializeBlock(blockBytes)
 	if err != nil {
 		return nil, err
 	}
-	bs.cache.Add(blockHash, block)
-	return block.Clone(), nil
+	bs.cache.Add(blockHash, blockDeserialized)
+	return blockDeserialized.Clone(), nil
 }
 
 // HasBlock returns whether a block with a given hash exists in the store.

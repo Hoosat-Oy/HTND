@@ -44,8 +44,8 @@ func (ads *acceptanceDataStore) Get(dbContext model.DBReader, stagingArea *model
 	if acceptanceData, ok := stagingShard.toAdd[*blockHash]; ok {
 		return acceptanceData.Clone(), nil
 	}
-
-	if acceptanceData, ok := ads.cache.Get(blockHash); ok {
+	acceptanceData, ok := ads.cache.Get(blockHash)
+	if ok && acceptanceData != nil {
 		return acceptanceData.(externalapi.AcceptanceData).Clone(), nil
 	}
 
@@ -54,12 +54,12 @@ func (ads *acceptanceDataStore) Get(dbContext model.DBReader, stagingArea *model
 		return nil, err
 	}
 
-	acceptanceData, err := ads.deserializeAcceptanceData(acceptanceDataBytes)
+	acceptanceDataDeserialized, err := ads.deserializeAcceptanceData(acceptanceDataBytes)
 	if err != nil {
 		return nil, err
 	}
-	ads.cache.Add(blockHash, acceptanceData)
-	return acceptanceData.Clone(), nil
+	ads.cache.Add(blockHash, acceptanceDataDeserialized)
+	return acceptanceDataDeserialized.Clone(), nil
 }
 
 // Delete deletes the acceptanceData associated with the given blockHash

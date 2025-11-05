@@ -54,8 +54,8 @@ func (daas *daaBlocksStore) DAAScore(dbContext model.DBReader, stagingArea *mode
 	if daaScore, ok := stagingShard.daaScoreToAdd[*blockHash]; ok {
 		return daaScore, nil
 	}
-
-	if daaScore, ok := daas.daaScoreLRUCache.Get(blockHash); ok {
+	daaScore, ok := daas.daaScoreLRUCache.Get(blockHash)
+	if ok && daaScore != nil {
 		return daaScore.(uint64), nil
 	}
 
@@ -68,12 +68,12 @@ func (daas *daaBlocksStore) DAAScore(dbContext model.DBReader, stagingArea *mode
 		return 0, err
 	}
 
-	daaScore, err := binaryserialization.DeserializeUint64(daaScoreBytes)
+	daaScoreDeserialized, err := binaryserialization.DeserializeUint64(daaScoreBytes)
 	if err != nil {
 		return 0, err
 	}
-	daas.daaScoreLRUCache.Add(blockHash, daaScore)
-	return daaScore, nil
+	daas.daaScoreLRUCache.Add(blockHash, daaScoreDeserialized)
+	return daaScoreDeserialized, nil
 }
 
 func (daas *daaBlocksStore) DAAAddedBlocks(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {

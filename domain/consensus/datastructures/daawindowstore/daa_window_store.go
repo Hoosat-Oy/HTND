@@ -49,12 +49,8 @@ func (daaws *daaWindowStore) DAAWindowBlock(dbContext model.DBReader, stagingAre
 	if pair, ok := stagingShard.toAdd[dbKey]; ok {
 		return pair, nil
 	}
-
-	if pair, ok := daaws.cache.Get(blockHash, index); ok {
-		if pair == nil {
-			return nil, errDAAWindowBlockNotFound
-		}
-
+	pair, ok := daaws.cache.Get(blockHash, index)
+	if ok && pair != nil {
 		return pair, nil
 	}
 
@@ -66,13 +62,13 @@ func (daaws *daaWindowStore) DAAWindowBlock(dbContext model.DBReader, stagingAre
 		return nil, err
 	}
 
-	pair, err := deserializePairBytes(pairBytes)
+	pairDeserialized, err := deserializePairBytes(pairBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	daaws.cache.Add(blockHash, index, pair)
-	return pair, nil
+	daaws.cache.Add(blockHash, index, pairDeserialized)
+	return pairDeserialized, nil
 }
 
 func deserializePairBytes(pairBytes []byte) (*externalapi.BlockGHOSTDAGDataHashPair, error) {
