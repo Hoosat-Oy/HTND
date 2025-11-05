@@ -186,7 +186,7 @@ func (s *consensus) BuildBlockTemplate(coinbaseData *externalapi.DomainCoinbaseD
 		return nil, err
 	}
 
-	isNearlySynced, err := s.IsNearlySynced()
+	isNearlySynced, err := s.isNearlySyncedNoLock()
 	if err != nil {
 		return nil, err
 	}
@@ -431,6 +431,9 @@ func (s *consensus) GetBlockHeaders(blockHashes []*externalapi.DomainHash) ([]ex
 }
 
 func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalapi.BlockInfo, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 
 	blockInfo := &externalapi.BlockInfo{}
@@ -446,7 +449,7 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 
 	blockStatus, err := s.blockStatusStore.Get(s.databaseContext, stagingArea, blockHash)
 	if database.IsNotFoundError(err) {
-		log.Debugf("GetBlockInfo failed to retrieve with %s\n", blockHash)
+		log.Infof("GetBlockInfo failed to retrieve with %s\n", blockHash)
 		return nil, err
 	}
 	if err != nil {
@@ -461,7 +464,7 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 
 	ghostdagData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, blockHash, false)
 	if database.IsNotFoundError(err) {
-		log.Debugf("GetBlockInfo failed to retrieve with %s\n", blockHash)
+		log.Infof("GetBlockInfo failed to retrieve with %s\n", blockHash)
 		return nil, err
 	}
 	if err != nil {
@@ -479,6 +482,7 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 
 func (s *consensus) GetBlockRelations(blockHash *externalapi.DomainHash) (
 	parents []*externalapi.DomainHash, children []*externalapi.DomainHash, err error) {
+
 	stagingArea := model.NewStagingArea()
 
 	blockRelation, err := s.blockRelationStores[0].BlockRelation(s.databaseContext, stagingArea, blockHash)
@@ -490,6 +494,8 @@ func (s *consensus) GetBlockRelations(blockHash *externalapi.DomainHash) (
 }
 
 func (s *consensus) GetBlockAcceptanceData(blockHash *externalapi.DomainHash) (externalapi.AcceptanceData, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	stagingArea := model.NewStagingArea()
 
@@ -502,6 +508,9 @@ func (s *consensus) GetBlockAcceptanceData(blockHash *externalapi.DomainHash) (e
 }
 
 func (s *consensus) GetBlocksAcceptanceData(blockHashes []*externalapi.DomainHash) ([]externalapi.AcceptanceData, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 	blocksAcceptanceData := make([]externalapi.AcceptanceData, len(blockHashes))
 
@@ -525,6 +534,9 @@ func (s *consensus) GetBlocksAcceptanceData(blockHashes []*externalapi.DomainHas
 func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash, maxBlocks uint64) (
 	hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
 
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 
 	err = s.validateBlockHashExists(stagingArea, lowHash)
@@ -541,6 +553,8 @@ func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash, 
 
 func (s *consensus) GetAnticone(blockHash, contextHash *externalapi.DomainHash,
 	maxBlocks uint64) (hashes []*externalapi.DomainHash, err error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	stagingArea := model.NewStagingArea()
 
@@ -557,6 +571,9 @@ func (s *consensus) GetAnticone(blockHash, contextHash *externalapi.DomainHash,
 }
 
 func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 
 	err := s.validateBlockHashExists(stagingArea, highHash)
@@ -569,6 +586,9 @@ func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) 
 
 func (s *consensus) GetPruningPointUTXOs(expectedPruningPointHash *externalapi.DomainHash,
 	fromOutpoint *externalapi.DomainOutpoint, limit int) ([]*externalapi.OutpointAndUTXOEntryPair, error) {
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	stagingArea := model.NewStagingArea()
 
@@ -592,6 +612,9 @@ func (s *consensus) GetPruningPointUTXOs(expectedPruningPointHash *externalapi.D
 
 func (s *consensus) GetVirtualUTXOs(expectedVirtualParents []*externalapi.DomainHash,
 	fromOutpoint *externalapi.DomainOutpoint, limit int) ([]*externalapi.OutpointAndUTXOEntryPair, error) {
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	stagingArea := model.NewStagingArea()
 
@@ -620,6 +643,9 @@ func (s *consensus) PruningPoint() (*externalapi.DomainHash, error) {
 }
 
 func (s *consensus) PruningPointHeaders() ([]externalapi.BlockHeader, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 
 	lastPruningPointIndex, err := s.pruningStore.CurrentPruningPointIndex(s.databaseContext, stagingArea)
@@ -660,10 +686,16 @@ func (s *consensus) AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []
 }
 
 func (s *consensus) ValidateAndInsertImportedPruningPoint(newPruningPoint *externalapi.DomainHash) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	return s.blockProcessor.ValidateAndInsertImportedPruningPoint(newPruningPoint)
 }
 
 func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 
 	virtualGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
@@ -684,6 +716,9 @@ func (s *consensus) Tips() ([]*externalapi.DomainHash, error) {
 }
 
 func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 
 	blockRelations, err := s.blockRelationStores[0].BlockRelation(s.databaseContext, stagingArea, model.VirtualBlockHash)
@@ -722,12 +757,17 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 }
 
 func (s *consensus) GetVirtualDAAScore() (uint64, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 
 	return s.daaBlocksStore.DAAScore(s.databaseContext, stagingArea, model.VirtualBlockHash)
 }
 
 func (s *consensus) CreateBlockLocatorFromPruningPoint(highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	stagingArea := model.NewStagingArea()
 
 	err := s.validateBlockHashExists(stagingArea, highHash)
@@ -744,6 +784,9 @@ func (s *consensus) CreateBlockLocatorFromPruningPoint(highHash *externalapi.Dom
 }
 
 func (s *consensus) CreateFullHeadersSelectedChainBlockLocator() (externalapi.BlockLocator, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 
 	lowHash, err := s.pruningStore.PruningPoint(s.databaseContext, stagingArea)
@@ -760,18 +803,27 @@ func (s *consensus) CreateFullHeadersSelectedChainBlockLocator() (externalapi.Bl
 }
 
 func (s *consensus) CreateHeadersSelectedChainBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 
 	return s.syncManager.CreateHeadersSelectedChainBlockLocator(stagingArea, lowHash, highHash)
 }
 
 func (s *consensus) GetSyncInfo() (*externalapi.SyncInfo, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 
 	return s.syncManager.GetSyncInfo(stagingArea)
 }
 
 func (s *consensus) IsValidPruningPoint(blockHash *externalapi.DomainHash) (bool, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 
 	err := s.validateBlockHashExists(stagingArea, blockHash)
@@ -783,6 +835,8 @@ func (s *consensus) IsValidPruningPoint(blockHash *externalapi.DomainHash) (bool
 }
 
 func (s *consensus) ArePruningPointsViolatingFinality(pruningPoints []externalapi.BlockHeader) (bool, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	stagingArea := model.NewStagingArea()
 
@@ -790,6 +844,8 @@ func (s *consensus) ArePruningPointsViolatingFinality(pruningPoints []externalap
 }
 
 func (s *consensus) ImportPruningPoints(pruningPoints []externalapi.BlockHeader) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	stagingArea := model.NewStagingArea()
 	err := s.consensusStateManager.ImportPruningPoints(stagingArea, pruningPoints)
@@ -832,6 +888,9 @@ func (s *consensus) validateBlockHashExists(stagingArea *model.StagingArea, bloc
 }
 
 func (s *consensus) IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 
 	err := s.validateBlockHashExists(stagingArea, blockHashA)
@@ -853,6 +912,8 @@ func (s *consensus) GetHeadersSelectedTip() (*externalapi.DomainHash, error) {
 }
 
 func (s *consensus) Anticone(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	stagingArea := model.NewStagingArea()
 
 	err := s.validateBlockHashExists(stagingArea, blockHash)
@@ -982,6 +1043,9 @@ func (s *consensus) BlockDAAWindowHashes(blockHash *externalapi.DomainHash) ([]*
 }
 
 func (s *consensus) TrustedDataDataDAAHeader(trustedBlockHash, daaBlockHash *externalapi.DomainHash, daaBlockWindowIndex uint64) (*externalapi.TrustedDataDataDAAHeader, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 	header, err := s.blockHeaderStore.BlockHeader(s.databaseContext, stagingArea, daaBlockHash)
 	if err != nil {
@@ -1017,10 +1081,16 @@ func (s *consensus) TrustedDataDataDAAHeader(trustedBlockHash, daaBlockHash *ext
 }
 
 func (s *consensus) TrustedBlockAssociatedGHOSTDAGDataBlockHashes(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	return s.pruningManager.TrustedBlockAssociatedGHOSTDAGDataBlockHashes(model.NewStagingArea(), blockHash)
 }
 
 func (s *consensus) TrustedGHOSTDAGData(blockHash *externalapi.DomainHash) (*externalapi.BlockGHOSTDAGData, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 	ghostdagData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, blockHash, false)
 	isNotFoundError := database.IsNotFoundError(err)
@@ -1032,6 +1102,9 @@ func (s *consensus) TrustedGHOSTDAGData(blockHash *externalapi.DomainHash) (*ext
 }
 
 func (s *consensus) IsChainBlock(blockHash *externalapi.DomainHash) (bool, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 	virtualGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
 	if database.IsNotFoundError(err) {
@@ -1046,6 +1119,9 @@ func (s *consensus) IsChainBlock(blockHash *externalapi.DomainHash) (bool, error
 }
 
 func (s *consensus) VirtualMergeDepthRoot() (*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 	return s.mergeDepthManager.VirtualMergeDepthRoot(stagingArea)
 }
@@ -1053,6 +1129,13 @@ func (s *consensus) VirtualMergeDepthRoot() (*externalapi.DomainHash, error) {
 // IsNearlySynced returns whether this consensus is considered synced or close to being synced. This info
 // is used to determine if it's ok to use a block template from this node for mining purposes.
 func (s *consensus) IsNearlySynced() (bool, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.isNearlySyncedNoLock()
+}
+
+func (s *consensus) isNearlySyncedNoLock() (bool, error) {
 	stagingArea := model.NewStagingArea()
 	virtualGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
