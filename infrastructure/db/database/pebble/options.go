@@ -18,7 +18,7 @@ func Options() *pebble.Options {
 	// - 4 KiB index blocks to reduce index IO on seeks
 
 	// Bloom filters significantly cut false-positive reads on point lookups
-	bloomFilterLevel := int(6)
+	bloomFilterLevel := int(10)
 	if v := os.Getenv("HTND_BLOOM_FILTER_LEVEL"); v != "" {
 		if levl, err := strconv.Atoi(v); err == nil && levl > 0 {
 			bloomFilterLevel = int(levl)
