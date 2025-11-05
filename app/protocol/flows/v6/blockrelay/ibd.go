@@ -553,7 +553,7 @@ func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlo
 		log.Debugf("Block header %s is already in the DAG. Skipping...", blockHash)
 		return nil
 	}
-	err = consensus.ValidateAndInsertBlock(block, false, false)
+	err = consensus.ValidateAndInsertBlock(block, false, true)
 	if err != nil {
 
 		if !errors.As(err, &ruleerrors.RuleError{}) {
@@ -730,9 +730,9 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 			}
 			// Set updateVirtual to true only for the last block in the entire hashes list
 			if index < len(hashesToRequest) {
-				err = flow.Domain().Consensus().ValidateAndInsertBlock(block, true, false)
+				err = flow.Domain().Consensus().ValidateAndInsertBlock(block, false, true)
 			} else {
-				err = flow.Domain().Consensus().ValidateAndInsertBlock(block, true, false)
+				err = flow.Domain().Consensus().ValidateAndInsertBlock(block, true, true)
 			}
 			if err != nil {
 				if !errors.As(err, &ruleerrors.RuleError{}) {
