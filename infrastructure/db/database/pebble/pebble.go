@@ -77,7 +77,7 @@ func (db *PebbleDB) Close() error {
 // Put sets the value for the given key. It overwrites any previous value for that key.
 func (db *PebbleDB) Put(key *database.Key, value []byte) error {
 	// log.Infof("Put key: %s, value %x", key, value)
-	err := db.db.Set(key.Bytes(), value, pebble.Sync)
+	err := db.db.Set(key.Bytes(), value, pebble.NoSync)
 	// if strings.Contains(string(key.Bytes()), "utxo-index") {
 	// 	log.Infof("Pebble Put, key: %x, value: %x", key.Bytes(), value)
 	// }
@@ -88,11 +88,11 @@ func (db *PebbleDB) BatchPut(pairs map[*database.Key][]byte) error {
 	batch := db.db.NewBatch()
 	defer batch.Close()
 	for key, value := range pairs {
-		if err := batch.Set(key.Bytes(), value, pebble.Sync); err != nil {
+		if err := batch.Set(key.Bytes(), value, pebble.NoSync); err != nil {
 			return errors.Wrapf(err, "failed to set key %s in batch", key)
 		}
 	}
-	if err := batch.Commit(pebble.Sync); err != nil {
+	if err := batch.Commit(pebble.NoSync); err != nil {
 		return errors.WithStack(err)
 	}
 	return nil
