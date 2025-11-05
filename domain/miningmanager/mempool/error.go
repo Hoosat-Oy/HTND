@@ -53,6 +53,7 @@ const (
 	RejectBadOrphan       RejectCode = 0x64
 	RejectSpamTx          RejectCode = 0x65
 	RejectFreezedWallet   RejectCode = 0x66
+	RejectRateLimit       RejectCode = 0x67
 )
 
 // Map of reject codes back strings for pretty printing.
@@ -69,6 +70,9 @@ var rejectCodeStrings = map[RejectCode]string{
 	RejectNotRequested:    "REJECT_NOT_REQUESTED",
 	RejectImmatureSpend:   "REJECT_IMMATURE_SPEND",
 	RejectBadOrphan:       "REJECT_BAD_ORPHAN",
+	RejectSpamTx:          "REJECT_SPAM_TX",
+	RejectFreezedWallet:   "REJECT_FREEZED_WALLET",
+	RejectRateLimit:       "REJECT_RATE_LIMIT",
 }
 
 // String returns the RejectCode in human-readable form.

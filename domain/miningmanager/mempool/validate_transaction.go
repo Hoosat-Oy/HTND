@@ -54,6 +54,15 @@ func (mp *mempool) validateTransactionInContext(transaction *externalapi.DomainT
 		}
 	}
 
+	// Check compound transaction rate limiting
+	if isRateLimited, rateLimitedAddresses := mp.compoundTxRateLimiter.isRateLimited(transaction); isRateLimited {
+		txID := consensushashing.TransactionID(transaction)
+		log.Warnf("Rejected compound transaction %s from mempool due to rate limiting (addresses: %v, inputs: %d)",
+			txID, rateLimitedAddresses, len(transaction.Inputs))
+		return transactionRuleError(RejectRateLimit,
+			fmt.Sprintf("Compound transaction rate limit exceeded for addresses: %v", rateLimitedAddresses))
+	}
+
 	// for _, input := range transaction.Inputs {
 	// 	inputTransaction, _, found := mp.GetTransaction(&input.PreviousOutpoint.TransactionID, true, true)
 	// 	if found {

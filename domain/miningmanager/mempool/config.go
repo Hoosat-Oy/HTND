@@ -27,6 +27,12 @@ const (
 	// the mempool and relayed. It is specified in sompi per 1kg (or 1000 grams) of transaction mass.
 	defaultMinimumRelayTransactionFee = util.Amount(1000)
 
+	// Compound transaction rate limiting defaults
+	defaultCompoundTxRateLimitEnabled       = true
+	defaultMaxCompoundTxPerAddressPerMinute = uint64(5)  // Max 5 compound transactions per address per minute
+	defaultCompoundTxRateLimitWindowMinutes = uint64(5)  // 5-minute sliding window
+	defaultCompoundTxMinInputsThreshold     = uint64(10) // Consider transactions with 10+ inputs as potential compound
+
 	// Standard transaction version range might be different from what consensus accepts, therefore
 	// we define separate values in mempool.
 	// However, currently there's exactly one transaction version, so mempool accepts the same version
@@ -50,6 +56,12 @@ type Config struct {
 	MinimumRelayTransactionFee            util.Amount
 	MinimumStandardTransactionVersion     uint16
 	MaximumStandardTransactionVersion     uint16
+
+	// Compound transaction rate limiting configuration
+	CompoundTxRateLimitEnabled       bool
+	MaxCompoundTxPerAddressPerMinute uint64
+	CompoundTxRateLimitWindowMinutes uint64
+	CompoundTxMinInputsThreshold     uint64
 }
 
 // DefaultConfig returns the default mempool configuration
@@ -70,5 +82,11 @@ func DefaultConfig(dagParams *dagconfig.Params) *Config {
 		MinimumRelayTransactionFee:            defaultMinimumRelayTransactionFee,
 		MinimumStandardTransactionVersion:     defaultMinimumStandardTransactionVersion,
 		MaximumStandardTransactionVersion:     defaultMaximumStandardTransactionVersion,
+
+		// Compound transaction rate limiting
+		CompoundTxRateLimitEnabled:       defaultCompoundTxRateLimitEnabled,
+		MaxCompoundTxPerAddressPerMinute: defaultMaxCompoundTxPerAddressPerMinute,
+		CompoundTxRateLimitWindowMinutes: defaultCompoundTxRateLimitWindowMinutes,
+		CompoundTxMinInputsThreshold:     defaultCompoundTxMinInputsThreshold,
 	}
 }

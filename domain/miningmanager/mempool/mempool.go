@@ -20,9 +20,10 @@ type mempool struct {
 	config             *Config
 	consensusReference consensusreference.ConsensusReference
 
-	mempoolUTXOSet   *mempoolUTXOSet
-	transactionsPool *transactionsPool
-	orphansPool      *orphansPool
+	mempoolUTXOSet        *mempoolUTXOSet
+	transactionsPool      *transactionsPool
+	orphansPool           *orphansPool
+	compoundTxRateLimiter *compoundTxRateLimiter
 }
 
 // New constructs a new mempool
@@ -35,6 +36,7 @@ func New(config *Config, consensusReference consensusreference.ConsensusReferenc
 	mp.mempoolUTXOSet = newMempoolUTXOSet(mp)
 	mp.transactionsPool = newTransactionsPool(mp)
 	mp.orphansPool = newOrphansPool(mp)
+	mp.compoundTxRateLimiter = newCompoundTxRateLimiter(config)
 
 	return mp
 }

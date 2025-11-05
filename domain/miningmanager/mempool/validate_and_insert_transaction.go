@@ -49,9 +49,19 @@ func (mp *mempool) validateAndInsertTransaction(transaction *externalapi.DomainT
 		return nil, err
 	}
 
+	// Record the transaction for compound transaction rate limiting
+	txID := consensushashing.TransactionID(transaction)
+	mp.compoundTxRateLimiter.recordTransaction(transaction, txID.String())
+
 	acceptedOrphans, err := mp.orphansPool.processOrphansAfterAcceptedTransaction(mempoolTransaction.Transaction())
 	if err != nil {
 		return nil, err
+	}
+
+	// Record orphan transactions as well for rate limiting
+	for _, orphanTx := range acceptedOrphans {
+		orphanTxID := consensushashing.TransactionID(orphanTx)
+		mp.compoundTxRateLimiter.recordTransaction(orphanTx, orphanTxID.String())
 	}
 
 	acceptedTransactions = append([]*externalapi.DomainTransaction{transaction.Clone()}, acceptedOrphans...) //these pointer leave the mempool, hence we clone.

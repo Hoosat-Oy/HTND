@@ -127,6 +127,12 @@ type Flags struct {
 	AllowSubmitBlockWhenNotSynced   bool          `long:"allow-submit-block-when-not-synced" hidden:"true" description:"Allow the node to accept blocks from RPC while not synced (this flag is mainly used for testing)"`
 	EnableSanityCheckPruningUTXOSet bool          `long:"enable-sanity-check-pruning-utxo" hidden:"true" description:"When moving the pruning point - check that the utxo set matches the utxo commitment"`
 	ProtocolVersion                 uint32        `long:"protocol-version" hidden:"true" description:"Use non default p2p protocol version"`
+
+	// Compound transaction rate limiting flags
+	DisableCompoundTxRateLimit bool   `long:"disable-compound-tx-ratelimit" description:"Disable compound transaction rate limiting"`
+	MaxCompoundTxPerMinute     uint64 `long:"max-compound-tx-per-minute" description:"Maximum compound transactions per address per minute" default:"5"`
+	CompoundTxRateLimitWindow  uint64 `long:"compound-tx-ratelimit-window" description:"Rate limit window in minutes" default:"5"`
+	CompoundTxInputsThreshold  uint64 `long:"compound-tx-inputs-threshold" description:"Minimum inputs to consider transaction as compound" default:"10"`
 	NetworkFlags
 	ServiceOptions *ServiceOptions
 }

@@ -89,6 +89,18 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 	mempoolConfig.MaximumOrphanTransactionCount = cfg.MaxOrphanTxs
 	mempoolConfig.MinimumRelayTransactionFee = cfg.MinRelayTxFee
 
+	// Configure compound transaction rate limiting
+	mempoolConfig.CompoundTxRateLimitEnabled = !cfg.DisableCompoundTxRateLimit
+	if cfg.MaxCompoundTxPerMinute > 0 {
+		mempoolConfig.MaxCompoundTxPerAddressPerMinute = cfg.MaxCompoundTxPerMinute
+	}
+	if cfg.CompoundTxRateLimitWindow > 0 {
+		mempoolConfig.CompoundTxRateLimitWindowMinutes = cfg.CompoundTxRateLimitWindow
+	}
+	if cfg.CompoundTxInputsThreshold > 0 {
+		mempoolConfig.CompoundTxMinInputsThreshold = cfg.CompoundTxInputsThreshold
+	}
+
 	domain, err := domain.New(&consensusConfig, mempoolConfig, db)
 	if err != nil {
 		return nil, err
