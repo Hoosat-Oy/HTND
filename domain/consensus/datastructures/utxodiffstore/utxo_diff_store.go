@@ -72,11 +72,6 @@ func (uds *utxoDiffStore) UTXODiff(dbContext model.DBReader, stagingArea *model.
 	}
 
 	utxoDiffBytes, err := dbContext.Get(uds.utxoDiffHashAsKey(blockHash))
-	if database.IsNotFoundError(err) {
-		// Print the hash and the raw DB key bytes in hex for easier debugging
-		log.Infof("UTXODiff failed to retrieve with %s, key=%x\n", blockHash, uds.utxoDiffHashAsKey(blockHash).Bytes())
-		return nil, err
-	}
 	if err != nil {
 		return nil, err
 	}

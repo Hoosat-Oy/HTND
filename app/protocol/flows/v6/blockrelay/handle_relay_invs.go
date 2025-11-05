@@ -299,8 +299,10 @@ func (flow *handleRelayInvsFlow) start() error {
 				continue
 			}
 			if database.IsNotFoundError(err) {
-				log.Infof("Ignoring block %s due to missing UTXO diff key. From %s", inv.Hash, flow.netConnection.Address())
-				continue
+				// Print stack trace to help debug missing UTXO diff key issues.
+				log.Infof("Ignoring block %s due to missing UTXO diff key. From %s\nStack trace:\n%+v",
+					inv.Hash, flow.netConnection.Address(), errors.WithStack(err))
+				return err
 			}
 			if errors.Is(err, ruleerrors.ErrInvalidPoW) {
 				if block.PoWHash != "" {
