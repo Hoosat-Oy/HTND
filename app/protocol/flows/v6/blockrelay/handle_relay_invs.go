@@ -311,6 +311,10 @@ func (flow *handleRelayInvsFlow) start() error {
 				flow.banConnection(false)
 				continue
 			}
+			if errors.Is(err, ruleerrors.ErrUnfinalizedTx) {
+				log.Infof("Ignoring block %s with unfinalized transaction from %s", inv.Hash, flow.netConnection.Address())
+				continue
+			}
 			return err
 		}
 		if len(missingParents) > 0 {
