@@ -71,6 +71,7 @@ type sendConfig struct {
 type autoCompoundConfig struct {
 	KeysFile                 string   `long:"keys-file" short:"f" description:"Keys file location (default: ~/.htnwallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Hoosatwallet\\key.json (Windows))"`
 	Password                 string   `long:"password" short:"p" description:"Wallet password"`
+	CompoundRate             int      `long:"compound-rate" short:"c" description:"Time in seconds"`
 	DaemonAddress            string   `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to"`
 	ToAddress                string   `long:"to-address" short:"t" description:"The public address to compound your HTN to" required:"true"`
 	FromAddresses            []string `long:"from-address" short:"a" description:"Specific public address to send Hoosat from. Repeat multiple times (adding -a before each) to accept several addresses" required:"false"`

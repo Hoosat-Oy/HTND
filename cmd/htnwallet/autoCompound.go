@@ -17,7 +17,7 @@ import (
 var errRateLimited = errors.New("rate limited")
 
 func autoCompound(conf *autoCompoundConfig) error {
-	tickerSecond := 60 * time.Second
+	tickerSecond := time.Duration(conf.CompoundRate) * time.Second
 	fmt.Printf("Hoosat Auto-Compounder STARTED → 1 compound tx every %d seconds\n", int(tickerSecond.Seconds()))
 
 	// === Load keys ===
