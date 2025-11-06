@@ -177,7 +177,7 @@ func cleanAndExpandPath(path string) string {
 func newConfigParser(cfgFlags *Flags, options flags.Options) *flags.Parser {
 	parser := flags.NewParser(cfgFlags, options)
 	if runtime.GOOS == "windows" {
-		parser.AddGroup("Service Options", "Service Options", cfgFlags.ServiceOptions)
+		_, _ = parser.AddGroup("Service Options", "Service Options", cfgFlags.ServiceOptions)
 	}
 	return parser
 }
