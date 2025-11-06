@@ -20,7 +20,7 @@ func GetPassword(prompt string) string {
 	// Restore it in the event of an interrupt.
 	// CITATION: Konstantin Shaposhnikov - https://groups.google.com/forum/#!topic/golang-nuts/kTVAbtee9UA
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
 		_ = term.Restore(int(syscall.Stdin), initialTermState)
