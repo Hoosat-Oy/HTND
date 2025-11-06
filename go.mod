@@ -19,7 +19,7 @@ require (
 	github.com/tyler-smith/go-bip39 v1.1.0
 	golang.org/x/crypto v0.42.0
 	golang.org/x/term v0.35.0
-	google.golang.org/grpc v1.75.1
+	google.golang.org/grpc v1.76.0
 	google.golang.org/protobuf v1.36.9
 	lukechampine.com/blake3 v1.4.1
 )
