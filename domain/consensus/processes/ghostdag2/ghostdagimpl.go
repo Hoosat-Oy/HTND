@@ -224,48 +224,6 @@ func (gh *ghostdagHelper) isAnticone(stagingArea *model.StagingArea, blockA, blo
 	return !isBAncestorOfA, nil
 }
 
-/* ----------------validateKCluster------------------- */
-func (gh *ghostdagHelper) validateKCluster(stagingArea *model.StagingArea, chain *externalapi.DomainHash,
-	checkedBlock *externalapi.DomainHash, counter *int, blueSet *[]*externalapi.DomainHash) (bool, error) {
-
-	var k = int(gh.k[constants.GetBlockVersion()-1])
-	isAnticone, err := gh.isAnticone(stagingArea, chain, checkedBlock)
-	if err != nil {
-		return false, err
-	}
-	if isAnticone {
-		if *counter > k {
-			return false, nil
-		}
-		ifDestroy, err := gh.checkIfDestroy(stagingArea, chain, blueSet)
-		if err != nil {
-			return false, err
-		}
-		if ifDestroy {
-			return false, nil
-		}
-		*counter++
-		return true, nil
-	}
-	isAncestorOf, err := gh.dagTopologyManager.IsAncestorOf(stagingArea, checkedBlock, chain)
-	if err != nil {
-		return false, err
-	}
-	if isAncestorOf {
-		dataStore, err := gh.BlockData(stagingArea, chain)
-		if err != nil {
-			return false, err
-		}
-		if mergeSetReds := dataStore.MergeSetReds(); contains(checkedBlock, mergeSetReds) {
-			return false, nil
-		}
-	} else {
-		return true, nil
-	}
-
-	return false, nil
-}
-
 /*----------------contains-------------------------- */
 func contains(item *externalapi.DomainHash, items []*externalapi.DomainHash) bool {
 	for _, r := range items {
