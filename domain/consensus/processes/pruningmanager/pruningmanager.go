@@ -998,7 +998,7 @@ func (pm *pruningManager) AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPa
 	if err != nil {
 		return err
 	}
-	defer dbTx.RollbackUnlessClosed()
+	defer func() { _ = dbTx.RollbackUnlessClosed() }()
 
 	importedMultiset, err := pm.pruningStore.ImportedPruningPointMultiset(dbTx)
 	if err != nil {
