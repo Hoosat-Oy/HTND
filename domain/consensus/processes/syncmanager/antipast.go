@@ -192,25 +192,3 @@ func (sm *syncManager) missingBlockBodyHashes(stagingArea *model.StagingArea, hi
 
 	return missingBlocks, nil
 }
-
-func (sm *syncManager) isHeaderOnlyBlock(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
-	exists, err := sm.blockStatusStore.Exists(sm.databaseContext, stagingArea, blockHash)
-	if err != nil {
-		return false, err
-	}
-
-	if !exists {
-		return false, nil
-	}
-
-	status, err := sm.blockStatusStore.Get(sm.databaseContext, stagingArea, blockHash)
-	if database.IsNotFoundError(err) {
-		log.Infof("isHeaderOnlyBlock failed to retrieve with %s\n", blockHash)
-		return false, err
-	}
-	if err != nil {
-		return false, err
-	}
-
-	return status == externalapi.StatusHeaderOnly, nil
-}
