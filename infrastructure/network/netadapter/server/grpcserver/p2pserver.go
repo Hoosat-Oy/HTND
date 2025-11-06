@@ -51,7 +51,7 @@ func (p *p2pServer) Connect(address string) (server.Connection, error) {
 	// connection failures (context deadline exceeded) before a TCP handshake completes.
 	// Bump this to a more forgiving value to improve initial connectivity.
 	const dialTimeout = 5 * time.Second
-	gRPCClientConnection, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock(), grpc.WithTimeout(dialTimeout))
+	gRPCClientConnection, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithTimeout(dialTimeout))
 	if err != nil {
 		return nil, errors.Wrapf(err, "%s error connecting to %s", p.name, address)
 	}

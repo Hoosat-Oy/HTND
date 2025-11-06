@@ -3,7 +3,6 @@ package grpcclient
 import (
 	"context"
 	"io"
-	"time"
 
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
@@ -11,6 +10,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/server/grpcserver/protowire"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
 )
 
@@ -30,11 +30,7 @@ type GRPCClient struct {
 
 // Connect connects to the RPC server with the given address
 func Connect(address string) (*GRPCClient, error) {
-	const dialTimeout = 5 * time.Second
-	ctx, cancel := context.WithTimeout(context.Background(), dialTimeout)
-	defer cancel()
-
-	gRPCConnection, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
+	gRPCConnection, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, errors.Wrapf(err, "error connecting to %s", address)
 	}
