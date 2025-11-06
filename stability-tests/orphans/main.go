@@ -41,7 +41,7 @@ func main() {
 		panic(errors.Wrap(err, "error connecting to JSON-RPC server"))
 	}
 
-	defer rpcClient.Disconnect()
+	defer func() { _ = rpcClient.Disconnect() }()
 	err = sendBlocks(routes, blocks, topBlock)
 	if err != nil {
 		backendLog.Close()
