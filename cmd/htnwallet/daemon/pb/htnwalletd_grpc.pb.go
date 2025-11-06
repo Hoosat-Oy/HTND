@@ -19,16 +19,17 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Htnwalletd_GetBalance_FullMethodName                 = "/htnwalletd.htnwalletd/GetBalance"
-	Htnwalletd_GetExternalSpendableUTXOs_FullMethodName  = "/htnwalletd.htnwalletd/GetExternalSpendableUTXOs"
-	Htnwalletd_CreateUnsignedTransactions_FullMethodName = "/htnwalletd.htnwalletd/CreateUnsignedTransactions"
-	Htnwalletd_ShowAddresses_FullMethodName              = "/htnwalletd.htnwalletd/ShowAddresses"
-	Htnwalletd_NewAddress_FullMethodName                 = "/htnwalletd.htnwalletd/NewAddress"
-	Htnwalletd_Shutdown_FullMethodName                   = "/htnwalletd.htnwalletd/Shutdown"
-	Htnwalletd_Broadcast_FullMethodName                  = "/htnwalletd.htnwalletd/Broadcast"
-	Htnwalletd_Send_FullMethodName                       = "/htnwalletd.htnwalletd/Send"
-	Htnwalletd_Sign_FullMethodName                       = "/htnwalletd.htnwalletd/Sign"
-	Htnwalletd_GetVersion_FullMethodName                 = "/htnwalletd.htnwalletd/GetVersion"
+	Htnwalletd_GetBalance_FullMethodName                        = "/htnwalletd.htnwalletd/GetBalance"
+	Htnwalletd_GetExternalSpendableUTXOs_FullMethodName         = "/htnwalletd.htnwalletd/GetExternalSpendableUTXOs"
+	Htnwalletd_CreateUnsignedTransactions_FullMethodName        = "/htnwalletd.htnwalletd/CreateUnsignedTransactions"
+	Htnwalletd_ShowAddresses_FullMethodName                     = "/htnwalletd.htnwalletd/ShowAddresses"
+	Htnwalletd_NewAddress_FullMethodName                        = "/htnwalletd.htnwalletd/NewAddress"
+	Htnwalletd_Shutdown_FullMethodName                          = "/htnwalletd.htnwalletd/Shutdown"
+	Htnwalletd_Broadcast_FullMethodName                         = "/htnwalletd.htnwalletd/Broadcast"
+	Htnwalletd_Send_FullMethodName                              = "/htnwalletd.htnwalletd/Send"
+	Htnwalletd_Sign_FullMethodName                              = "/htnwalletd.htnwalletd/Sign"
+	Htnwalletd_GetVersion_FullMethodName                        = "/htnwalletd.htnwalletd/GetVersion"
+	Htnwalletd_CreateUnsignedCompoundTransaction_FullMethodName = "/htnwalletd.htnwalletd/CreateUnsignedCompoundTransaction"
 )
 
 // HtnwalletdClient is the client API for Htnwalletd service.
@@ -47,6 +48,7 @@ type HtnwalletdClient interface {
 	// Since SignRequest contains a password - this command should only be used on a trusted or secure connection
 	Sign(ctx context.Context, in *SignRequest, opts ...grpc.CallOption) (*SignResponse, error)
 	GetVersion(ctx context.Context, in *GetVersionRequest, opts ...grpc.CallOption) (*GetVersionResponse, error)
+	CreateUnsignedCompoundTransaction(ctx context.Context, in *CreateUnsignedTransactionsRequest, opts ...grpc.CallOption) (*CreateUnsignedTransactionsResponse, error)
 }
 
 type htnwalletdClient struct {
@@ -157,6 +159,16 @@ func (c *htnwalletdClient) GetVersion(ctx context.Context, in *GetVersionRequest
 	return out, nil
 }
 
+func (c *htnwalletdClient) CreateUnsignedCompoundTransaction(ctx context.Context, in *CreateUnsignedTransactionsRequest, opts ...grpc.CallOption) (*CreateUnsignedTransactionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateUnsignedTransactionsResponse)
+	err := c.cc.Invoke(ctx, Htnwalletd_CreateUnsignedCompoundTransaction_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // HtnwalletdServer is the server API for Htnwalletd service.
 // All implementations must embed UnimplementedHtnwalletdServer
 // for forward compatibility.
@@ -173,6 +185,7 @@ type HtnwalletdServer interface {
 	// Since SignRequest contains a password - this command should only be used on a trusted or secure connection
 	Sign(context.Context, *SignRequest) (*SignResponse, error)
 	GetVersion(context.Context, *GetVersionRequest) (*GetVersionResponse, error)
+	CreateUnsignedCompoundTransaction(context.Context, *CreateUnsignedTransactionsRequest) (*CreateUnsignedTransactionsResponse, error)
 	mustEmbedUnimplementedHtnwalletdServer()
 }
 
@@ -212,6 +225,9 @@ func (UnimplementedHtnwalletdServer) Sign(context.Context, *SignRequest) (*SignR
 }
 func (UnimplementedHtnwalletdServer) GetVersion(context.Context, *GetVersionRequest) (*GetVersionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVersion not implemented")
+}
+func (UnimplementedHtnwalletdServer) CreateUnsignedCompoundTransaction(context.Context, *CreateUnsignedTransactionsRequest) (*CreateUnsignedTransactionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateUnsignedCompoundTransaction not implemented")
 }
 func (UnimplementedHtnwalletdServer) mustEmbedUnimplementedHtnwalletdServer() {}
 func (UnimplementedHtnwalletdServer) testEmbeddedByValue()                    {}
@@ -414,6 +430,24 @@ func _Htnwalletd_GetVersion_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Htnwalletd_CreateUnsignedCompoundTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateUnsignedTransactionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HtnwalletdServer).CreateUnsignedCompoundTransaction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Htnwalletd_CreateUnsignedCompoundTransaction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HtnwalletdServer).CreateUnsignedCompoundTransaction(ctx, req.(*CreateUnsignedTransactionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Htnwalletd_ServiceDesc is the grpc.ServiceDesc for Htnwalletd service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -460,6 +494,10 @@ var Htnwalletd_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetVersion",
 			Handler:    _Htnwalletd_GetVersion_Handler,
+		},
+		{
+			MethodName: "CreateUnsignedCompoundTransaction",
+			Handler:    _Htnwalletd_CreateUnsignedCompoundTransaction_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -3,18 +3,22 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Hoosat-Oy/HTND/cmd/htnwallet/daemon/client"
 	"github.com/Hoosat-Oy/HTND/cmd/htnwallet/daemon/pb"
 	"github.com/Hoosat-Oy/HTND/cmd/htnwallet/keys"
 	"github.com/Hoosat-Oy/HTND/cmd/htnwallet/libhtnwallet"
-	"github.com/Hoosat-Oy/HTND/cmd/htnwallet/utils"
 	"github.com/pkg/errors"
 )
 
+// sentinel error used to indicate a compound attempt hit the daemon rate limit
+var errRateLimited = errors.New("rate limited")
+
 func autoCompound(conf *autoCompoundConfig) error {
-	fmt.Println("Hoosat Auto-Compounder STARTED → 1 compound tx every 10 seconds")
+	tickerSecond := 60 * time.Second
+	fmt.Printf("Hoosat Auto-Compounder STARTED → 1 compound tx every %d seconds\n", int(tickerSecond.Seconds()))
 
 	// === Load keys ===
 	keysFile, err := keys.ReadKeysFile(conf.NetParams(), conf.KeysFile)
@@ -42,25 +46,26 @@ func autoCompound(conf *autoCompoundConfig) error {
 	}
 	defer tearDown()
 
-	// === Amount ===
-	var sendAmountSompi uint64
-	if !conf.IsSendAll {
-		sendAmountSompi, err = utils.KasToSompi(conf.SendAmount)
-		if sendAmountSompi < 16*88 {
-			sendAmountSompi = 16 * 88
-		}
-		if err != nil {
-			sendAmountSompi = 16 * 88
-		}
-	}
-
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(tickerSecond)
 	defer ticker.Stop()
 
+	if err := compoundOnce(conf, daemonClient, mnemonics, keysFile.ECDSA); err != nil {
+		if errors.Is(err, errRateLimited) {
+			fmt.Printf("[%s] rate limited, backing off for 2m\n", time.Now().Format("15:04:05"))
+			time.Sleep(2 * time.Minute)
+		} else {
+			fmt.Printf("[%s] compound failed: %v\n", time.Now().Format("15:04:05"), err)
+		}
+	}
 	for {
 		<-ticker.C
-		if err := compoundOnce(conf, daemonClient, mnemonics, keysFile.ECDSA, sendAmountSompi); err != nil {
-			fmt.Printf("[%s] compound failed: %v\n", time.Now().Format("15:04:05"), err)
+		if err := compoundOnce(conf, daemonClient, mnemonics, keysFile.ECDSA); err != nil {
+			if errors.Is(err, errRateLimited) {
+				fmt.Printf("[%s] rate limited, backing off for 2m\n", time.Now().Format("15:04:05"))
+				time.Sleep(2 * time.Minute)
+			} else {
+				fmt.Printf("[%s] compound failed: %v\n", time.Now().Format("15:04:05"), err)
+			}
 			continue
 		}
 	}
@@ -71,28 +76,25 @@ func compoundOnce(
 	client pb.HtnwalletdClient, // CORRECT TYPE
 	mnemonics []string,
 	ecdsa bool,
-	amount uint64,
 ) error {
 	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
 	defer cancel()
 
 	// 1. Create unsigned tx
-	resp, err := client.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
+	resp, err := client.CreateUnsignedCompoundTransaction(ctx, &pb.CreateUnsignedTransactionsRequest{
 		From:                     conf.FromAddresses,
 		Address:                  conf.ToAddress,
-		Amount:                   amount,
-		IsSendAll:                conf.IsSendAll,
 		UseExistingChangeAddress: conf.UseExistingChangeAddress,
 	})
 	if err != nil {
-		fmt.Printf("[%s] NOTHING TO COMPOUND → Error: %s\n",
-			time.Now().Format("15:04:05"), err)
+		fmt.Printf("[%s] NOTHING TO COMPOUND → Error: %s, backing off for 5m\n", time.Now().Format("15:04:05"), err)
+		time.Sleep(5 * time.Minute)
 		return nil
 	}
 
 	if len(resp.UnsignedTransactions) == 0 {
-		fmt.Printf("[%s] NOTHING TO COMPOUND\n",
-			time.Now().Format("15:04:05"))
+		fmt.Printf("[%s] NOTHING TO COMPOUND, backing off for 5m\n", time.Now().Format("15:04:05"))
+		time.Sleep(5 * time.Minute)
 		return nil
 	}
 
@@ -112,6 +114,10 @@ func compoundOnce(
 		Transactions: [][]byte{signedTx},
 	})
 	if err != nil {
+		// Handle rate limit gracefully
+		if strings.Contains(err.Error(), "Compound transaction rate limit exceeded") {
+			return errRateLimited
+		}
 		return errors.Wrap(err, "broadcast failed")
 	}
 

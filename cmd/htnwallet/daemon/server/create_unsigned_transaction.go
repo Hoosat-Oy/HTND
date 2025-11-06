@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/Hoosat-Oy/HTND/cmd/htnwallet/daemon/pb"
 	"github.com/Hoosat-Oy/HTND/cmd/htnwallet/libhtnwallet"
@@ -34,6 +35,130 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 	return &pb.CreateUnsignedTransactionsResponse{UnsignedTransactions: unsignedTransactions}, nil
 }
 
+func (s *server) CreateUnsignedCompoundTransaction(_ context.Context, request *pb.CreateUnsignedTransactionsRequest) (
+	*pb.CreateUnsignedTransactionsResponse, error,
+) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	unsignedTransactions, err := s.createUnsignedCompoundTransaction(request.Address, request.From, request.UseExistingChangeAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.CreateUnsignedTransactionsResponse{UnsignedTransactions: unsignedTransactions}, nil
+}
+
+func (s *server) createUnsignedCompoundTransaction(address string, fromAddressesString []string, useExistingChangeAddress bool) ([][]byte, error) {
+	if !s.isSynced() {
+		return nil, errors.Errorf("wallet daemon is not synced yet, %s", s.formatSyncStateReport())
+	}
+	toAddress, err := util.DecodeAddress(address, s.params.Prefix)
+	if err != nil {
+		return nil, err
+	}
+
+	var fromAddresses []*walletAddress
+	for _, from := range fromAddressesString {
+		fromAddress, exists := s.addressSet[from]
+		if !exists {
+			return nil, fmt.Errorf("specified from address %s does not exists", from)
+		}
+		fromAddresses = append(fromAddresses, fromAddress)
+	}
+
+	selectedUTXOs, _, changeSompi, err := s.selectCompoundUTXOs(feePerInput, fromAddresses)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(selectedUTXOs) == 0 {
+		return nil, errors.Errorf("couldn't find funds to spend")
+	}
+
+	changeAddress, changeWalletAddress, err := s.changeAddress(useExistingChangeAddress, fromAddresses)
+	if err != nil {
+		return nil, err
+	}
+
+	// For compounding we want to consolidate inputs into a single output.
+	// Send the net amount (after fees) to the requested address and avoid creating
+	// an additional change output to keep base mass low and prevent dust.
+	// Note: changeAddress is still used by maybeAutoCompoundTransaction for split/merge flows.
+	payments := []*libhtnwallet.Payment{{
+		Address: toAddress,
+		Amount:  changeSompi,
+	}}
+	unsignedTransaction, err := libhtnwallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
+		s.keysFile.MinimumSignatures,
+		payments, selectedUTXOs)
+	if err != nil {
+		return nil, err
+	}
+
+	unsignedTransactions, err := s.maybeAutoCompoundTransaction(unsignedTransaction, toAddress, changeAddress, changeWalletAddress)
+	if err != nil {
+		return nil, err
+	}
+	return unsignedTransactions, nil
+}
+
+// Add this constant next to your others
+const targetCompoundInputs = 72
+
+func (s *server) selectCompoundUTXOs(feePerInput int, fromAddresses []*walletAddress) (
+	selectedUTXOs []*libhtnwallet.UTXO, totalReceived uint64, changeSompi uint64, err error) {
+
+	selectedUTXOs = make([]*libhtnwallet.UTXO, 0, targetCompoundInputs)
+	var totalValue uint64
+
+	dagInfo, err := s.rpcClient.GetBlockDAGInfo()
+	if err != nil {
+		return nil, 0, 0, errors.Wrap(err, "failed to get DAG info")
+	}
+
+	s.sortUTXOsByAmountAscending()
+
+	// Step 1: Collect up to targetCompoundInputs smallest spendable UTXOs
+	for _, utxo := range s.utxosSortedByAmount {
+		if len(selectedUTXOs) >= targetCompoundInputs {
+			break
+		}
+		if (fromAddresses != nil && !walletAddressesContain(fromAddresses, utxo.address)) ||
+			!s.isUTXOSpendable(utxo, dagInfo.VirtualDAAScore) {
+			continue
+		}
+
+		if broadcastTime, ok := s.usedOutpoints[*utxo.Outpoint]; ok {
+			if s.usedOutpointHasExpired(broadcastTime) {
+				delete(s.usedOutpoints, *utxo.Outpoint)
+			} else {
+				continue
+			}
+		}
+
+		selectedUTXOs = append(selectedUTXOs, &libhtnwallet.UTXO{
+			Outpoint:       utxo.Outpoint,
+			UTXOEntry:      utxo.UTXOEntry,
+			DerivationPath: s.walletAddressPath(utxo.address),
+		})
+		totalValue += utxo.UTXOEntry.Amount()
+	}
+
+	if len(selectedUTXOs) == 0 {
+		return nil, 0, 0, errors.New("no spendable UTXOs for compounding")
+	}
+
+	// Calculate fees based on the actual number of selected inputs
+	fee := uint64(len(selectedUTXOs)) * uint64(feePerInput)
+	if totalValue <= fee {
+		return nil, 0, 0, errors.Errorf("not enough funds: total %d sompi < fee %d sompi", totalValue, fee)
+	}
+
+	changeSompi = totalValue - fee
+
+	return selectedUTXOs, totalValue, changeSompi, nil
+}
 func (s *server) createUnsignedTransactions(address string, amount uint64, isSendAll bool, fromAddressesString []string, useExistingChangeAddress bool) ([][]byte, error) {
 	if !s.isSynced() {
 		return nil, errors.Errorf("wallet daemon is not synced yet, %s", s.formatSyncStateReport())
@@ -49,7 +174,7 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, isSen
 	for _, from := range fromAddressesString {
 		fromAddress, exists := s.addressSet[from]
 		if !exists {
-			return nil, fmt.Errorf("Specified from address %s does not exists", from)
+			return nil, fmt.Errorf("specified from address %s does not exists", from)
 		}
 		fromAddresses = append(fromAddresses, fromAddress)
 	}
@@ -92,6 +217,19 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, isSen
 	return unsignedTransactions, nil
 }
 
+func (s *server) sortUTXOsByAmountAscending() {
+	slices.SortStableFunc(s.utxosSortedByAmount, func(a, b *walletUTXO) int {
+		switch {
+		case a.UTXOEntry.Amount() < b.UTXOEntry.Amount():
+			return -1
+		case a.UTXOEntry.Amount() > b.UTXOEntry.Amount():
+			return 1
+		default:
+			return 0
+		}
+	})
+}
+
 func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uint64, fromAddresses []*walletAddress) (
 	selectedUTXOs []*libhtnwallet.UTXO, totalReceived uint64, changeSompi uint64, err error) {
 
@@ -102,6 +240,8 @@ func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uin
 	if err != nil {
 		return nil, 0, 0, err
 	}
+
+	s.sortUTXOsByAmountAscending()
 
 	for _, utxo := range s.utxosSortedByAmount {
 		if (fromAddresses != nil && !walletAddressesContain(fromAddresses, utxo.address)) ||
