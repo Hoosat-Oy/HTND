@@ -46,7 +46,10 @@ func (p *p2pServer) MessageStream(stream protowire.P2P_MessageStreamServer) erro
 func (p *p2pServer) Connect(address string) (server.Connection, error) {
 	log.Debugf("%s Dialing to %s", p.name, address)
 
-	const dialTimeout = 1 * time.Second
+	// A 1s dial timeout can be too aggressive on some networks and cause frequent
+	// connection failures (context deadline exceeded) before a TCP handshake completes.
+	// Bump this to a more forgiving value to improve initial connectivity.
+	const dialTimeout = 5 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), dialTimeout)
 	defer cancel()
 
