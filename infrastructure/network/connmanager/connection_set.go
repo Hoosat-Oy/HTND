@@ -6,10 +6,6 @@ import (
 
 type connectionSet map[string]*netadapter.NetConnection
 
-func (cs connectionSet) add(connection *netadapter.NetConnection) {
-	cs[connection.Address()] = connection
-}
-
 func (cs connectionSet) remove(connection *netadapter.NetConnection) {
 	delete(cs, connection.Address())
 }
