@@ -5,9 +5,10 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"crypto/sha512"
+	"hash"
+
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ripemd160" //nolint:staticcheck
-	"hash"
 )
 
 func newHMACWriter(key []byte) hmacWriter {

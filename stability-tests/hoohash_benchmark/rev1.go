@@ -15,7 +15,6 @@ import (
 	// Import other necessary packages
 )
 
-
 type xoShiRo256PlusPlus struct {
 	s0 uint64
 	s1 uint64
@@ -45,6 +44,7 @@ func (x *xoShiRo256PlusPlus) Uint64() uint64 {
 	x.s3 = bits.RotateLeft64(x.s3, 45)
 	return res
 }
+
 const eps float64 = 1e-9
 
 // type matrix [64][64]uint16
@@ -55,14 +55,14 @@ func MediumComplexNonLinear(x float64) float64 {
 }
 
 func IntermediateComplexNonLinear(x float64) float64 {
-    if x == math.Pi/2 || x == 3*math.Pi/2 {
-        return 0 // Avoid singularity
-    }
-    return math.Sin(x) * math.Cos(x) * math.Tan(x)
+	if x == math.Pi/2 || x == 3*math.Pi/2 {
+		return 0 // Avoid singularity
+	}
+	return math.Sin(x) * math.Cos(x) * math.Tan(x)
 }
 
 func HighComplexNonLinear(x float64) float64 {
-	return math.Exp(x) * math.Log(x + 1)
+	return math.Exp(x) * math.Log(x+1)
 }
 
 func ComplexNonLinear(x float64) float64 {
@@ -137,7 +137,7 @@ func (mat *matrix) computeHoohashRank() int {
 func generateHoohashMatrix(hash *externalapi.DomainHash) *matrix {
 	var mat matrix
 	generator := newxoShiRo256PlusPlus(hash)
-	
+
 	for {
 		for i := range mat {
 			for j := 0; j < 64; j += 16 {
@@ -200,98 +200,92 @@ func (mat *matrix) HoohashMatrixMultiplication(hash *externalapi.DomainHash) []b
 const tableSize = 1 << 20 // 64 KB table (reduced from 16 MB)
 var lookupTable [tableSize]uint64
 
-
 func generateHoohashLookupTable() {
-    // Initialize lookup table deterministically
-    var seed [32]byte
-    for i := range lookupTable {
-        // Use SHA-256 to generate deterministic values
-        binary.BigEndian.PutUint32(seed[:], uint32(i))
-        hash := sha256.Sum256(seed[:])
-        lookupTable[i] = binary.BigEndian.Uint64(hash[:8])
-    }
+	// Initialize lookup table deterministically
+	var seed [32]byte
+	for i := range lookupTable {
+		// Use SHA-256 to generate deterministic values
+		binary.BigEndian.PutUint32(seed[:], uint32(i))
+		hash := sha256.Sum256(seed[:])
+		lookupTable[i] = binary.BigEndian.Uint64(hash[:8])
+	}
 }
-
 
 func timeMemoryTradeoff(input uint64) uint64 {
-    result := input
-    for i := 0; i < 1000; i++ { // Number of lookups
-        index := result % tableSize
-        result ^= lookupTable[index]
-        result = (result << 1) | (result >> 63) // Rotate left by 1
-    }
-    return result
+	result := input
+	for i := 0; i < 1000; i++ { // Number of lookups
+		index := result % tableSize
+		result ^= lookupTable[index]
+		result = (result << 1) | (result >> 63) // Rotate left by 1
+	}
+	return result
 }
 
-
 func memoryHardFunction(input []byte) []byte {
-    const memorySize = 1 << 10 // 2^16 = 65536
-    const iterations = 2
+	const memorySize = 1 << 10 // 2^16 = 65536
+	const iterations = 2
 
-    memory := make([]uint64, memorySize)
+	memory := make([]uint64, memorySize)
 
-    // Initialize memory
-    for i := range memory {
-        memory[i] = binary.LittleEndian.Uint64(input)
-    }
+	// Initialize memory
+	for i := range memory {
+		memory[i] = binary.LittleEndian.Uint64(input)
+	}
 
-    // Perform memory-hard computations
-    for i := 0; i < iterations; i++ {
-        for j := 0; j < memorySize; j++ {
-            index1 := memory[j] % uint64(memorySize)
-            index2 := (memory[j] >> 32) % uint64(memorySize)
-            
-            hash, _ := blake2b.New512(nil)
-            _ = binary.Write(hash, binary.LittleEndian, memory[index1])
-            _ = binary.Write(hash, binary.LittleEndian, memory[index2])
-            
-            memory[j] = binary.LittleEndian.Uint64(hash.Sum(nil))
-        }
-    }
+	// Perform memory-hard computations
+	for i := 0; i < iterations; i++ {
+		for j := 0; j < memorySize; j++ {
+			index1 := memory[j] % uint64(memorySize)
+			index2 := (memory[j] >> 32) % uint64(memorySize)
 
-    // Combine results
-    result := make([]byte, 64)
-    for i := 0; i < 8; i++ {
-        binary.LittleEndian.PutUint64(result[i*8:], memory[i])
-    }
-    return result
+			hash, _ := blake2b.New512(nil)
+			_ = binary.Write(hash, binary.LittleEndian, memory[index1])
+			_ = binary.Write(hash, binary.LittleEndian, memory[index2])
+
+			memory[j] = binary.LittleEndian.Uint64(hash.Sum(nil))
+		}
+	}
+
+	// Combine results
+	result := make([]byte, 64)
+	for i := 0; i < 8; i++ {
+		binary.LittleEndian.PutUint64(result[i*8:], memory[i])
+	}
+	return result
 }
 
 func verifiableDelayFunction(input []byte) []byte {
-    const iterations = 1000 // Adjust based on desired delay
+	const iterations = 1000 // Adjust based on desired delay
 
-    // Create a prime field
-    p, _ := new(big.Int).SetString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F", 16)
-    
-    // Convert input to big.Int
-    x := new(big.Int).SetBytes(input)
-    
-    // Perform repeated squaring
-    for i := 0; i < iterations; i++ {
-        x.Mul(x, x)
-        x.Mod(x, p)
-    }
-    
-    // Hash the result to get final output
-    hash := sha256.Sum256(x.Bytes())
-    return hash[:]
+	// Create a prime field
+	p, _ := new(big.Int).SetString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F", 16)
+
+	// Convert input to big.Int
+	x := new(big.Int).SetBytes(input)
+
+	// Perform repeated squaring
+	for i := 0; i < iterations; i++ {
+		x.Mul(x, x)
+		x.Mod(x, p)
+	}
+
+	// Hash the result to get final output
+	hash := sha256.Sum256(x.Bytes())
+	return hash[:]
 }
-
 
 func BenchmarkHoohashRev1() *externalapi.DomainHash {
-    input := []byte("BenchmarkMatrix_HeavyHash")
-    firstPass := hashes.Blake3HashWriter()
-    firstPass.InfallibleWrite(input)
-    hash := firstPass.Finalize()
-    matrix := generateHoohashMatrix(hash)
-    multiplied := matrix.HoohashMatrixMultiplication(hash)
-    secondPass := hashes.Blake3HashWriter()
-    secondPass.InfallibleWrite(multiplied)
-    hash = secondPass.Finalize()
-    return hash
+	input := []byte("BenchmarkMatrix_HeavyHash")
+	firstPass := hashes.Blake3HashWriter()
+	firstPass.InfallibleWrite(input)
+	hash := firstPass.Finalize()
+	matrix := generateHoohashMatrix(hash)
+	multiplied := matrix.HoohashMatrixMultiplication(hash)
+	secondPass := hashes.Blake3HashWriter()
+	secondPass.InfallibleWrite(multiplied)
+	hash = secondPass.Finalize()
+	return hash
 }
-
-
 
 func BenchmarkHoohashRev2() *externalapi.DomainHash {
 	input := []byte("BenchmarkMatrix_HeavyHash")
@@ -308,23 +302,23 @@ func BenchmarkHoohashRev2() *externalapi.DomainHash {
 	secondPass := hashes.Blake3HashWriter()
 	secondPass.InfallibleWrite(multiplied)
 	hash = secondPass.Finalize()
-    return hash
+	return hash
 }
 
 func main() {
-    iterations := 0
-    startTime := time.Now()
+	iterations := 0
+	startTime := time.Now()
 	generateHoohashLookupTable()
-    for {
+	for {
 		// Here you can switch which algorithm to benchmark
-        BenchmarkHoohashRev1()
+		BenchmarkHoohashRev1()
 		// BenchmarkHoohashRev2()
-        iterations++
+		iterations++
 
-        if iterations%1000 == 0 {
-            elapsed := time.Since(startTime)
-            opsPerSecond := float64(iterations) / elapsed.Seconds()
-            fmt.Printf("Iterations: %d, Time: %v, Ops/sec: %.2f\n", iterations, elapsed, opsPerSecond)
-        }
-    }
+		if iterations%1000 == 0 {
+			elapsed := time.Since(startTime)
+			opsPerSecond := float64(iterations) / elapsed.Seconds()
+			fmt.Printf("Iterations: %d, Time: %v, Ops/sec: %.2f\n", iterations, elapsed, opsPerSecond)
+		}
+	}
 }
