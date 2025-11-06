@@ -33,7 +33,7 @@ func main() {
 	if err != nil {
 		printErrorAndExit(fmt.Sprintf("error connecting to the RPC server: %s", err))
 	}
-	defer client.Disconnect()
+	defer func() { _ = client.Disconnect() }()
 
 	if !cfg.AllowConnectionToDifferentVersions {
 		htndMessage, err := client.Post(&protowire.HoosatdMessage{Payload: &protowire.HoosatdMessage_GetInfoRequest{GetInfoRequest: &protowire.GetInfoRequestMessage{}}})
