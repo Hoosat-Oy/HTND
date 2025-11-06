@@ -33,24 +33,6 @@ func (mdb *miningDB) updateLastMinedBlock(id string) error {
 	return mdb.db.Put(lastMinedBlockKey, []byte(id))
 }
 
-func (mdb *miningDB) lastMinedBlock() (string, error) {
-	has, err := mdb.db.Has(lastMinedBlockKey)
-	if err != nil {
-		return "", err
-	}
-
-	if !has {
-		return "0", nil
-	}
-
-	blockID, err := mdb.db.Get(lastMinedBlockKey)
-	if err != nil {
-		return "", err
-	}
-
-	return string(blockID), nil
-}
-
 func newMiningDB(dataDir string) (*miningDB, error) {
 	idToBlockHash := make(map[string]*externalapi.DomainHash)
 	hashToBlockID := make(map[externalapi.DomainHash]string)
