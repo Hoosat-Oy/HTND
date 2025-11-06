@@ -1240,8 +1240,7 @@ func (pm *pruningManager) ExpectedHeaderPruningPoint(stagingArea *model.StagingA
 
 	selectedParentPruningPointHeader, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, selectedParentHeader.PruningPoint())
 	if database.IsNotFoundError(err) {
-		log.Infof("ExpectedHeaderPruningPoint: block header not found for selected parent's pruning point %s\n", selectedParentHeader.PruningPoint())
-		return nil, err
+		return selectedParentHeader.PruningPoint(), nil
 	}
 	if err != nil {
 		return nil, err
