@@ -3,7 +3,6 @@ package pow
 import (
 	"bytes"
 	"crypto/sha256"
-	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"math"
@@ -15,7 +14,6 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/hashes"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/serialization"
-	"golang.org/x/crypto/blake2b"
 )
 
 func BenchmarkMatrixHoohashRev2(b *testing.B) {
@@ -616,49 +614,6 @@ func (mat *matrix) kHeavyHashTest(hash *externalapi.DomainHash, t *testing.T) *e
 	writer := hashes.KeccakHeavyHashWriter()
 	writer.InfallibleWrite(res[:])
 	return writer.Finalize()
-}
-
-func timeMemoryTradeoff(input uint64) uint64 {
-	result := input
-	for i := 0; i < 1000; i++ { // Number of lookups
-		index := result % tableSize
-		result ^= lookupTable[index]
-		result = (result << 1) | (result >> 63) // Rotate left by 1
-	}
-	return result
-}
-
-func memoryHardFunction(input []byte) []byte {
-	const memorySize = 1 << 10 // 2^16 = 65536
-	const iterations = 2
-
-	memory := make([]uint64, memorySize)
-
-	// Initialize memory
-	for i := range memory {
-		memory[i] = binary.LittleEndian.Uint64(input)
-	}
-
-	// Perform memory-hard computations
-	for i := 0; i < iterations; i++ {
-		for j := 0; j < memorySize; j++ {
-			index1 := memory[j] % uint64(memorySize)
-			index2 := (memory[j] >> 32) % uint64(memorySize)
-
-			hash, _ := blake2b.New512(nil)
-			_ = binary.Write(hash, binary.LittleEndian, memory[index1])
-			_ = binary.Write(hash, binary.LittleEndian, memory[index2])
-
-			memory[j] = binary.LittleEndian.Uint64(hash.Sum(nil))
-		}
-	}
-
-	// Combine results
-	result := make([]byte, 64)
-	for i := 0; i < 8; i++ {
-		binary.LittleEndian.PutUint64(result[i*8:], memory[i])
-	}
-	return result
 }
 
 func TestKHeavyHash(t *testing.T) {
