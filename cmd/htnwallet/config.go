@@ -13,7 +13,7 @@ const (
 	createSubCmd                    = "create"
 	balanceSubCmd                   = "balance"
 	sendSubCmd                      = "send"
-	spamSubCmd                      = "spam"
+	autoCompoundSubCmd              = "auto-compound"
 	sweepSubCmd                     = "sweep"
 	createUnsignedTransactionSubCmd = "create-unsigned-transaction"
 	signSubCmd                      = "sign"
@@ -167,7 +167,7 @@ func parseCommandLine() (subCommand string, config interface{}) {
 		"Shows the balance for a public address in Hoosat", balanceConf)
 
 	spamConf := &autoCompoundConfig{DaemonAddress: defaultListen}
-	_, _ = parser.AddCommand(spamSubCmd, "Sends a Hoosat compound transactions automatically",
+	_, _ = parser.AddCommand(autoCompoundSubCmd, "Sends a Hoosat compound transactions automatically",
 		"Sends a Hoosat compound transactions automatically", spamConf)
 
 	sendConf := &sendConfig{DaemonAddress: defaultListen}
@@ -244,7 +244,7 @@ func parseCommandLine() (subCommand string, config interface{}) {
 			printErrorAndExit(err)
 		}
 		config = balanceConf
-	case spamSubCmd:
+	case autoCompoundSubCmd:
 		combineNetworkFlags(&spamConf.NetworkFlags, &cfg.NetworkFlags)
 		err := spamConf.ResolveNetwork(parser)
 		if err != nil {

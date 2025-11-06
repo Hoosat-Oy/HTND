@@ -12,7 +12,7 @@ func main() {
 		err = create(config.(*createConfig))
 	case balanceSubCmd:
 		err = balance(config.(*balanceConfig))
-	case spamSubCmd:
+	case autoCompoundSubCmd:
 		err = autoCompound(config.(*autoCompoundConfig))
 	case sendSubCmd:
 		err = send(config.(*sendConfig))
