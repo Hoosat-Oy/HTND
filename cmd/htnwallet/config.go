@@ -10,7 +10,11 @@ import (
 )
 
 const (
-	createSubCmd                    = "create"
+	createSubC	_	_, _ = parser.AddCommand(createSubCmd, "Creates a new wallet (`--import` to recover from seed)",
+		"Creates a private key and 3 public addresses, one for each of MainNet, TestNet and DevNet. "+
+			"Import existing private key and public addresses from seed using `--import`.", createConf) = parser.AddCommand(createSubCmd, "Creates a new wallet (`--import` to recover from seed)",
+		"Creates a private key and 3 public addresses, one for each of MainNet, TestNet and DevNet. "+
+			"Import existing private key and public addresses from seed using `--import`.", createConf)                   = "create"
 	balanceSubCmd                   = "balance"
 	sendSubCmd                      = "send"
 	spamSubCmd                      = "spam"
@@ -159,16 +163,16 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	parser := flags.NewParser(cfg, flags.PrintErrors|flags.HelpFlag)
 
 	createConf := &createConfig{}
-	parser.AddCommand(createSubCmd, "Creates a new wallet (`--import` to recover from seed)",
+	_, _ = parser.AddCommand(createSubCmd, "Creates a new wallet (`--import` to recover from seed)",
 		"Creates a private key and 3 public addresses, one for each of MainNet, TestNet and DevNet. "+
 			"Import existing private key and public addresses from seed using `--import`.", createConf)
 
 	balanceConf := &balanceConfig{DaemonAddress: defaultListen}
-	parser.AddCommand(balanceSubCmd, "Shows the balance of a public address",
+	_, _ = parser.AddCommand(balanceSubCmd, "Shows the balance of a public address",
 		"Shows the balance for a public address in Hoosat", balanceConf)
 
 	spamConf := &spamConfig{DaemonAddress: defaultListen}
-	parser.AddCommand(spamSubCmd, "Sends a Hoosat transactions in a spammy way to a public address",
+	_, _ = parser.AddCommand(spamSubCmd, "Sends a Hoosat transactions in a spammy way to a public address",
 		"Sends a Hoosat transactios spammy way to a public address", spamConf)
 
 	sendConf := &sendConfig{DaemonAddress: defaultListen}
