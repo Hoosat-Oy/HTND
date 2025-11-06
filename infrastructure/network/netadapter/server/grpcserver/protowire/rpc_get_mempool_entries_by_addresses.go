@@ -47,7 +47,7 @@ func (x *HoosatdMessage_GetMempoolEntriesByAddressesResponse) fromAppMessage(mes
 	entries := make([]*MempoolEntryByAddress, len(message.Entries))
 	for i, entry := range message.Entries {
 		entries[i] = &MempoolEntryByAddress{}
-		entries[i].fromAppMessage(entry)
+		_ = entries[i].fromAppMessage(entry)
 	}
 	x.GetMempoolEntriesByAddressesResponse = &GetMempoolEntriesByAddressesResponseMessage{
 		Entries: entries,
