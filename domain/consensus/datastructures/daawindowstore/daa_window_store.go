@@ -9,7 +9,6 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/lrucachehashpairtoblockghostdagdatahashpair"
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
 	"github.com/Hoosat-Oy/HTND/util/staging"
-	"github.com/pkg/errors"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -39,8 +38,6 @@ func (daaws *daaWindowStore) Stage(stagingArea *model.StagingArea, blockHash *ex
 	}
 
 }
-
-var errDAAWindowBlockNotFound = errors.Wrap(database.ErrNotFound, "DAA window block not found")
 
 func (daaws *daaWindowStore) DAAWindowBlock(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, index uint64) (*externalapi.BlockGHOSTDAGDataHashPair, error) {
 	stagingShard := daaws.stagingShard(stagingArea)
