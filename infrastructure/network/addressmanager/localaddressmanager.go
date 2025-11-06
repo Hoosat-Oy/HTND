@@ -149,7 +149,7 @@ func (lam *localAddressManager) addLocalAddress(addr string) error {
 			}
 
 			netAddr := appmessage.NewNetAddressIPPort(ifaceIP, uint16(port))
-			lam.addLocalNetAddress(netAddr, BoundPrio)
+			_ = lam.addLocalNetAddress(netAddr, BoundPrio)
 		}
 	} else {
 		netAddr, err := lam.hostToNetAddress(host, uint16(port))
@@ -157,7 +157,7 @@ func (lam *localAddressManager) addLocalAddress(addr string) error {
 			return err
 		}
 
-		lam.addLocalNetAddress(netAddr, BoundPrio)
+		_ = lam.addLocalNetAddress(netAddr, BoundPrio)
 	}
 
 	return nil
