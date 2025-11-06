@@ -49,7 +49,7 @@ func realMain() error {
 	if err != nil {
 		return errors.Wrap(err, "error connecting to RPC server")
 	}
-	defer syncerRPCClient.Disconnect()
+	defer func() { _ = syncerRPCClient.Disconnect() }()
 
 	syncedRPCClient, err := rpc.ConnectToRPC(&rpc.Config{
 		RPCServer: syncedRPCAddress,
@@ -57,7 +57,7 @@ func realMain() error {
 	if err != nil {
 		return errors.Wrap(err, "error connecting to RPC server")
 	}
-	defer syncedRPCClient.Disconnect()
+	defer func() { _ = syncedRPCClient.Disconnect() }()
 
 	err = syncedRPCClient.RegisterForBlockAddedNotifications()
 	if err != nil {
