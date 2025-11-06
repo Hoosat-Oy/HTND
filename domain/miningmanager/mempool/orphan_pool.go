@@ -224,6 +224,10 @@ func (op *orphansPool) unorphanTransaction(transaction *model.OrphanTransaction)
 		return err
 	}
 
+	// Record this transaction for compound rate limiting using the original orphan arrival time
+	txID := consensushashing.TransactionID(transaction.Transaction())
+	op.mempool.compoundTxRateLimiter.recordTransactionAt(transaction.Transaction(), txID.String(), transaction.AddedAtTime())
+
 	return nil
 }
 

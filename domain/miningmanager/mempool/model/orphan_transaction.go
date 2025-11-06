@@ -1,6 +1,8 @@
 package model
 
 import (
+	"time"
+
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
 )
@@ -10,6 +12,7 @@ type OrphanTransaction struct {
 	transaction     *externalapi.DomainTransaction
 	isHighPriority  bool
 	addedAtDAAScore uint64
+	addedAtTime     time.Time
 }
 
 // NewOrphanTransaction constructs a new OrphanTransaction
@@ -22,6 +25,7 @@ func NewOrphanTransaction(
 		transaction:     transaction,
 		isHighPriority:  isHighPriority,
 		addedAtDAAScore: addedAtDAAScore,
+		addedAtTime:     time.Now(),
 	}
 }
 
@@ -43,4 +47,9 @@ func (ot *OrphanTransaction) IsHighPriority() bool {
 // AddedAtDAAScore returns the virtual DAA score at which this OrphanTransaction was added to the mempool
 func (ot *OrphanTransaction) AddedAtDAAScore() uint64 {
 	return ot.addedAtDAAScore
+}
+
+// AddedAtTime returns the wall-clock time when this orphan was first seen
+func (ot *OrphanTransaction) AddedAtTime() time.Time {
+	return ot.addedAtTime
 }

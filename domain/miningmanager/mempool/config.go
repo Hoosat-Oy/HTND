@@ -63,6 +63,9 @@ type Config struct {
 	CompoundTxRateLimitWindowMinutes uint64
 	CompoundTxMinInputsThreshold     uint64
 
+	// DAG/network parameters used for address encoding/decoding and script parsing
+	DAGParams *dagconfig.Params
+
 	// Wallet freezing configuration
 	WalletFreezingEnabled bool
 	FrozenAddresses       []string
@@ -92,6 +95,9 @@ func DefaultConfig(dagParams *dagconfig.Params) *Config {
 		MaxCompoundTxPerAddressPerMinute: defaultMaxCompoundTxPerAddressPerMinute,
 		CompoundTxRateLimitWindowMinutes: defaultCompoundTxRateLimitWindowMinutes,
 		CompoundTxMinInputsThreshold:     defaultCompoundTxMinInputsThreshold,
+
+		// DAG params
+		DAGParams: dagParams,
 
 		// Wallet freezing
 		WalletFreezingEnabled: true,

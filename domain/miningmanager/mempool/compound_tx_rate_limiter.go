@@ -6,7 +6,6 @@ import (
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/txscript"
-	"github.com/Hoosat-Oy/HTND/domain/dagconfig"
 )
 
 // compoundTxSubmission represents a single compound transaction submission
@@ -64,7 +63,7 @@ func (rtl *compoundTxRateLimiter) extractSenderAddresses(transaction *externalap
 	for _, input := range transaction.Inputs {
 		if input.UTXOEntry != nil && input.UTXOEntry.ScriptPublicKey() != nil {
 			_, extractedAddress, err := txscript.ExtractScriptPubKeyAddress(
-				input.UTXOEntry.ScriptPublicKey(), &dagconfig.MainnetParams)
+				input.UTXOEntry.ScriptPublicKey(), rtl.config.DAGParams)
 			if err != nil {
 				continue
 			}
@@ -155,11 +154,47 @@ func (rtl *compoundTxRateLimiter) recordTransaction(transaction *externalapi.Dom
 		rtl.cleanupOldSubmissions(tracker)
 
 		tracker.mutex.Lock()
+		// Deduplicate by txID for this address within the window
+		for _, s := range tracker.submissions {
+			if s.txID == txID {
+				tracker.mutex.Unlock()
+				goto nextAddress
+			}
+		}
 		tracker.submissions = append(tracker.submissions, compoundTxSubmission{
 			timestamp: time.Now(),
 			txID:      txID,
 		})
 		tracker.mutex.Unlock()
+	nextAddress:
+	}
+}
+
+// recordTransactionAt records a compound transaction with a specific timestamp (used for accepted orphans)
+func (rtl *compoundTxRateLimiter) recordTransactionAt(transaction *externalapi.DomainTransaction, txID string, ts time.Time) {
+	if !rtl.config.CompoundTxRateLimitEnabled || !rtl.isCompoundTransaction(transaction) {
+		return
+	}
+
+	addresses := rtl.extractSenderAddresses(transaction)
+
+	for _, address := range addresses {
+		tracker := rtl.getOrCreateTracker(address)
+		rtl.cleanupOldSubmissions(tracker)
+
+		tracker.mutex.Lock()
+		for _, s := range tracker.submissions {
+			if s.txID == txID {
+				tracker.mutex.Unlock()
+				goto nextAddress
+			}
+		}
+		tracker.submissions = append(tracker.submissions, compoundTxSubmission{
+			timestamp: ts,
+			txID:      txID,
+		})
+		tracker.mutex.Unlock()
+	nextAddress:
 	}
 }
 

@@ -5,7 +5,6 @@ import (
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/txscript"
-	"github.com/Hoosat-Oy/HTND/domain/dagconfig"
 )
 
 // walletFreezingManager handles frozen wallet address management and checking
@@ -41,7 +40,7 @@ func (wfm *walletFreezingManager) extractAddressesFromTransaction(transaction *e
 	for _, input := range transaction.Inputs {
 		if input.UTXOEntry != nil && input.UTXOEntry.ScriptPublicKey() != nil {
 			_, extractedAddress, err := txscript.ExtractScriptPubKeyAddress(
-				input.UTXOEntry.ScriptPublicKey(), &dagconfig.MainnetParams)
+				input.UTXOEntry.ScriptPublicKey(), wfm.config.DAGParams)
 			if err != nil {
 				continue
 			}
@@ -53,7 +52,7 @@ func (wfm *walletFreezingManager) extractAddressesFromTransaction(transaction *e
 	for _, output := range transaction.Outputs {
 		if output.ScriptPublicKey != nil {
 			_, extractedAddress, err := txscript.ExtractScriptPubKeyAddress(
-				output.ScriptPublicKey, &dagconfig.MainnetParams)
+				output.ScriptPublicKey, wfm.config.DAGParams)
 			if err != nil {
 				continue
 			}
