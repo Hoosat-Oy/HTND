@@ -62,7 +62,7 @@ func realMain() error {
 	if err != nil {
 		return errors.Wrap(err, "Error connecting to RPC server")
 	}
-	defer rpcClient.Disconnect()
+	defer func() { _ = rpcClient.Disconnect() }()
 
 	// Mine block that its timestamp is one second after the genesis timestamp.
 	blockTemplate, err := rpcClient.GetBlockTemplate(miningAddress.EncodeAddress(), "")
