@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -21,9 +20,9 @@ import (
 
 func TestCreateStagingConsensus(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		dataDir, err := ioutil.TempDir("", fmt.Sprintf("TestCreateStagingConsensus-%s", consensusConfig.Name))
+		dataDir, err := os.MkdirTemp("", fmt.Sprintf("TestCreateStagingConsensus-%s", consensusConfig.Name))
 		if err != nil {
-			t.Fatalf("ioutil.TempDir: %+v", err)
+			t.Fatalf("os.MkdirTemp: %+v", err)
 		}
 		defer os.RemoveAll(dataDir)
 
