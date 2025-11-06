@@ -1,8 +1,6 @@
 package protocol
 
 import (
-	"fmt"
-	"net"
 	"sync"
 	"sync/atomic"
 
@@ -20,46 +18,6 @@ import (
 	routerpkg "github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 )
-
-func isLocalAddress(address string) bool {
-	host, _, err := net.SplitHostPort(address)
-	if err != nil {
-		fmt.Println("Error parsing address:", err)
-		return false
-	}
-
-	if host == "localhost" {
-		return true
-	}
-
-	loopbackIPs := []string{"127.0.0.1", "::1"}
-	for _, ip := range loopbackIPs {
-		if host == ip {
-			return true
-		}
-	}
-
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		fmt.Println("Error getting local network interfaces:", err)
-		return false
-	}
-
-	for _, addr := range addrs {
-		var ip net.IP
-		if ipNet, ok := addr.(*net.IPNet); ok {
-			ip = ipNet.IP
-		} else if ipAddr, ok := addr.(*net.IPAddr); ok {
-			ip = ipAddr.IP
-		}
-
-		if ip != nil && ip.String() == host {
-			return true
-		}
-	}
-
-	return false
-}
 
 func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *netadapter.NetConnection) {
 	// isStopping flag is raised the moment that the connection associated with this router is disconnected
