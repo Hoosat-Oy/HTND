@@ -51,13 +51,15 @@ func (p *p2pServer) Connect(address string) (server.Connection, error) {
 	// connection failures (context deadline exceeded) before a TCP handshake completes.
 	// Bump this to a more forgiving value to improve initial connectivity.
 	const dialTimeout = 5 * time.Second
-	gRPCClientConnection, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithTimeout(dialTimeout))
+	gRPCClientConnection, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, errors.Wrapf(err, "%s error connecting to %s", p.name, address)
 	}
 
 	client := protowire.NewP2PClient(gRPCClientConnection)
-	stream, err := client.MessageStream(context.Background(), grpc.UseCompressor(gzip.Name),
+	ctx, cancel := context.WithTimeout(context.Background(), dialTimeout)
+	defer cancel()
+	stream, err := client.MessageStream(ctx, grpc.UseCompressor(gzip.Name),
 		grpc.MaxCallRecvMsgSize(p2pMaxMessageSize), grpc.MaxCallSendMsgSize(p2pMaxMessageSize))
 	if err != nil {
 		return nil, errors.Wrapf(err, "%s error getting client stream for %s", p.name, address)
