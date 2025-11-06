@@ -26,8 +26,6 @@ type testConsensus struct {
 	testReachabilityManager   testapi.TestReachabilityManager
 	testConsensusStateManager testapi.TestConsensusStateManager
 	testTransactionValidator  testapi.TestTransactionValidator
-
-	buildBlockConsensus *consensus
 }
 
 func (tc *testConsensus) DAGParams() *dagconfig.Params {
