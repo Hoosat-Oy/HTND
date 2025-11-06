@@ -47,11 +47,7 @@ func (block *DomainBlock) Equal(other *DomainBlock) bool {
 		}
 	}
 
-	if block.PoWHash != other.PoWHash {
-		return false
-	}
-
-	return true
+	return block.PoWHash != other.PoWHash
 }
 
 // BlockHeader represents an immutable block header.
