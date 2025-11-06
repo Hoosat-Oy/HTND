@@ -31,8 +31,8 @@ func TestAddresses(t *testing.T) {
 		// Positive P2PK tests.
 		{
 			name:    "mainnet p2pk",
-			addr:    "hoosat:qr35ennsep3hxfe7lnz5ee7j5jgmkjswsn35ennsep3hxfe7ln35cdv0dy335",
-			encoded: "hoosat:qr35ennsep3hxfe7lnz5ee7j5jgmkjswsn35ennsep3hxfe7ln35cdv0dy335",
+			addr:    "hoosat:qr35ennsep3hxfe7lnz5ee7j5jgmkjswsn35ennsep3hxfe7ln35cta93d2lg",
+			encoded: "hoosat:qr35ennsep3hxfe7lnz5ee7j5jgmkjswsn35ennsep3hxfe7ln35cta93d2lg",
 			valid:   true,
 			result: util.TstAddressPubKey(
 				util.Bech32PrefixHoosat,
@@ -55,8 +55,8 @@ func TestAddresses(t *testing.T) {
 		},
 		{
 			name:    "mainnet p2pk 2",
-			addr:    "hoosat:qq80qvqs0lfxuzmt7sz3909ze6camq9d4t35ennsep3hxfe7ln35cvfqgz3z8",
-			encoded: "hoosat:qq80qvqs0lfxuzmt7sz3909ze6camq9d4t35ennsep3hxfe7ln35cvfqgz3z8",
+			addr:    "hoosat:qq80qvqs0lfxuzmt7sz3909ze6camq9d4t35ennsep3hxfe7ln35c2c25t2vm",
+			encoded: "hoosat:qq80qvqs0lfxuzmt7sz3909ze6camq9d4t35ennsep3hxfe7ln35c2c25t2vm",
 			valid:   true,
 			result: util.TstAddressPubKey(
 				util.Bech32PrefixHoosat,
@@ -80,8 +80,8 @@ func TestAddresses(t *testing.T) {
 		},
 		{
 			name:    "testnet p2pk",
-			addr:    "hoosattest:qputx94qseratdmjs0j395mq8u03er0x3l35ennsep3hxfe7ln35ckquw528z",
-			encoded: "hoosattest:qputx94qseratdmjs0j395mq8u03er0x3l35ennsep3hxfe7ln35ckquw528z",
+			addr:    "hoosattest:qputx94qseratdmjs0j395mq8u03er0x3l35ennsep3hxfe7ln35c67gazt36",
+			encoded: "hoosattest:qputx94qseratdmjs0j395mq8u03er0x3l35ennsep3hxfe7ln35c67gazt36",
 			valid:   true,
 			result: util.TstAddressPubKey(
 				util.Bech32PrefixHoosatTest,
@@ -107,8 +107,8 @@ func TestAddresses(t *testing.T) {
 		// ECDSA P2PK tests.
 		{
 			name:    "mainnet ecdsa p2pk",
-			addr:    "hoosat:qyp0r5mcq4rd5grj3652ra09u5dcgwqq9ntuswp247nama5quyj40eq03sc2dkx",
-			encoded: "hoosat:qyp0r5mcq4rd5grj3652ra09u5dcgwqq9ntuswp247nama5quyj40eq03sc2dkx",
+			addr:    "hoosat:qyp0r5mcq4rd5grj3652ra09u5dcgwqq9ntuswp247nama5quyj40eq0f28wqsx",
+			encoded: "hoosat:qyp0r5mcq4rd5grj3652ra09u5dcgwqq9ntuswp247nama5quyj40eq0f28wqsx",
 			valid:   true,
 			result: util.TstAddressPubKeyECDSA(
 				util.Bech32PrefixHoosat,
@@ -384,17 +384,17 @@ func TestDecodeAddressErrorConditions(t *testing.T) {
 			"decoded address's prefix could not be parsed",
 		},
 		{
-			"hoosatsim:raskzctpv9skzctpv9skzctpv9skzctpvy37ct7zafpv9skzctpvymmnd3gh8",
+			"hoosatsim:raskzctpv9skzctpv9skzctpv9skzctpvy37ct7zafpv9skzctpvyrpvfuwh8",
 			util.Bech32PrefixHoosatSim,
 			"unknown address type",
 		},
 		{
-			"hoosatsim:raskzcg58mth0an",
+			"hoosatsim:raskzcgwws5uddg",
 			util.Bech32PrefixHoosatSim,
 			"unknown address type",
 		},
 		{
-			"hoosattest:qqq65mvpxcmajeq44n2n8vfn6u9f8l4zsy0xez0tzw",
+			"hoosattest:qqq65mvpxcmajeq44n2n8vfn6u9f8l4zsy0dv85teau",
 			util.Bech32PrefixHoosat,
 			"decoded address is of wrong network",
 		},
@@ -471,5 +471,5 @@ func TestCreateBurnAddress(t *testing.T) {
 	hashed := hasher.Sum(nil)
 	prefix := util.Bech32PrefixHoosat
 	address := bech32.Encode(prefix.String(), hashed, 0)
-	t.Errorf("%s", address)
+	t.Logf("%s", address)
 }

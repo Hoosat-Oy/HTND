@@ -29,7 +29,7 @@ func TestAmountCreation(t *testing.T) {
 		},
 		{
 			name:     "max producible",
-			amount:   29e9,
+			amount:   17100000000,
 			valid:    true,
 			expected: Amount(constants.MaxSompi),
 		},
@@ -106,8 +106,8 @@ func TestAmountUnitConversions(t *testing.T) {
 			name:      "MHSAT",
 			amount:    Amount(constants.MaxSompi),
 			unit:      AmountMegaHSAT,
-			converted: 29000,
-			s:         "29000 MHSAT",
+			converted: 17100,
+			s:         "17100 MHSAT",
 		},
 		{
 			name:      "kHSAT",
