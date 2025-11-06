@@ -142,7 +142,7 @@ func TestTransactionHasBatchIsolation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("TestTransactionHasBatchIsolation: Begin failed: %s", err)
 	}
-	defer tx.RollbackUnlessClosed()
+	defer func() { _ = tx.RollbackUnlessClosed() }()
 
 	// Put a UTXO-like key-value pair
 	key := database.MakeBucket([]byte("utxo")).Key([]byte("txid:0"))
