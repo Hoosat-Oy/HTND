@@ -16,7 +16,7 @@ import (
 
 func TestGetHashrateString(t *testing.T) {
 	var results = map[string]string{
-		dagconfig.MainnetParams.Name: "1.53 GH/s",
+		dagconfig.MainnetParams.Name: "131.07 KH/s",
 		dagconfig.TestnetParams.Name: "131.07 KH/s",
 		dagconfig.DevnetParams.Name:  "830 H/s",
 		dagconfig.SimnetParams.Name:  "2.00 KH/s",
