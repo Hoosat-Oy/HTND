@@ -5,44 +5,28 @@ import (
 	"time"
 
 	"github.com/Hoosat-Oy/HTND/cmd/htnwallet/daemon/server"
+
 	"github.com/pkg/errors"
 
 	"github.com/Hoosat-Oy/HTND/cmd/htnwallet/daemon/pb"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
-// Connect connects to the htnwalletd server with proper connection state handling
+// Connect connects to the htnwalletd server, and returns the client instance
 func Connect(address string) (pb.HtnwalletdClient, func(), error) {
-	conn, err := grpc.NewClient(
-		address,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(server.MaxDaemonSendMsgSize)),
-	)
-	if err != nil {
-		return nil, nil, errors.WithStack(err)
-	}
-
-	// Give the connection up to 10 seconds to become ready
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// Connection is local, so 1 second timeout is sufficient
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	// Wait until the connection is ready (or fails)
-	for {
-		state := conn.GetState()
-		if state == connectivity.Ready {
-			break
+	conn, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(server.MaxDaemonSendMsgSize)))
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			return nil, nil, errors.New("htnwallet daemon is not running, start it with `htnwallet start-daemon`")
 		}
-		if !conn.WaitForStateChange(ctx, state) {
-			// Context deadline exceeded or canceled
-			conn.Close()
-			return nil, nil, errors.New("failed to connect to htnwallet daemon: timeout after 10s - is it running? Run `htnwallet start-daemon`")
-		}
+		return nil, nil, err
 	}
 
-	client := pb.NewHtnwalletdClient(conn)
-	closer := func() { conn.Close() }
-
-	return client, closer, nil
+	return pb.NewHtnwalletdClient(conn), func() {
+		conn.Close()
+	}, nil
 }
