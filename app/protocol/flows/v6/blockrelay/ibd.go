@@ -561,11 +561,11 @@ func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlo
 		}
 		var missingParentsErr *ruleerrors.ErrMissingParents
 		if errors.Is(err, ruleerrors.ErrUnexpectedDifficulty) {
-			log.Infof("Skipping block header %s as it is a has incorrect difficulty.", blockHash)
+			log.Debugf("Skipping block header %s as it is a has incorrect difficulty.", blockHash)
 		} else if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-			log.Infof("Skipping block header %s as it is a duplicate", blockHash)
+			log.Debugf("Skipping block header %s as it is a duplicate", blockHash)
 		} else if errors.As(err, &missingParentsErr) {
-			log.Infof("Skipping block header %s as it is missing parent", blockHash)
+			log.Debugf("Skipping block header %s as it is missing parent", blockHash)
 		} else {
 			log.Infof("Rejected block header %s from %s during IBD: %s", blockHash, flow.peer, err)
 			return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", blockHash)
