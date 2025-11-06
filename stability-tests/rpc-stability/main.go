@@ -30,7 +30,7 @@ func main() {
 	if err != nil {
 		panic(errors.Wrap(err, "error connecting to RPC server"))
 	}
-	defer rpcClient.Disconnect()
+	defer func() { _ = rpcClient.Disconnect() }()
 
 	commandsChan, err := readCommands()
 	if err != nil {
