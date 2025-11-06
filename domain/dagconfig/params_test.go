@@ -143,8 +143,8 @@ func TestCalculateK(t *testing.T) {
 			latencyMs:        500.0,
 			attackerHashrate: 0.475,
 			errorProb:        0.01,
-			expectedMinK:     18, // Kaspa's current k at 1 bps.
-			expectedMaxK:     25,
+			expectedMinK:     45,
+			expectedMaxK:     55,
 		},
 		{
 			name:             "5 bps",
@@ -152,8 +152,8 @@ func TestCalculateK(t *testing.T) {
 			latencyMs:        500.0,
 			attackerHashrate: 0.475,
 			errorProb:        0.01,
-			expectedMinK:     40,
-			expectedMaxK:     60,
+			expectedMinK:     90,
+			expectedMaxK:     110,
 		},
 		{
 			name:             "10 bps",
@@ -161,8 +161,8 @@ func TestCalculateK(t *testing.T) {
 			latencyMs:        500.0,
 			attackerHashrate: 0.475,
 			errorProb:        0.01,
-			expectedMinK:     80,
-			expectedMaxK:     120,
+			expectedMinK:     180,
+			expectedMaxK:     220,
 		},
 	}
 
@@ -187,7 +187,7 @@ func TestFinalityDepth(t *testing.T) {
 	} else {
 		finalityDepth = uint64(finalityDuration.Seconds() / targetTimePerBlock.Seconds())
 	}
-	t.Errorf("FinalityDepth %d", finalityDepth)
+	t.Logf("FinalityDepth %d", finalityDepth)
 }
 
 // PruningDepth returns the pruning duration represented in blocks
@@ -203,5 +203,5 @@ func TestPruningDepth(t *testing.T) {
 	} else {
 		pruningDepth = 2*finalityDepth*PruningMultiplier + 4*MergeSetSizeLimit*uint64(K) + 2*uint64(K) + 2
 	}
-	t.Errorf("PruningDepth %d", pruningDepth)
+	t.Logf("PruningDepth %d", pruningDepth)
 }

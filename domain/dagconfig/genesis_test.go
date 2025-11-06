@@ -116,7 +116,7 @@ func DifficultyToBits(baseBits uint32, difficulty int64) uint32 {
 // Unit test for difficulty 100 from 0x207fffff
 func TestDifficultyToBits(t *testing.T) {
 	baseBits := uint32(0x207fffff) // Regtest maximum target
-	wantBits := uint32(0x1c7fffff) // Expected for difficulty 100
+	wantBits := uint32(0x1f0346dc) // Expected for difficulty 10000
 
 	gotBits := DifficultyToBits(baseBits, 10000)
 	if gotBits != wantBits {
