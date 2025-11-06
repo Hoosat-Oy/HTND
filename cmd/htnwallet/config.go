@@ -172,17 +172,17 @@ func parseCommandLine() (subCommand string, config interface{}) {
 		"Sends a Hoosat transactios spammy way to a public address", spamConf)
 
 	sendConf := &sendConfig{DaemonAddress: defaultListen}
-	parser.AddCommand(sendSubCmd, "Sends a Hoosat transaction to a public address",
+	_, _ = parser.AddCommand(sendSubCmd, "Sends a Hoosat transaction to a public address",
 		"Sends a Hoosat transaction to a public address", sendConf)
 
 	sweepConf := &sweepConfig{DaemonAddress: defaultListen}
-	parser.AddCommand(sweepSubCmd, "Sends all funds associated with the given schnorr private key to a new address of the current wallet",
+	_, _ = parser.AddCommand(sweepSubCmd, "Sends all funds associated with the given schnorr private key to a new address of the current wallet",
 		"Sends all funds associated with the given schnorr private key to a newly created external (i.e. not a change) address of the "+
 			"keyfile that is under the daemon's contol. Can be used with a private key generated with the genkeypair utilily "+
 			"to send funds to your main wallet.", sweepConf)
 
 	createUnsignedTransactionConf := &createUnsignedTransactionConfig{DaemonAddress: defaultListen}
-	parser.AddCommand(createUnsignedTransactionSubCmd, "Create an unsigned Hoosat transaction",
+	_, _ = parser.AddCommand(createUnsignedTransactionSubCmd, "Create an unsigned Hoosat transaction",
 		"Create an unsigned Hoosat transaction", createUnsignedTransactionConf)
 
 	signConf := &signConfig{}
