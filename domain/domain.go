@@ -114,7 +114,7 @@ func (d *domain) CommitStagingConsensus() error {
 	if err != nil {
 		return err
 	}
-	defer dbTx.RollbackUnlessClosed()
+	defer func() { _ = dbTx.RollbackUnlessClosed() }()
 
 	inactivePrefix, hasInactivePrefix, err := prefixmanager.InactivePrefix(d.db)
 	if err != nil {
