@@ -23,10 +23,6 @@ var (
 	// defaultServices describes the default services that are supported by
 	// the server.
 	defaultServices = appmessage.DefaultServices
-
-	// defaultRequiredServices describes the default services that are
-	// required to be supported by outbound peers.
-	defaultRequiredServices = appmessage.SFNodeNetwork
 )
 
 type sendVersionFlow struct {
