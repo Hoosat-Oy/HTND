@@ -169,11 +169,6 @@ func (dtm *dagTraversalManager) newSizedUpHeapFromSlice(stagingArea *model.Stagi
 	return &h
 }
 
-// len returns the length of this heap
-func (sbh *sizedUpBlockHeap) len() int {
-	return sbh.impl.Len()
-}
-
 // pop removes the block with lowest blueWork+hash from this heap and returns it
 func (sbh *sizedUpBlockHeap) pop() *externalapi.DomainHash {
 	return heap.Pop(&sbh.impl).(*externalapi.BlockGHOSTDAGDataHashPair).Hash
