@@ -1,7 +1,6 @@
 package binaryserializer
 
 import (
-	"reflect"
 	"testing"
 	"unsafe"
 )
@@ -54,5 +53,5 @@ func TestBinaryFreeList(t *testing.T) {
 }
 
 func underlyingArrayAddress(buf []byte) uint64 {
-	return uint64((*reflect.SliceHeader)(unsafe.Pointer(&buf)).Data)
+	return uint64(uintptr(unsafe.Pointer(unsafe.SliceData(buf))))
 }
