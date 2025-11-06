@@ -132,9 +132,7 @@ func (tad *TransactionAcceptanceData) Equal(other *TransactionAcceptanceData) bo
 // Clone returns a clone of TransactionAcceptanceData
 func (tad *TransactionAcceptanceData) Clone() *TransactionAcceptanceData {
 	cloneTransactionInputUTXOEntries := make([]UTXOEntry, len(tad.TransactionInputUTXOEntries))
-	for i, utxoEntry := range tad.TransactionInputUTXOEntries {
-		cloneTransactionInputUTXOEntries[i] = utxoEntry
-	}
+	copy(cloneTransactionInputUTXOEntries, tad.TransactionInputUTXOEntries)
 
 	return &TransactionAcceptanceData{
 		Transaction:                 tad.Transaction.Clone(),

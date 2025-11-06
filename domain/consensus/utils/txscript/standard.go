@@ -229,7 +229,7 @@ func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 			return nil, err
 		}
 
-		return &externalapi.ScriptPublicKey{script, addressPublicKeyScriptPublicKeyVersion}, err
+		return &externalapi.ScriptPublicKey{Script: script, Version: addressPublicKeyScriptPublicKeyVersion}, err
 
 	case *util.AddressPublicKeyECDSA:
 		if addr == nil {
@@ -241,7 +241,7 @@ func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 			return nil, err
 		}
 
-		return &externalapi.ScriptPublicKey{script, addressPublicKeyECDSAScriptPublicKeyVersion}, err
+		return &externalapi.ScriptPublicKey{Script: script, Version: addressPublicKeyECDSAScriptPublicKeyVersion}, err
 
 	case *util.AddressScriptHash:
 		if addr == nil {
@@ -253,7 +253,7 @@ func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 			return nil, err
 		}
 
-		return &externalapi.ScriptPublicKey{script, addressScriptHashScriptPublicKeyVersion}, err
+		return &externalapi.ScriptPublicKey{Script: script, Version: addressScriptHashScriptPublicKeyVersion}, err
 	}
 
 	str := fmt.Sprintf("unable to generate payment script for unsupported "+

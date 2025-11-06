@@ -180,19 +180,3 @@ func (rtl *compoundTxRateLimiter) isRateLimited(transaction *externalapi.DomainT
 
 	return len(rateLimitedAddresses) > 0, rateLimitedAddresses
 }
-
-// getStatistics returns rate limiting statistics for monitoring
-func (rtl *compoundTxRateLimiter) getStatistics() map[string]interface{} {
-	rtl.globalMutex.RLock()
-	defer rtl.globalMutex.RUnlock()
-
-	stats := map[string]interface{}{
-		"enabled":              rtl.config.CompoundTxRateLimitEnabled,
-		"max_tx_per_minute":    rtl.config.MaxCompoundTxPerAddressPerMinute,
-		"window_minutes":       rtl.config.CompoundTxRateLimitWindowMinutes,
-		"min_inputs_threshold": rtl.config.CompoundTxMinInputsThreshold,
-		"tracked_addresses":    len(rtl.addressTracker),
-	}
-
-	return stats
-}

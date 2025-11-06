@@ -186,7 +186,7 @@ func TestIsFinalizedTransaction(t *testing.T) {
 		}
 
 		block, err := tc.BuildBlock(
-			&externalapi.DomainCoinbaseData{&externalapi.ScriptPublicKey{}, nil}, nil)
+			&externalapi.DomainCoinbaseData{ScriptPublicKey: &externalapi.ScriptPublicKey{}, ExtraData: nil}, nil)
 		if err != nil {
 			t.Fatalf("Error getting block: %+v", err)
 		}

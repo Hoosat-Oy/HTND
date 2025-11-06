@@ -6,7 +6,6 @@ import (
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
 	"github.com/Hoosat-Oy/HTND/app/rpc/rpccontext"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
-	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/transactionhelper"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/txscript"
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
@@ -44,10 +43,6 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 			return errorMessage, nil
 		}
 		return nil, err
-	}
-
-	if uint64(len(templateBlock.Transactions[transactionhelper.CoinbaseTransactionIndex].Payload)) > context.Config.NetParams().MaxCoinbasePayloadLength {
-
 	}
 
 	rpcBlock := appmessage.DomainBlockToRPCBlock(templateBlock)

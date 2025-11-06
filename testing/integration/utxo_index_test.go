@@ -80,9 +80,7 @@ func TestUTXOIndex(t *testing.T) {
 		if len(notification.Removed) > 0 {
 			t.Fatalf("Unexpectedly received that a UTXO has been removed")
 		}
-		for _, added := range notification.Added {
-			notificationEntries = append(notificationEntries, added)
-		}
+		notificationEntries = append(notificationEntries, notification.Added...)
 	}
 
 	// Submit a few transactions that spends some UTXOs
@@ -119,9 +117,7 @@ func TestUTXOIndex(t *testing.T) {
 				entry.Outpoint.TransactionID, entry.Outpoint.Index)
 		}
 	}
-	for _, added := range notification.Added {
-		notificationEntries = append(notificationEntries, added)
-	}
+	notificationEntries = append(notificationEntries, notification.Added...)
 
 	// Remove the UTXOs we spent from `notificationEntries`
 	notificationEntries = notificationEntries[transactionAmountToSpend:]

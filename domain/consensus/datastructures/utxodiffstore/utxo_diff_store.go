@@ -135,12 +135,8 @@ func (uds *utxoDiffStore) Delete(stagingArea *model.StagingArea, blockHash *exte
 	stagingShard := uds.stagingShard(stagingArea)
 
 	if uds.isBlockHashStaged(stagingShard, blockHash) {
-		if _, ok := stagingShard.utxoDiffToAdd[*blockHash]; ok {
-			delete(stagingShard.utxoDiffToAdd, *blockHash)
-		}
-		if _, ok := stagingShard.utxoDiffChildToAdd[*blockHash]; ok {
-			delete(stagingShard.utxoDiffChildToAdd, *blockHash)
-		}
+		delete(stagingShard.utxoDiffToAdd, *blockHash)
+		delete(stagingShard.utxoDiffChildToAdd, *blockHash)
 		return
 	}
 	stagingShard.toDelete[*blockHash] = struct{}{}

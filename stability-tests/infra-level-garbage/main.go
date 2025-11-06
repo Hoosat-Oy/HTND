@@ -3,13 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/Hoosat-Oy/HTND/stability-tests/common"
 	"github.com/Hoosat-Oy/HTND/util/profiling"
 )
-
-const timeout = 5 * time.Second
 
 func main() {
 	err := parseConfig()

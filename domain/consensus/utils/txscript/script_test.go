@@ -3601,7 +3601,7 @@ func TestGetPreciseSigOps(t *testing.T) {
 	// the right pattern.
 	scriptOnly := mustParseShortForm("BLAKE2B DATA_32 0x433ec2ac1ffa1b7b7d0"+
 		"27f564529c57197f9ae88 EQUAL", 0)
-	scriptPubKey := &externalapi.ScriptPublicKey{scriptOnly, 0}
+	scriptPubKey := &externalapi.ScriptPublicKey{Script: scriptOnly, Version: 0}
 
 	tests := []struct {
 		name            string
@@ -3683,7 +3683,7 @@ func TestIsPayToScriptHash(t *testing.T) {
 	t.Parallel()
 
 	for _, test := range scriptClassTests {
-		script := &externalapi.ScriptPublicKey{mustParseShortForm(test.script, 0), 0}
+		script := &externalapi.ScriptPublicKey{Script: mustParseShortForm(test.script, 0), Version: 0}
 		shouldBe := (test.class == ScriptHashTy)
 		p2sh := IsPayToScriptHash(script)
 		if p2sh != shouldBe {

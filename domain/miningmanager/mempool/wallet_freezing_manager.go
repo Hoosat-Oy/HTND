@@ -126,17 +126,3 @@ func (wfm *walletFreezingManager) isFrozen(address string) bool {
 	defer wfm.mutex.RUnlock()
 	return wfm.frozenWallets[address]
 }
-
-// getStatistics returns wallet freezing statistics for monitoring
-func (wfm *walletFreezingManager) getStatistics() map[string]interface{} {
-	wfm.mutex.RLock()
-	defer wfm.mutex.RUnlock()
-
-	stats := map[string]interface{}{
-		"enabled":          wfm.config.WalletFreezingEnabled,
-		"frozen_wallets":   len(wfm.frozenWallets),
-		"frozen_addresses": wfm.getFrozenWallets(),
-	}
-
-	return stats
-}

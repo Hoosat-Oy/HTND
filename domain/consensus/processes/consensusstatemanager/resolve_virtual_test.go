@@ -387,7 +387,7 @@ func verifyUtxoDiffPaths(t *testing.T, tc testapi.TestConsensus, hashes []*exter
 
 	virtualGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, model.VirtualBlockHash, false)
 	if database.IsNotFoundError(err) {
-		t.Fatal("verifyUtxoDiffPaths failed to retrieve with %s\n", model.VirtualBlockHash)
+		t.Fatalf("verifyUtxoDiffPaths failed to retrieve with %s\n", model.VirtualBlockHash)
 	}
 	if err != nil {
 		t.Fatal(err)

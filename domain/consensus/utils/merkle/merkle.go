@@ -68,9 +68,7 @@ func merkleRoot(hashes []*externalapi.DomainHash) *externalapi.DomainHash {
 	merkles := make([]*externalapi.DomainHash, arraySize)
 
 	// Create the base transaction hashes and populate the array with them.
-	for i, hash := range hashes {
-		merkles[i] = hash
-	}
+	copy(merkles, hashes)
 
 	// Start the array offset after the last transaction and adjusted to the
 	// next power of two.

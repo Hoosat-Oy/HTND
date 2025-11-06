@@ -187,7 +187,7 @@ func (ps *pruningStore) PruningPointByIndex(dbContext model.DBReader, stagingAre
 
 	pruningPointBytes, err := dbContext.Get(ps.indexAsKey(index))
 	if database.IsNotFoundError(err) {
-		log.Infof("PruningPointByIndex failed to retrieve with %s\n", index)
+		log.Infof("PruningPointByIndex failed to retrieve with %d\n", index)
 		return nil, err
 	}
 	if err != nil {

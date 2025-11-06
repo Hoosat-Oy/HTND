@@ -132,7 +132,7 @@ func (hscs *headersSelectedChainStore) GetHashByIndex(dbContext model.DBReader, 
 
 	hashBytes, err := dbContext.Get(hscs.indexAsKey(index))
 	if database.IsNotFoundError(err) {
-		log.Infof("GetHashByIndex failed to retrieve with %s\n", index)
+		log.Infof("GetHashByIndex failed to retrieve with %d\n", index)
 		return nil, err
 	}
 	if err != nil {

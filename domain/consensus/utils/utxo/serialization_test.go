@@ -13,7 +13,7 @@ func Benchmark_serializeUTXO(b *testing.B) {
 	if err != nil {
 		b.Fatalf("Error decoding scriptPublicKey string: %s", err)
 	}
-	scriptPublicKey := &externalapi.ScriptPublicKey{script, 0}
+	scriptPublicKey := &externalapi.ScriptPublicKey{Script: script, Version: 0}
 	entry := NewUTXOEntry(5000000000, scriptPublicKey, false, 1432432)
 	outpoint := &externalapi.DomainOutpoint{
 		TransactionID: *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{

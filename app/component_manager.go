@@ -70,8 +70,6 @@ func (a *ComponentManager) Stop() {
 
 	a.protocolManager.Close()
 	close(a.protocolManager.Context().Domain().ConsensusEventsChannel())
-
-	return
 }
 
 // NewComponentManager returns a new ComponentManager instance.

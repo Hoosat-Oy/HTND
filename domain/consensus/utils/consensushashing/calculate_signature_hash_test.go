@@ -383,7 +383,7 @@ func TestSignatureHash(t *testing.T) {
 		LockTime:     1615462089000,
 		SubnetworkID: subnetworks.SubnetworkIDNative,
 	}
-	t.Errorf("er %s", nativeTx)
+	t.Errorf("error: %v", nativeTx)
 }
 
 func generateTxs() (nativeTx, subnetworkTx *externalapi.DomainTransaction, err error) {

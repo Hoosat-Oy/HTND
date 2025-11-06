@@ -38,7 +38,7 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 
 	if !hasValidatedHeader {
 		var logErr error
-		log.Debug("block %s blue score is %d", blockHash, ghostdagData.BlueScore())
+		log.Debugf("block %s blue score is %d", blockHash, ghostdagData.BlueScore())
 		if logErr != nil {
 			return logErr
 		}

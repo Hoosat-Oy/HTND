@@ -35,9 +35,7 @@ func main() {
 	}
 
 	const testDuration = 30 * time.Second
-	select {
-	case <-time.After(testDuration):
-	}
+	time.Sleep(testDuration)
 	for _, client := range clients {
 		client.Close()
 	}

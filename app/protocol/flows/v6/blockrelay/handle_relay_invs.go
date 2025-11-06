@@ -1,7 +1,6 @@
 package blockrelay
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
@@ -133,7 +132,7 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 		if exists {
-			log.Debug("Don't process, Ignoring duplicate block %s, from %s", inv.Hash, flow.netConnection.Address())
+			log.Debugf("Don't process, Ignoring duplicate block %s, from %s", inv.Hash, flow.netConnection.Address())
 			continue
 		}
 		blockInfo, err := flow.Domain().Consensus().GetBlockInfo(inv.Hash)
@@ -300,9 +299,9 @@ func (flow *handleRelayInvsFlow) start() error {
 			}
 			if errors.Is(err, ruleerrors.ErrInvalidPoW) {
 				if block.PoWHash != "" {
-					log.Infof(fmt.Sprintf("Ignoring invalid PoW %s, considering banning: %s", block.PoWHash, flow.netConnection.NetAddress().String()))
+					log.Infof("Ignoring invalid PoW %s, considering banning: %s", block.PoWHash, flow.netConnection.NetAddress().String())
 				} else {
-					log.Infof(fmt.Sprintf("Ignoring invalid empty PoW, considering banning: %s", flow.netConnection.NetAddress().String()))
+					log.Infof("Ignoring invalid empty PoW, considering banning: %s", flow.netConnection.NetAddress().String())
 				}
 				flow.banConnection(false)
 				continue
@@ -403,10 +402,6 @@ func (flow *handleRelayInvsFlow) readInv() (invRelayBlock, error) {
 		return invRelayBlock{}, protocolerrors.Errorf(true, "unexpected %s message in the block relay handleRelayInvsFlow while expecting an inv message", msg.Command())
 	}
 	return invRelayBlock{Hash: msgInv.Hash, IsOrphanRoot: false}, nil
-}
-
-func (flow *handleRelayInvsFlow) unreadInv(inv invRelayBlock) {
-	flow.invsQueue = append([]invRelayBlock{inv}, flow.invsQueue...)
 }
 
 func (flow *handleRelayInvsFlow) requestBlock(requestHash *externalapi.DomainHash) (*externalapi.DomainBlock, bool, error) {

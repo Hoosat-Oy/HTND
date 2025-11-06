@@ -202,9 +202,9 @@ func initData(consensusConfig *consensus.Config) (*externalapi.DomainHash, exter
 		&externalapi.DomainTransaction{
 			Version: 0,
 			Inputs:  []*externalapi.DomainTransactionInput{},
-			Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-				&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
-				&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
+			Outputs: []*externalapi.DomainTransactionOutput{{Value: uint64(0xFFFF),
+				ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {Value: uint64(0xFFFF),
+				ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
 			LockTime:     1,
 			SubnetworkID: externalapi.DomainSubnetworkID{0x01},
 			Gas:          1,

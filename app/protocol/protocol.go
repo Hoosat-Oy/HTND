@@ -185,11 +185,11 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 		return
 	}
 	if errors.Is(err, routerpkg.ErrRouteClosed) {
-		log.Debugf("Route closed.", netConnection)
+		log.Debugf("Route closed: %v", netConnection)
 		return
 	}
 	if errors.Is(err, addressmanager.ErrAddressNotFound) {
-		log.Debugf("Address not found.", netConnection)
+		log.Debugf("Address not found: %v", netConnection)
 		return
 	}
 	panic(err)

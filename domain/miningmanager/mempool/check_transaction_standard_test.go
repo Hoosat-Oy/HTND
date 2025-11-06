@@ -109,11 +109,11 @@ func TestCalcMinRequiredTxRelayFee(t *testing.T) {
 
 func TestIsTransactionOutputDust(t *testing.T) {
 	scriptPublicKey := &externalapi.ScriptPublicKey{
-		[]byte{0x76, 0xa9, 0x21, 0x03, 0x2f, 0x7e, 0x43,
+		Script: []byte{0x76, 0xa9, 0x21, 0x03, 0x2f, 0x7e, 0x43,
 			0x0a, 0xa4, 0xc9, 0xd1, 0x59, 0x43, 0x7e, 0x84, 0xb9,
 			0x75, 0xdc, 0x76, 0xd9, 0x00, 0x3b, 0xf0, 0x92, 0x2c,
 			0xf3, 0xaa, 0x45, 0x28, 0x46, 0x4b, 0xab, 0x78, 0x0d,
-			0xba, 0x5e}, 0}
+			0xba, 0x5e}, Version: 0}
 
 	tests := []struct {
 		name                       string // test description
@@ -165,7 +165,7 @@ func TestIsTransactionOutputDust(t *testing.T) {
 			// Unspendable ScriptPublicKey due to an invalid public key
 			// script.
 			"unspendable ScriptPublicKey",
-			externalapi.DomainTransactionOutput{Value: 5000, ScriptPublicKey: &externalapi.ScriptPublicKey{[]byte{0x01}, 0}},
+			externalapi.DomainTransactionOutput{Value: 5000, ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{0x01}, Version: 0}},
 			0, // no relay fee
 			true,
 		},
@@ -244,7 +244,7 @@ func TestCheckTransactionStandardInIsolation(t *testing.T) {
 			name: "Transaction size is too large",
 			tx: &externalapi.DomainTransaction{Version: 0, Inputs: []*externalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*externalapi.DomainTransactionOutput{{
 				Value:           0,
-				ScriptPublicKey: &externalapi.ScriptPublicKey{bytes.Repeat([]byte{0x00}, MaximumStandardTransactionMass+1), 0},
+				ScriptPublicKey: &externalapi.ScriptPublicKey{Script: bytes.Repeat([]byte{0x00}, MaximumStandardTransactionMass+1), Version: 0},
 			}}},
 			height:     300000,
 			isStandard: false,
@@ -265,7 +265,7 @@ func TestCheckTransactionStandardInIsolation(t *testing.T) {
 			name: "Valid but non standard public key script",
 			tx: &externalapi.DomainTransaction{Version: 0, Inputs: []*externalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*externalapi.DomainTransactionOutput{{
 				Value:           100000000,
-				ScriptPublicKey: &externalapi.ScriptPublicKey{[]byte{txscript.OpTrue}, 0},
+				ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{txscript.OpTrue}, Version: 0},
 			}}},
 			height:     300000,
 			isStandard: false,
@@ -285,7 +285,7 @@ func TestCheckTransactionStandardInIsolation(t *testing.T) {
 			name: "Nulldata transaction",
 			tx: &externalapi.DomainTransaction{Version: 0, Inputs: []*externalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*externalapi.DomainTransactionOutput{{
 				Value:           0,
-				ScriptPublicKey: &externalapi.ScriptPublicKey{[]byte{txscript.OpReturn}, 0},
+				ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{txscript.OpReturn}, Version: 0},
 			}}},
 			height:     300000,
 			isStandard: false,

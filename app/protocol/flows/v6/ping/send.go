@@ -65,7 +65,7 @@ func (flow *sendPingsFlow) start() error {
 		message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 		if err != nil {
 			if errors.Is(err, router.ErrTimeout) {
-				return errors.Wrapf(flowcontext.ErrPingTimeout, err.Error())
+				return errors.Wrap(flowcontext.ErrPingTimeout, err.Error())
 			}
 			return err
 		}

@@ -163,7 +163,7 @@ func handleBlockAddError(block *externalapi.DomainBlock, err error) *appmessage.
 // newErrorResponse creates a new SubmitBlockResponseMessage with error
 func newErrorResponse(err error, reason appmessage.RejectReason) *appmessage.SubmitBlockResponseMessage {
 	return &appmessage.SubmitBlockResponseMessage{
-		Error:        appmessage.RPCErrorf(err.Error()),
+		Error:        appmessage.RPCErrorf("%s", err.Error()),
 		RejectReason: reason,
 	}
 }

@@ -198,21 +198,21 @@ type allBlockHashesIterator struct {
 	isClosed bool
 }
 
-func (a allBlockHashesIterator) First() bool {
+func (a *allBlockHashesIterator) First() bool {
 	if a.isClosed {
 		panic("Tried using a closed AllBlockHashesIterator")
 	}
 	return a.cursor.First()
 }
 
-func (a allBlockHashesIterator) Next() bool {
+func (a *allBlockHashesIterator) Next() bool {
 	if a.isClosed {
 		panic("Tried using a closed AllBlockHashesIterator")
 	}
 	return a.cursor.Next()
 }
 
-func (a allBlockHashesIterator) Get() (*externalapi.DomainHash, error) {
+func (a *allBlockHashesIterator) Get() (*externalapi.DomainHash, error) {
 	if a.isClosed {
 		return nil, errors.New("Tried using a closed AllBlockHashesIterator")
 	}
@@ -225,7 +225,7 @@ func (a allBlockHashesIterator) Get() (*externalapi.DomainHash, error) {
 	return externalapi.NewDomainHashFromByteSlice(blockHashBytes)
 }
 
-func (a allBlockHashesIterator) Close() error {
+func (a *allBlockHashesIterator) Close() error {
 	if a.isClosed {
 		return errors.New("Tried using a closed AllBlockHashesIterator")
 	}

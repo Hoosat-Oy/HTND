@@ -219,21 +219,21 @@ func newCursorUTXOSetIterator(cursor model.DBCursor) externalapi.ReadOnlyUTXOSet
 	return &utxoSetIterator{cursor: cursor}
 }
 
-func (u utxoSetIterator) First() bool {
+func (u *utxoSetIterator) First() bool {
 	if u.isClosed {
 		panic("Tried using a closed utxoSetIterator")
 	}
 	return u.cursor.First()
 }
 
-func (u utxoSetIterator) Next() bool {
+func (u *utxoSetIterator) Next() bool {
 	if u.isClosed {
 		panic("Tried using a closed utxoSetIterator")
 	}
 	return u.cursor.Next()
 }
 
-func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry, err error) {
+func (u *utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry, err error) {
 	if u.isClosed {
 		return nil, nil, errors.New("Tried using a closed utxoSetIterator")
 	}
@@ -260,7 +260,7 @@ func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry 
 	return outpoint, utxoEntry, nil
 }
 
-func (u utxoSetIterator) Close() error {
+func (u *utxoSetIterator) Close() error {
 	if u.isClosed {
 		return errors.New("Tried using a closed utxoSetIterator")
 	}

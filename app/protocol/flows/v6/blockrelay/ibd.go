@@ -769,15 +769,6 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 	return flow.OnNewBlockTemplate()
 }
 
-func (flow *handleIBDFlow) banIfBlockIsHeaderOnly(block *externalapi.DomainBlock) error {
-	if len(block.Transactions) == 0 {
-		return protocolerrors.Errorf(true, "sent header of %s block where expected block with body",
-			consensushashing.BlockHash(block))
-	}
-
-	return nil
-}
-
 func (flow *handleIBDFlow) resolveVirtual(estimatedVirtualDAAScoreTarget uint64) error {
 	err := flow.Domain().Consensus().ResolveVirtual(func(virtualDAAScoreStart uint64, virtualDAAScore uint64) {
 		var percents int

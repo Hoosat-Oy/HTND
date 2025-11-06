@@ -68,11 +68,11 @@ func dumpHeapProfile(heapLimit uint64, dumpFolder string, memStats *runtime.MemS
 	heapFile := filepath.Join(dumpFolder, heapDumpFileName)
 	log.Infof("Saving heap statistics into %s (HeapAlloc=%d > %d=heapLimit)", heapFile, memStats.HeapAlloc, heapLimit)
 	f, err := os.Create(heapFile)
-	defer f.Close()
 	if err != nil {
 		log.Infof("Could not create heap profile: %s", err)
 		return
 	}
+	defer f.Close()
 	if err := pprof.WriteHeapProfile(f); err != nil {
 		log.Infof("Could not write heap profile: %s", err)
 	}
