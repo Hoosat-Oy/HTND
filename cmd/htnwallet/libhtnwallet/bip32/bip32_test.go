@@ -367,8 +367,6 @@ func TestPublicParentPublicChildDerivation(t *testing.T) {
 
 	type testChildKey struct {
 		pathFragment uint32
-		privKey      string
-		pubKey       string
 		hexPubKey    string
 	}
 
