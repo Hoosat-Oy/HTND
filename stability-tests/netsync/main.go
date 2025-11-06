@@ -34,7 +34,7 @@ func main() {
 		}
 	})
 	defer func() {
-		syncerClient.Disconnect()
+		_ = syncerClient.Disconnect()
 		syncerTeardown()
 	}()
 
@@ -48,7 +48,7 @@ func main() {
 		}
 	})
 	defer func() {
-		syncedClient.Disconnect()
+		_ = syncedClient.Disconnect()
 		syncedTeardown()
 	}()
 
