@@ -578,11 +578,11 @@ func TestMatrixHoohashRev1(t *testing.T) {
 		// fmt.Printf("PRE_POW_HASH: %v\n", hex.EncodeToString(prePowHash))
 		writer.InfallibleWrite(prePowHash)
 		// fmt.Printf("TIME: %d\n", Timestamp)
-		serialization.WriteElement(writer, Timestamp)
+		_ = serialization.WriteElement(writer, Timestamp)
 		zeroes := [32]byte{}
 		writer.InfallibleWrite(zeroes[:])
 		// fmt.Printf("Nonce: %d\n", Nonce)
-		serialization.WriteElement(writer, Nonce)
+		_ = serialization.WriteElement(writer, Nonce)
 		powHash := writer.Finalize()
 		// fmt.Printf("Powhash finalized: %v\n", powHash)
 		matrix := GenerateHoohashMatrixTest(externalapi.NewDomainHashFromByteArray((*[32]byte)(prePowHash)), t)
@@ -625,7 +625,7 @@ func TestKHeavyHash(t *testing.T) {
 		// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
 		writer := hashes.Blake3HashWriter()
 		writer.InfallibleWrite(prePowHash)
-		serialization.WriteElement(writer, Timestamp)
+		_ = serialization.WriteElement(writer, Timestamp)
 		zeroes := [32]byte{}
 		writer.InfallibleWrite(zeroes[:])
 		fmt.Printf("Nonce: %d\n", Nonce)
@@ -670,7 +670,7 @@ func BenchmarkMatrixPyrinhash(b *testing.B) {
 		writer.InfallibleWrite(input)
 		hash := writer.Finalize()
 		matrix := GenerateMatrix(hash)
-		hash = matrix.bHeavyHash(hash)
+		_ = matrix.bHeavyHash(hash)
 	}
 }
 
