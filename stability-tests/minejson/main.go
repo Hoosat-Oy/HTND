@@ -27,7 +27,7 @@ func main() {
 	if err != nil {
 		panic(errors.Wrap(err, "error connecting to JSON-RPC server"))
 	}
-	defer rpcClient.Disconnect()
+	defer func() { _ = rpcClient.Disconnect() }()
 
 	dataDir, err := common.TempDir("minejson")
 	if err != nil {
