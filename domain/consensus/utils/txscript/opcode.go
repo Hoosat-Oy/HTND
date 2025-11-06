@@ -9,7 +9,6 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
-	"hash"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
 
@@ -1871,12 +1870,6 @@ func opcodeWithin(op *parsedOpcode, vm *Engine) error {
 		vm.dstack.PushInt(scriptNum(0))
 	}
 	return nil
-}
-
-// calcHash calculates the hash of hasher over buf.
-func calcHash(buf []byte, hasher hash.Hash) []byte {
-	hasher.Write(buf)
-	return hasher.Sum(nil)
 }
 
 // opcodeSha256 treats the top item of the data stack as raw bytes and replaces

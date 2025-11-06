@@ -51,11 +51,6 @@ type Engine struct {
 	savedFirstStack     [][]byte // stack from first script for ps2h scripts
 }
 
-// hasFlag returns whether the script engine instance has the passed flag set.
-func (vm *Engine) hasFlag(flag ScriptFlags) bool {
-	return vm.flags&flag == flag
-}
-
 // isBranchExecuting returns whether or not the current conditional branch is
 // actively executing. For example, when the data stack has an OP_FALSE on it
 // and an OP_IF is encountered, the branch is inactive until an OP_ELSE or
@@ -345,11 +340,6 @@ func (vm *Engine) Execute() (err error) {
 	}
 
 	return vm.CheckErrorCondition(true)
-}
-
-// currentScript returns the script currently being processed.
-func (vm *Engine) currentScript() []parsedOpcode {
-	return vm.scripts[vm.scriptIdx]
 }
 
 // checkPubKeyEncoding returns whether or not the passed public key adheres to
