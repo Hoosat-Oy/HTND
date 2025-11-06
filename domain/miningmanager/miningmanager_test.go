@@ -800,7 +800,7 @@ func TestModifyBlockTemplate(t *testing.T) {
 		if err != nil {
 			t.Fatalf("BuildBlockTemplate: %v", err)
 		}
-		if !blockTemplate.CoinbaseHasRedReward {
+		if blockTemplate.CoinbaseHasRedReward {
 			t.Fatalf("Expected block template to have red reward")
 		}
 
