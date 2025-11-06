@@ -647,6 +647,7 @@ func BenchmarkMatrixKheavyHash(b *testing.B) {
 		hash := writer.Finalize()
 		matrix := GenerateMatrix(hash)
 		hash = matrix.kHeavyHash(hash)
+		_ = hash
 	}
 }
 
@@ -658,6 +659,7 @@ func BenchmarkMatrixKarlsenHash(b *testing.B) {
 		hash := writer.Finalize()
 		matrix := GenerateMatrix(hash)
 		hash = matrix.kHeavyHash(hash)
+		_ = hash
 	}
 }
 
