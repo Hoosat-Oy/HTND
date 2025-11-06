@@ -118,7 +118,7 @@ func (uis *utxoIndexStore) commit() error {
 	if err != nil {
 		return err
 	}
-	defer dbTransaction.RollbackUnlessClosed()
+	defer func() { _ = dbTransaction.RollbackUnlessClosed() }()
 
 	toRemoveSompiSupply := uint64(0)
 
