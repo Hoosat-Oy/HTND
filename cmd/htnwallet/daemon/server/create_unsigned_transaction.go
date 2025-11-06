@@ -104,7 +104,7 @@ func (s *server) createUnsignedCompoundTransaction(address string, fromAddresses
 }
 
 // Add this constant next to your others
-const targetCompoundInputs = 72
+const targetCompoundInputs = 88
 
 func (s *server) selectCompoundUTXOs(feePerInput int, fromAddresses []*walletAddress) (
 	selectedUTXOs []*libhtnwallet.UTXO, totalReceived uint64, changeSompi uint64, err error) {
