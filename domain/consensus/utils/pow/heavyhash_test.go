@@ -629,7 +629,7 @@ func TestKHeavyHash(t *testing.T) {
 		zeroes := [32]byte{}
 		writer.InfallibleWrite(zeroes[:])
 		fmt.Printf("Nonce: %d\n", Nonce)
-		serialization.WriteElement(writer, Nonce)
+		_ = serialization.WriteElement(writer, Nonce)
 		powHash := writer.Finalize()
 		// fmt.Printf("Powhash finalized: %v\n", powHash)
 		matrix := GenerateHoohashMatrix(externalapi.NewDomainHashFromByteArray((*[32]byte)(prePowHash)))
