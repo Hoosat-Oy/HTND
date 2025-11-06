@@ -1,7 +1,6 @@
 package fast_pruning_ibd_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"testing"
@@ -132,7 +131,7 @@ func TestGenerateFastPruningIBDTest(t *testing.T) {
 			}
 		}
 
-		file, err := ioutil.TempFile("", "")
+		file, err := os.CreateTemp("", "")
 		if err != nil {
 			t.Fatal(err)
 		}
