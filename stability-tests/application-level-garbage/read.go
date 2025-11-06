@@ -8,8 +8,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-var blockBuffer []byte
-
 func readBlocks() (<-chan *externalapi.DomainBlock, error) {
 	c := make(chan *externalapi.DomainBlock)
 
