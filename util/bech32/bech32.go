@@ -213,8 +213,6 @@ func convertBits(data []byte, conversionType conversionType) []byte {
 	if conversionType.pad && filledBits > 0 {
 		nextByte = nextByte << (conversionType.toBits - filledBits)
 		regrouped = append(regrouped, nextByte)
-		filledBits = 0
-		nextByte = 0
 	}
 
 	return regrouped
