@@ -17,6 +17,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
 	pb2 "github.com/Hoosat-Oy/HTND/infrastructure/network/dnsseed/pb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/Hoosat-Oy/HTND/util/mstime"
 
@@ -109,7 +110,7 @@ func SeedFromGRPC(dagParams *dagconfig.Params, customSeed string, includeAllSubn
 		spawn("SeedFromGRPC", func() {
 			randSource := rand.New(rand.NewSource(time.Now().UnixNano()))
 
-			conn, err := grpc.Dial(host, grpc.WithInsecure())
+			conn, err := grpc.NewClient(host, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			client := pb2.NewPeerServiceClient(conn)
 			if err != nil {
 				log.Warnf("Failed to connect to gRPC server: %s", host)
