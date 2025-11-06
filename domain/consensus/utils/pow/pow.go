@@ -1,9 +1,6 @@
 package pow
 
 import (
-	"crypto/sha256"
-	"encoding/binary"
-
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
@@ -15,20 +12,6 @@ import (
 
 	"github.com/pkg/errors"
 )
-
-const tableSize = 1 << 20 // 64 KB table (reduced from 16 MB)
-var lookupTable [tableSize]uint64
-
-func generateHoohashLookupTable() {
-	// Initialize lookup table deterministically
-	var seed [32]byte
-	for i := range lookupTable {
-		// Use SHA-256 to generate deterministic values
-		binary.BigEndian.PutUint32(seed[:], uint32(i))
-		hash := sha256.Sum256(seed[:])
-		lookupTable[i] = binary.BigEndian.Uint64(hash[:8])
-	}
-}
 
 // State is an intermediate data structure with pre-computed values to speed up mining.
 type State struct {
