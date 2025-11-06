@@ -242,8 +242,8 @@ func memoryHardFunction(input []byte) []byte {
             index2 := (memory[j] >> 32) % uint64(memorySize)
             
             hash, _ := blake2b.New512(nil)
-            binary.Write(hash, binary.LittleEndian, memory[index1])
-            binary.Write(hash, binary.LittleEndian, memory[index2])
+            _ = binary.Write(hash, binary.LittleEndian, memory[index1])
+            _ = binary.Write(hash, binary.LittleEndian, memory[index2])
             
             memory[j] = binary.LittleEndian.Uint64(hash.Sum(nil))
         }
