@@ -68,14 +68,13 @@ type sendConfig struct {
 	config.NetworkFlags
 }
 
-type spamConfig struct {
+type autoCompoundConfig struct {
 	KeysFile                 string   `long:"keys-file" short:"f" description:"Keys file location (default: ~/.htnwallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Hoosatwallet\\key.json (Windows))"`
 	Password                 string   `long:"password" short:"p" description:"Wallet password"`
 	DaemonAddress            string   `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to"`
-	TxsPerSecond             string   `long:"txs-per-second" short:"x" description:"Target transactions per second to spam"`
 	ToAddress                string   `long:"to-address" short:"t" description:"The public address to send Hoosat to" required:"true"`
 	FromAddresses            []string `long:"from-address" short:"a" description:"Specific public address to send Hoosat from. Repeat multiple times (adding -a before each) to accept several addresses" required:"false"`
-	SendAmount               string   `long:"send-amount" short:"v" description:"An amount to send in Hoosat (e.g. 1234.12345678)"`
+	SendAmount               string   `long:"send-amount" short:"v" description:"An amount to compound every iteration in Hoosat (e.g. 1234.12345678)"`
 	IsSendAll                bool     `long:"send-all" description:"Send all the Hoosat in the wallet (mutually exclusive with --send-amount). If --from-address was used, will send all only from the specified addresses."`
 	UseExistingChangeAddress bool     `long:"use-existing-change-address" short:"u" description:"Will use an existing change address (in case no change address was ever used, it will use a new one)"`
 	Verbose                  bool     `long:"show-serialized" short:"s" description:"Show a list of hex encoded sent transactions"`
@@ -167,9 +166,9 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	_, _ = parser.AddCommand(balanceSubCmd, "Shows the balance of a public address",
 		"Shows the balance for a public address in Hoosat", balanceConf)
 
-	spamConf := &spamConfig{DaemonAddress: defaultListen}
-	_, _ = parser.AddCommand(spamSubCmd, "Sends a Hoosat transactions in a spammy way to a public address",
-		"Sends a Hoosat transactios spammy way to a public address", spamConf)
+	spamConf := &autoCompoundConfig{DaemonAddress: defaultListen}
+	_, _ = parser.AddCommand(spamSubCmd, "Sends a Hoosat compound transactions automatically",
+		"Sends a Hoosat compound transactions automatically", spamConf)
 
 	sendConf := &sendConfig{DaemonAddress: defaultListen}
 	_, _ = parser.AddCommand(sendSubCmd, "Sends a Hoosat transaction to a public address",

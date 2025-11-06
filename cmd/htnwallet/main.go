@@ -13,7 +13,7 @@ func main() {
 	case balanceSubCmd:
 		err = balance(config.(*balanceConfig))
 	case spamSubCmd:
-		err = spamSend(config.(*spamConfig))
+		err = autoCompound(config.(*autoCompoundConfig))
 	case sendSubCmd:
 		err = send(config.(*sendConfig))
 	case createUnsignedTransactionSubCmd:
