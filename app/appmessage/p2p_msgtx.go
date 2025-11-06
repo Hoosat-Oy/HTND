@@ -27,31 +27,9 @@ const (
 	// backing array multiple times.
 	defaultTxInOutAlloc = 15
 
-	// minTxInPayload is the minimum payload size for a transaction input.
-	// PreviousOutpoint.TxID + PreviousOutpoint.Index 4 bytes + Varint for
-	// SignatureScript length 1 byte + Sequence 4 bytes.
-	minTxInPayload = 9 + externalapi.DomainHashSize
-
-	// maxTxInPerMessage is the maximum number of transactions inputs that
-	// a transaction which fits into a message could possibly have.
-	maxTxInPerMessage = (MaxMessagePayload / minTxInPayload) + 1
-
 	// MinTxOutPayload is the minimum payload size for a transaction output.
 	// Value 8 bytes + version 2 bytes + Varint for ScriptPublicKey length 1 byte.
 	MinTxOutPayload = 11
-
-	// maxTxOutPerMessage is the maximum number of transactions outputs that
-	// a transaction which fits into a message could possibly have.
-	maxTxOutPerMessage = (MaxMessagePayload / MinTxOutPayload) + 1
-
-	// minTxPayload is the minimum payload size for a transaction. Note
-	// that any realistically usable transaction must have at least one
-	// input or output, but that is a rule enforced at a higher layer, so
-	// it is intentionally not included here.
-	// Version 4 bytes + Varint number of transaction inputs 1 byte + Varint
-	// number of transaction outputs 1 byte + LockTime 4 bytes + min input
-	// payload + min output payload.
-	minTxPayload = 10
 )
 
 // Outpoint defines a hoosat data type that is used to track previous
