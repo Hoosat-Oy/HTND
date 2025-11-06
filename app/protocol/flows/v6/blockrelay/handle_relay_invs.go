@@ -105,7 +105,7 @@ func (flow *handleRelayInvsFlow) banConnection(offenseTimesOverrule bool) {
 
 	if len(recentOffenses) >= maxOffenses || offenseTimesOverrule {
 		log.Infof("Banning connection: %s due to exceeding offense threshold", address)
-		flow.connectionManager.Ban(flow.netConnection)
+		_ = flow.connectionManager.Ban(flow.netConnection)
 		isBanned, _ := flow.connectionManager.IsBanned(flow.netConnection)
 		if isBanned {
 			log.Infof("Peer %s is banned. Disconnecting...", flow.netConnection.NetAddress().IP)
