@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/Hoosat-Oy/HTND/cmd/htnwallet/libhtnwallet/serialization"
@@ -23,7 +23,7 @@ func parse(conf *parseConfig) error {
 
 	transactionHex := conf.Transaction
 	if conf.TransactionFile != "" {
-		transactionHexBytes, err := ioutil.ReadFile(conf.TransactionFile)
+		transactionHexBytes, err := os.ReadFile(conf.TransactionFile)
 		if err != nil {
 			return errors.Wrapf(err, "Could not read hex from %s", conf.TransactionFile)
 		}
