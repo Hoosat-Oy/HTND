@@ -6,13 +6,11 @@ import (
 
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
 	"github.com/Hoosat-Oy/HTND/stability-tests/common"
-	"github.com/Hoosat-Oy/HTND/util/panics"
 )
 
 var (
 	backendLog = logger.NewBackend()
 	log        = backendLog.Logger("CHGN")
-	spawn      = panics.GoroutineWrapperFunc(log)
 )
 
 func initLog(logFile, errLogFile string) {

@@ -198,15 +198,15 @@ func parseCommandLine() (subCommand string, config interface{}) {
 		"Parse the given transaction and print its contents", parseConf)
 
 	showAddressesConf := &showAddressesConfig{DaemonAddress: defaultListen}
-	parser.AddCommand(showAddressesSubCmd, "Shows all generated public addresses of the current wallet",
+	_, _ = parser.AddCommand(showAddressesSubCmd, "Shows all generated public addresses of the current wallet",
 		"Shows all generated public addresses of the current wallet", showAddressesConf)
 
 	newAddressConf := &newAddressConfig{DaemonAddress: defaultListen}
-	parser.AddCommand(newAddressSubCmd, "Generates new public address of the current wallet and shows it",
+	_, _ = parser.AddCommand(newAddressSubCmd, "Generates new public address of the current wallet and shows it",
 		"Generates new public address of the current wallet and shows it", newAddressConf)
 
 	dumpUnencryptedDataConf := &dumpUnencryptedDataConfig{}
-	parser.AddCommand(dumpUnencryptedDataSubCmd, "Prints the unencrypted wallet data",
+	_, _ = parser.AddCommand(dumpUnencryptedDataSubCmd, "Prints the unencrypted wallet data",
 		"Prints the unencrypted wallet data including its private keys. Anyone that sees it can access "+
 			"the funds. Use only on safe environment.", dumpUnencryptedDataConf)
 
