@@ -10,11 +10,7 @@ import (
 )
 
 const (
-	createSubC	_	_, _ = parser.AddCommand(createSubCmd, "Creates a new wallet (`--import` to recover from seed)",
-		"Creates a private key and 3 public addresses, one for each of MainNet, TestNet and DevNet. "+
-			"Import existing private key and public addresses from seed using `--import`.", createConf) = parser.AddCommand(createSubCmd, "Creates a new wallet (`--import` to recover from seed)",
-		"Creates a private key and 3 public addresses, one for each of MainNet, TestNet and DevNet. "+
-			"Import existing private key and public addresses from seed using `--import`.", createConf)                   = "create"
+	createSubCmd                    = "create"
 	balanceSubCmd                   = "balance"
 	sendSubCmd                      = "send"
 	spamSubCmd                      = "spam"
