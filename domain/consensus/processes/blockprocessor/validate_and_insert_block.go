@@ -188,10 +188,11 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 	var logClosureErr error
 	log.Debug(logger.NewLogClosure(func() string {
 		virtualGhostDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, stagingArea, model.VirtualBlockHash, false)
-		// if database.IsNotFoundError(err) {
-		// 	log.Infof("validateAndInsertBlock failed to retrieve with %s\n", model.VirtualBlockHash)
-		// 	return "Cannot log data for non-existent virtual"
-		// }
+		// If virtual GHOSTDAG data does not exist yet (e.g., fresh staging consensus without genesis during IBD),
+		// skip logging instead of failing the whole flow.
+		if database.IsNotFoundError(err) {
+			return "Cannot log data for non-existent virtual"
+		}
 		if err != nil {
 			logClosureErr = err
 			return fmt.Sprintf("Failed to get virtual GHOSTDAG data: %s", err)
