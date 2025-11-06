@@ -66,13 +66,6 @@ func (uc utxoCollection) add(outpoint *externalapi.DomainOutpoint, entry externa
 	uc[*outpoint] = entry
 }
 
-// addMultiple adds multiple UTXO entries to this collection
-func (uc utxoCollection) addMultiple(collectionToAdd utxoCollection) {
-	for outpoint, entry := range collectionToAdd {
-		uc[outpoint] = entry
-	}
-}
-
 // remove removes a UTXO entry from this collection if it exists
 func (uc utxoCollection) remove(outpoint *externalapi.DomainOutpoint) {
 	delete(uc, *outpoint)
