@@ -3,9 +3,3 @@
 // license that can be found in the LICENSE file.
 
 package dagconfig
-
-import (
-	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
-)
-
-var log = logger.RegisterSubSystem("DAGC")
