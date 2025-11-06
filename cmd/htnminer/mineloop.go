@@ -29,7 +29,6 @@ type PowTransfer struct {
 
 func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond float64, mineWhenNotSynced bool,
 	miningAddr util.Address, threads *int) error {
-	rand.Seed(time.Now().UnixNano()) // Seed the global concurrent-safe random source.
 
 	errChan := make(chan error)
 	doneChan := make(chan struct{})
