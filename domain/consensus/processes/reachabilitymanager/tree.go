@@ -107,24 +107,6 @@ func (rt *reachabilityManager) remainingSlackAfter(stagingArea *model.StagingAre
 	return intervalSize(interval), nil
 }
 
-func (rt *reachabilityManager) hasSlackIntervalBefore(stagingArea *model.StagingArea, node *externalapi.DomainHash) (bool, error) {
-	interval, err := rt.remainingIntervalBefore(stagingArea, node)
-	if err != nil {
-		return false, err
-	}
-
-	return intervalSize(interval) > 0, nil
-}
-
-func (rt *reachabilityManager) hasSlackIntervalAfter(stagingArea *model.StagingArea, node *externalapi.DomainHash) (bool, error) {
-	interval, err := rt.remainingIntervalAfter(stagingArea, node)
-	if err != nil {
-		return false, err
-	}
-
-	return intervalSize(interval) > 0, nil
-}
-
 /*
 
 ReachabilityManager API functions
