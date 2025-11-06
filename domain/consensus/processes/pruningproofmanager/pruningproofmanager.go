@@ -632,62 +632,6 @@ func (ppm *pruningProofManager) dagProcesses(
 	return reachabilityManagers, dagTopologyManagers, ghostdagManagers
 }
 
-func (ppm *pruningProofManager) ghostdagDataWithoutPrunedBlocks(stagingArea *model.StagingArea, targetReachabilityDataStore model.ReachabilityDataStore,
-	data *externalapi.BlockGHOSTDAGData) (*externalapi.BlockGHOSTDAGData, bool, error) {
-
-	changed := false
-	mergeSetBlues := make([]*externalapi.DomainHash, 0, len(data.MergeSetBlues()))
-	for _, blockHash := range data.MergeSetBlues() {
-		hasReachabilityData, err := targetReachabilityDataStore.HasReachabilityData(ppm.databaseContext, stagingArea, blockHash)
-		if err != nil {
-			return nil, false, err
-		}
-		if !hasReachabilityData {
-			changed = true
-			if data.SelectedParent().Equal(blockHash) {
-				mergeSetBlues = append(mergeSetBlues, model.VirtualGenesisBlockHash)
-			}
-			continue
-		}
-
-		mergeSetBlues = append(mergeSetBlues, blockHash)
-	}
-
-	mergeSetReds := make([]*externalapi.DomainHash, 0, len(data.MergeSetReds()))
-	for _, blockHash := range data.MergeSetReds() {
-		hasReachabilityData, err := targetReachabilityDataStore.HasReachabilityData(ppm.databaseContext, stagingArea, blockHash)
-		if err != nil {
-			return nil, false, err
-		}
-		if !hasReachabilityData {
-			changed = true
-			continue
-		}
-
-		mergeSetReds = append(mergeSetReds, blockHash)
-	}
-
-	selectedParent := data.SelectedParent()
-	hasReachabilityData, err := targetReachabilityDataStore.HasReachabilityData(ppm.databaseContext, stagingArea, data.SelectedParent())
-	if err != nil {
-		return nil, false, err
-	}
-
-	if !hasReachabilityData {
-		changed = true
-		selectedParent = model.VirtualGenesisBlockHash
-	}
-
-	return externalapi.NewBlockGHOSTDAGData(
-		data.BlueScore(),
-		data.BlueWork(),
-		selectedParent,
-		mergeSetBlues,
-		mergeSetReds,
-		data.BluesAnticoneSizes(),
-	), changed, nil
-}
-
 func (ppm *pruningProofManager) populateProofReachabilityAndHeaders(pruningPointProof *externalapi.PruningPointProof,
 	targetReachabilityDataStore model.ReachabilityDataStore) error {
 	// We build a DAG of all multi-level relations between blocks in the proof. We make a upHeap of all blocks, so we can iterate
