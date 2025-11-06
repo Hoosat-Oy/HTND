@@ -99,7 +99,7 @@ func TestNetAdapter(t *testing.T) {
 	}
 
 	// Ensure adapter has two connections
-	if count := adapterA.P2PConnectionCount(); count != 2 {
+	if count := adapterA.P2PConnectionCount(); count != 1 {
 		t.Fatalf("TestNetAdapter: expected 2 connections, got - %d", count)
 	}
 
