@@ -199,11 +199,11 @@ func TestMatrixHoohashRev110(t *testing.T) {
 			fmt.Printf("PRE_POW_HASH: %v\n", hex.EncodeToString(prePowHash))
 			writer.InfallibleWrite(prePowHash)
 			fmt.Printf("TIME: %d\n", Timestamp)
-			serialization.WriteElement(writer, Timestamp)
+			_ = serialization.WriteElement(writer, Timestamp)
 			zeroes := [32]byte{}
 			writer.InfallibleWrite(zeroes[:])
 			fmt.Printf("Nonce: %d\n", Nonce)
-			serialization.WriteElement(writer, Nonce)
+			_ = serialization.WriteElement(writer, Nonce)
 			powHash := writer.Finalize()
 			matrix := GenerateHoohashMatrixV110(externalapi.NewDomainHashFromByteArray((*[32]byte)(prePowHash)))
 			//fmt.Printf("Matrix: %v\n", matrix)
@@ -225,11 +225,11 @@ func TestMatrixHoohashRev110(t *testing.T) {
 	fmt.Printf("PRE_POW_HASH: %v\n", hex.EncodeToString(prePowHash))
 	writer.InfallibleWrite(prePowHash)
 	fmt.Printf("TIME: %d\n", Timestamp)
-	serialization.WriteElement(writer, Timestamp)
+	_ = serialization.WriteElement(writer, Timestamp)
 	zeroes := [32]byte{}
 	writer.InfallibleWrite(zeroes[:])
 	fmt.Printf("Nonce: %d\n", Nonce)
-	serialization.WriteElement(writer, Nonce)
+	_ = serialization.WriteElement(writer, Nonce)
 	powHash := writer.Finalize()
 	matrix := GenerateHoohashMatrixV110(externalapi.NewDomainHashFromByteArray((*[32]byte)(prePowHash)))
 	//fmt.Printf("Matrix: %v\n\n", matrix[0])
@@ -646,8 +646,8 @@ func memoryHardFunction(input []byte) []byte {
 			index2 := (memory[j] >> 32) % uint64(memorySize)
 
 			hash, _ := blake2b.New512(nil)
-			binary.Write(hash, binary.LittleEndian, memory[index1])
-			binary.Write(hash, binary.LittleEndian, memory[index2])
+			_ = binary.Write(hash, binary.LittleEndian, memory[index1])
+			_ = binary.Write(hash, binary.LittleEndian, memory[index2])
 
 			memory[j] = binary.LittleEndian.Uint64(hash.Sum(nil))
 		}
