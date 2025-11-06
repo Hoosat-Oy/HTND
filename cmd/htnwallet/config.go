@@ -186,15 +186,15 @@ func parseCommandLine() (subCommand string, config interface{}) {
 		"Create an unsigned Hoosat transaction", createUnsignedTransactionConf)
 
 	signConf := &signConfig{}
-	parser.AddCommand(signSubCmd, "Sign the given partially signed transaction",
+	_, _ = parser.AddCommand(signSubCmd, "Sign the given partially signed transaction",
 		"Sign the given partially signed transaction", signConf)
 
 	broadcastConf := &broadcastConfig{DaemonAddress: defaultListen}
-	parser.AddCommand(broadcastSubCmd, "Broadcast the given transaction",
+	_, _ = parser.AddCommand(broadcastSubCmd, "Broadcast the given transaction",
 		"Broadcast the given transaction", broadcastConf)
 
 	parseConf := &parseConfig{}
-	parser.AddCommand(parseSubCmd, "Parse the given transaction and print its contents",
+	_, _ = parser.AddCommand(parseSubCmd, "Parse the given transaction and print its contents",
 		"Parse the given transaction and print its contents", parseConf)
 
 	showAddressesConf := &showAddressesConfig{DaemonAddress: defaultListen}
