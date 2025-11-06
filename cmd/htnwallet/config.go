@@ -214,10 +214,10 @@ func parseCommandLine() (subCommand string, config interface{}) {
 		RPCServer: defaultRPCServer,
 		Listen:    defaultListen,
 	}
-	parser.AddCommand(startDaemonSubCmd, "Start the wallet daemon", "Start the wallet daemon", startDaemonConf)
-	parser.AddCommand(versionSubCmd, "Get the wallet version", "Get the wallet version", &versionConfig{})
+	_, _ = parser.AddCommand(startDaemonSubCmd, "Start the wallet daemon", "Start the wallet daemon", startDaemonConf)
+	_, _ = parser.AddCommand(versionSubCmd, "Get the wallet version", "Get the wallet version", &versionConfig{})
 	getDaemonVersionConf := &getDaemonVersionConfig{DaemonAddress: defaultListen}
-	parser.AddCommand(getDaemonVersionSubCmd, "Get the wallet daemon version", "Get the wallet daemon version", getDaemonVersionConf)
+	_, _ = parser.AddCommand(getDaemonVersionSubCmd, "Get the wallet daemon version", "Get the wallet daemon version", getDaemonVersionConf)
 
 	_, err := parser.Parse()
 	if err != nil {
