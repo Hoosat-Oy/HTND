@@ -42,10 +42,10 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 		err := c.initiateConnection(addressString)
 		if err != nil {
 			log.Debugf("Couldn't connect to %s: %s", addressString, err)
-			c.addressManager.MarkConnectionFailure(netAddress)
+			_ = c.addressManager.MarkConnectionFailure(netAddress)
 			continue
 		}
-		c.addressManager.MarkConnectionSuccess(netAddress)
+		_ = c.addressManager.MarkConnectionSuccess(netAddress)
 
 		c.activeOutgoing[addressString] = struct{}{}
 	}
