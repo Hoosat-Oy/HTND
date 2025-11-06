@@ -34,9 +34,6 @@ func (sht SigHashType) IsStandardSigHashType() bool {
 	}
 }
 
-func (sht SigHashType) isSigHashAll() bool {
-	return sht&SigHashMask == SigHashAll
-}
 func (sht SigHashType) isSigHashNone() bool {
 	return sht&SigHashMask == SigHashNone
 }
