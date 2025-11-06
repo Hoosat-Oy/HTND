@@ -5,28 +5,42 @@ import (
 	"time"
 
 	"github.com/Hoosat-Oy/HTND/cmd/htnwallet/daemon/server"
-
 	"github.com/pkg/errors"
-
-	"github.com/Hoosat-Oy/HTND/cmd/htnwallet/daemon/pb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
+	pb "github.com/Hoosat-Oy/HTND/cmd/htnwallet/daemon/pb"
 )
 
-// Connect connects to the htnwalletd server, and returns the client instance
+// Connect connects to htnwalletd with a 2-second timeout.
+// Fully compatible with gRPC Go v1.68+ and Go 1.24.
 func Connect(address string) (pb.HtnwalletdClient, func(), error) {
-	// Connection is local, so 1 second timeout is sufficient
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	conn, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(server.MaxDaemonSendMsgSize)))
+	client, err := grpc.NewClient(
+		address,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(server.MaxDaemonSendMsgSize),
+		),
+	)
 	if err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
-			return nil, nil, errors.New("htnwallet daemon is not running, start it with `htnwallet start-daemon`")
-		}
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "failed to initialize gRPC client")
 	}
 
-	return pb.NewHtnwalletdClient(conn), func() {
-		conn.Close()
+	// Force connection attempt with a no-op health check
+	_ = client.Invoke(ctx, "/grpc.health.v1.Health/Check", &struct{}{}, &struct{}{})
+
+	if ctx.Err() != nil {
+		client.Close() // ignore error — we're failing anyway
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			return nil, nil, errors.New("htnwallet daemon is not running — start it with `htnwallet start-daemon`")
+		}
+		return nil, nil, errors.Wrap(ctx.Err(), "connection timeout")
+	}
+
+	return pb.NewHtnwalletdClient(client), func() {
+		_ = client.Close() // ignore error in cleanup
 	}, nil
 }
