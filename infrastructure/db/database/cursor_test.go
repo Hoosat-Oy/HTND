@@ -243,10 +243,6 @@ func testCursorSeek(t *testing.T, db database.Database, testName string) {
 	// Seek to a value that doesn't exist and make sure that
 	// the returned error is ErrNotFound
 	err = cursor.Seek(database.MakeBucket(nil).Key([]byte("doesn't exist")))
-	if err == nil {
-		t.Fatalf("%s: Seek unexpectedly "+
-			"succeeded", testName)
-	}
 	if !database.IsNotFoundError(err) {
 		t.Fatalf("%s: Seek returned "+
 			"wrong error: %s", testName, err)
