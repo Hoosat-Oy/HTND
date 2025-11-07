@@ -10,6 +10,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/util/panics"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/peer"
@@ -47,17 +48,26 @@ func (p *p2pServer) MessageStream(stream protowire.P2P_MessageStreamServer) erro
 func (p *p2pServer) Connect(address string) (server.Connection, error) {
 	log.Debugf("%s Dialing to %s", p.name, address)
 
-	// A 1s dial timeout can be too aggressive on some networks and cause frequent
-	// connection failures (context deadline exceeded) before a TCP handshake completes.
-	// Bump this to a more forgiving value to improve initial connectivity.
-	const dialTimeout = 30 * time.Second
-
+	const dialTimeout = 5 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), dialTimeout)
 	defer cancel()
+
 	gRPCClientConnection, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
+		// Use modern gRPC client with better connection management and backoff
+		connectParams := grpc.ConnectParams{
+			Backoff: backoff.Config{
+				BaseDelay:  1.0 * time.Second,
+				Multiplier: 1.6,
+				Jitter:     0.2,
+				MaxDelay:   120 * time.Second,
+			},
+			MinConnectTimeout: 5 * time.Second,
+		}
+
 		gRPCClientConnection, err = grpc.NewClient(address,
-			grpc.WithConnectParams(grpc.ConnectParams{}), grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithConnectParams(connectParams),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
 		)
 		if err != nil {
 			return nil, errors.Wrapf(err, "%s error connecting to %s", p.name, address)
