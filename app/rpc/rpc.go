@@ -1,6 +1,8 @@
 package rpc
 
 import (
+	"time"
+
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
 	"github.com/Hoosat-Oy/HTND/app/rpc/rpccontext"
 	"github.com/Hoosat-Oy/HTND/app/rpc/rpchandlers"
@@ -101,6 +103,45 @@ func (m *Manager) handleIncomingMessages(router *router.Router, incomingRoute *r
 			// continue processing further requests
 			continue
 		}
+	}
+}
+
+const (
+	maxOffenses      = 5
+	banThresholdSecs = 300
+)
+
+var offenseTracker = make(map[string][]time.Time)
+
+func (m *Manager) banConnection(offenseTimesOverrule bool, netConnection *netadapter.NetConnection) {
+	address := netConnection.Address()
+	now := time.Now()
+
+	// Track offenses
+	offenseTimes := offenseTracker[address]
+	offenseTimes = append(offenseTimes, now)
+
+	// Remove old offenses outside the threshold window
+	var recentOffenses []time.Time
+	for _, t := range offenseTimes {
+		if now.Sub(t).Seconds() <= banThresholdSecs {
+			recentOffenses = append(recentOffenses, t)
+		}
+	}
+	offenseTracker[address] = recentOffenses
+
+	if len(recentOffenses) >= maxOffenses || offenseTimesOverrule {
+		log.Infof("Banning connection: %s due to exceeding offense threshold", address)
+		_ = m.context.ConnectionManager.Ban(netConnection)
+		isBanned, _ := m.context.ConnectionManager.IsBanned(netConnection)
+		if isBanned {
+			log.Infof("Peer %s is banned. Disconnecting...", netConnection.NetAddress().IP)
+			netConnection.Disconnect()
+			delete(offenseTracker, address) // Clean up after ban
+			return
+		}
+	} else {
+		log.Infof("Peer %s offense recorded (%d/%d within threshold window)", address, len(recentOffenses), maxOffenses)
 	}
 }
 
