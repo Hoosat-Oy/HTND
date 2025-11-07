@@ -360,6 +360,9 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 }
 
 func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, bool, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 
 	block, err := s.blockStore.Block(s.databaseContext, stagingArea, blockHash)
@@ -373,6 +376,8 @@ func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.Do
 }
 
 func (s *consensus) HasBlock(blockHash *externalapi.DomainHash) (bool, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	stagingArea := model.NewStagingArea()
 
 	exists, err := s.blockStore.HasBlock(s.databaseContext, stagingArea, blockHash)
@@ -407,6 +412,9 @@ func (s *consensus) GetBlockEvenIfHeaderOnly(blockHash *externalapi.DomainHash) 
 }
 
 func (s *consensus) GetBlockHeader(blockHash *externalapi.DomainHash) (externalapi.BlockHeader, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 
 	blockHeader, err := s.blockHeaderStore.BlockHeader(s.databaseContext, stagingArea, blockHash)
@@ -421,6 +429,8 @@ func (s *consensus) GetBlockHeader(blockHash *externalapi.DomainHash) (externala
 
 // GetBlockHeaders returns headers for the given hashes using a single staging area to minimize overhead.
 func (s *consensus) GetBlockHeaders(blockHashes []*externalapi.DomainHash) ([]externalapi.BlockHeader, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	stagingArea := model.NewStagingArea()
 
 	headers, err := s.blockHeaderStore.BlockHeaders(s.databaseContext, stagingArea, blockHashes)
@@ -482,6 +492,9 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 
 func (s *consensus) GetBlockRelations(blockHash *externalapi.DomainHash) (
 	parents []*externalapi.DomainHash, children []*externalapi.DomainHash, err error) {
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	stagingArea := model.NewStagingArea()
 
@@ -637,6 +650,9 @@ func (s *consensus) GetVirtualUTXOs(expectedVirtualParents []*externalapi.Domain
 }
 
 func (s *consensus) PruningPoint() (*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 
 	return s.pruningStore.PruningPoint(s.databaseContext, stagingArea)
@@ -710,6 +726,9 @@ func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainHash, error) 
 }
 
 func (s *consensus) Tips() ([]*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 
 	return s.consensusStateStore.Tips(stagingArea, s.databaseContext)
@@ -768,6 +787,7 @@ func (s *consensus) GetVirtualDAAScore() (uint64, error) {
 func (s *consensus) CreateBlockLocatorFromPruningPoint(highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 
 	err := s.validateBlockHashExists(stagingArea, highHash)
@@ -862,6 +882,9 @@ func (s *consensus) ImportPruningPoints(pruningPoints []externalapi.BlockHeader)
 }
 
 func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedChainPath, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 
 	err := s.validateBlockHashExists(stagingArea, blockHash)
@@ -906,6 +929,9 @@ func (s *consensus) IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash
 }
 
 func (s *consensus) GetHeadersSelectedTip() (*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 
 	return s.headersSelectedTipStore.HeadersSelectedTip(s.databaseContext, stagingArea)
@@ -914,6 +940,7 @@ func (s *consensus) GetHeadersSelectedTip() (*externalapi.DomainHash, error) {
 func (s *consensus) Anticone(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 
 	err := s.validateBlockHashExists(stagingArea, blockHash)
@@ -930,6 +957,9 @@ func (s *consensus) Anticone(blockHash *externalapi.DomainHash) ([]*externalapi.
 }
 
 func (s *consensus) EstimateNetworkHashesPerSecond(startHash *externalapi.DomainHash, windowSize int) (uint64, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	return s.difficultyManager.EstimateNetworkHashesPerSecond(startHash, windowSize)
 }
 
@@ -1038,6 +1068,9 @@ func (s *consensus) ApplyPruningPointProof(pruningPointProof *externalapi.Prunin
 }
 
 func (s *consensus) BlockDAAWindowHashes(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 	return s.dagTraversalManager.DAABlockWindow(stagingArea, blockHash)
 }
