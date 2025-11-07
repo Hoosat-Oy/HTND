@@ -252,6 +252,8 @@ func (s *consensus) validateAndInsertBlockWithLock(block *externalapi.DomainBloc
 }
 
 func (s *consensus) validateAndInsertBlockNoLock(block *externalapi.DomainBlock, updateVirtual bool, powSkip bool) (*externalapi.VirtualChangeSet, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	virtualChangeSet, blockStatus, err := s.blockProcessor.ValidateAndInsertBlock(block, updateVirtual, powSkip)
 	if err != nil {
 		return nil, err
