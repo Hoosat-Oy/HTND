@@ -252,8 +252,6 @@ func (s *consensus) validateAndInsertBlockWithLock(block *externalapi.DomainBloc
 }
 
 func (s *consensus) validateAndInsertBlockNoLock(block *externalapi.DomainBlock, updateVirtual bool, powSkip bool) (*externalapi.VirtualChangeSet, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
 	virtualChangeSet, blockStatus, err := s.blockProcessor.ValidateAndInsertBlock(block, updateVirtual, powSkip)
 	if err != nil {
 		return nil, err
@@ -331,6 +329,8 @@ func (s *consensus) sendVirtualChangedEvent(virtualChangeSet *externalapi.Virtua
 // ValidateTransactionAndPopulateWithConsensusData validates the given transaction
 // and populates it with any missing consensus data
 func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction *externalapi.DomainTransaction) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	stagingArea := model.NewStagingArea()
 
 	daaScore, err := s.daaBlocksStore.DAAScore(s.databaseContext, stagingArea, model.VirtualBlockHash)
