@@ -46,18 +46,18 @@ func (amc *AddressRandomize) RandomAddresses(addresses []*address, count int) []
 	if len(addresses) < count {
 		count = len(addresses)
 	}
-	
+
 	now := time.Now()
 	weights := make([]float32, 0, len(addresses))
-	
+
 	for _, addr := range addresses {
 		// Base weight starts high
 		weight := float32(1000.0)
-		
+
 		// Reduce weight based on failure count, but not to zero
 		failurePenalty := float32(addr.connectionFailedCount) * 100.0
 		weight = weight - failurePenalty
-		
+
 		// Boost weight for addresses that have succeeded recently
 		if !addr.lastSuccess.IsZero() {
 			hoursSinceSuccess := float32(now.Sub(addr.lastSuccess).Hours())
@@ -67,7 +67,7 @@ func (amc *AddressRandomize) RandomAddresses(addresses []*address, count int) []
 				weight = weight * 1.5 // 1.5x weight for successes within 24h
 			}
 		}
-		
+
 		// Reduce weight for addresses that have been attempted very recently
 		if !addr.lastAttempt.IsZero() {
 			minutesSinceAttempt := float32(now.Sub(addr.lastAttempt).Minutes())
@@ -77,15 +77,15 @@ func (amc *AddressRandomize) RandomAddresses(addresses []*address, count int) []
 				weight = weight * 0.5 // Lower weight for attempts within 30 minutes
 			}
 		}
-		
+
 		// Ensure minimum weight is never zero to give every address a chance
 		if weight < 1.0 {
 			weight = 1.0
 		}
-		
+
 		weights = append(weights, weight)
 	}
-	
+
 	result := make([]*appmessage.NetAddress, 0, count)
 	for count > 0 {
 		i := weightedRand(weights)
