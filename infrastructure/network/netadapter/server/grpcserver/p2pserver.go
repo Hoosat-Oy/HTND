@@ -50,8 +50,18 @@ func (p *p2pServer) Connect(address string) (server.Connection, error) {
 	// A 1s dial timeout can be too aggressive on some networks and cause frequent
 	// connection failures (context deadline exceeded) before a TCP handshake completes.
 	// Bump this to a more forgiving value to improve initial connectivity.
-	const dialTimeout = 5 * time.Second
-	gRPCClientConnection, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	const dialTimeout = 2 * time.Second
+
+	// Create a custom dialer with timeout to prevent hanging on DNS resolution and TCP connect
+	dialer := func(ctx context.Context, addr string) (net.Conn, error) {
+		dialCtx, cancel := context.WithTimeout(ctx, dialTimeout)
+		defer cancel()
+		return (&net.Dialer{}).DialContext(dialCtx, "tcp", addr)
+	}
+
+	gRPCClientConnection, err := grpc.NewClient(address,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithContextDialer(dialer))
 	if err != nil {
 		return nil, errors.Wrapf(err, "%s error connecting to %s", p.name, address)
 	}

@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	maxAddresses                   = 4096
-	connectionFailedCountForRemove = 4
+	maxAddresses                   = 16384 // Increased from 4096 to store more peer addresses
+	connectionFailedCountForRemove = 6     // Increased from 4 to be more tolerant of failures
+	maxConnectionFailureAge        = 24 * time.Hour // Reset failure counts after 24 hours
 )
 
 // addressRandomizer is the interface for the randomizer needed for the AddressManager.
@@ -33,8 +34,11 @@ type addressKey struct {
 }
 
 type address struct {
-	netAddress            *appmessage.NetAddress
-	connectionFailedCount uint64
+	netAddress             *appmessage.NetAddress
+	connectionFailedCount  uint64
+	lastAttempt           time.Time
+	lastSuccess           time.Time
+	firstSeen             time.Time
 }
 
 type ipv6 [net.IPv6len]byte
@@ -90,8 +94,23 @@ func (am *AddressManager) addAddressNoLock(netAddress *appmessage.NetAddress) er
 	}
 
 	key := netAddressKey(netAddress)
-	// We mark `connectionFailedCount` as 0 only after first success
-	address := &address{netAddress: netAddress, connectionFailedCount: 1}
+	now := time.Now()
+	
+	// Check if address already exists
+	if existing, ok := am.store.getNotBanned(key); ok {
+		// Update existing address but don't change failure count
+		existing.firstSeen = now
+		return am.store.updateNotBanned(key, existing)
+	}
+	
+	// Create new address entry
+	address := &address{
+		netAddress:            netAddress, 
+		connectionFailedCount: 0, // Start with 0 failures for new addresses
+		firstSeen:             now,
+		lastAttempt:           time.Time{},
+		lastSuccess:           time.Time{},
+	}
 	err := am.store.add(key, address)
 	if err != nil {
 		return err
@@ -100,18 +119,34 @@ func (am *AddressManager) addAddressNoLock(netAddress *appmessage.NetAddress) er
 	if am.store.notBannedCount() > maxAddresses {
 		allAddresses := am.store.getAllNotBanned()
 
-		maxConnectionFailedCount := uint64(0)
-		toRemove := allAddresses[0]
-		for _, address := range allAddresses[1:] {
-			if address.connectionFailedCount > maxConnectionFailedCount {
-				maxConnectionFailedCount = address.connectionFailedCount
-				toRemove = address
+		// Improved removal strategy: prefer removing old addresses with high failure counts
+		toRemoveIdx := -1
+		oldestFailureScore := float64(-1)
+		
+		for i, addr := range allAddresses {
+			// Calculate a score that considers both age and failure count
+			age := now.Sub(addr.firstSeen).Hours()
+			failureWeight := float64(addr.connectionFailedCount) * 10.0
+			
+			// Addresses that haven't been successful for a long time get higher scores
+			timeSinceSuccess := now.Sub(addr.lastSuccess).Hours()
+			if addr.lastSuccess.IsZero() {
+				timeSinceSuccess = age // Never had success
+			}
+			
+			score := failureWeight + age/24.0 + timeSinceSuccess/12.0
+			
+			if score > oldestFailureScore {
+				oldestFailureScore = score
+				toRemoveIdx = i
 			}
 		}
 
-		err := am.removeAddressNoLock(toRemove.netAddress)
-		if err != nil {
-			return err
+		if toRemoveIdx >= 0 {
+			err := am.removeAddressNoLock(allAddresses[toRemoveIdx].netAddress)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -163,6 +198,17 @@ func (am *AddressManager) MarkConnectionFailure(address *appmessage.NetAddress) 
 	if !ok {
 		return errors.Errorf("address %s is not registered with the address manager", address.TCPAddress())
 	}
+	
+	now := time.Now()
+	entry.lastAttempt = now
+	
+	// Implement time-based decay: reset failure count if it's been more than 24 hours
+	// since the last failure
+	if !entry.lastAttempt.IsZero() && now.Sub(entry.lastAttempt) > maxConnectionFailureAge {
+		entry.connectionFailedCount = 0
+		log.Debugf("Resetting failure count for %s due to age", address)
+	}
+	
 	entry.connectionFailedCount = entry.connectionFailedCount + 1
 
 	if entry.connectionFailedCount >= connectionFailedCountForRemove {
@@ -184,7 +230,12 @@ func (am *AddressManager) MarkConnectionSuccess(address *appmessage.NetAddress) 
 	if !ok {
 		return errors.Errorf("address %s is not registered with the address manager", address.TCPAddress())
 	}
+	
+	now := time.Now()
 	entry.connectionFailedCount = 0
+	entry.lastSuccess = now
+	entry.lastAttempt = now
+	
 	return am.store.updateNotBanned(key, entry)
 }
 
