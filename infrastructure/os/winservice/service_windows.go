@@ -64,10 +64,10 @@ func (s *Service) Execute(args []string, r <-chan svc.ChangeRequest, changes cha
 	// be properly logged
 	doneChan := make(chan error)
 	startedChan := make(chan struct{})
-	spawn("htndMain-windows", func() {
+	go func() {
 		err := s.main(startedChan)
 		doneChan <- err
-	})
+	}()
 
 	// Service is now started.
 	changes <- svc.Status{State: svc.Running, Accepts: cmdsAccepted}
@@ -116,4 +116,5 @@ func (s *Service) logServiceStart() {
 	message += fmt.Sprintf("Configuration file: %s\n", s.cfg.ConfigFile)
 	message += fmt.Sprintf("Application directory: %s\n", s.cfg.AppDir)
 	message += fmt.Sprintf("Logs directory: %s\n", s.cfg.LogDir)
+	s.eventLog.Info(1, message)
 }
