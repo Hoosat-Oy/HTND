@@ -1,7 +1,7 @@
 package lrucachehashpairtoblockghostdagdatahashpair
 
 import (
-	"sync"
+	// "sync"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 )
@@ -21,7 +21,7 @@ func newKey(blockHash *externalapi.DomainHash, index uint64) lruKey {
 // LRUCache is a least-recently-used cache from
 // lruKey to *externalapi.BlockGHOSTDAGDataHashPair
 type LRUCache struct {
-	lock     *sync.RWMutex
+	// lock     *sync.RWMutex
 	cache    map[lruKey]*externalapi.BlockGHOSTDAGDataHashPair
 	capacity int
 }
@@ -35,7 +35,7 @@ func New(capacity int, preallocate bool) *LRUCache {
 		cache = make(map[lruKey]*externalapi.BlockGHOSTDAGDataHashPair)
 	}
 	return &LRUCache{
-		lock:     &sync.RWMutex{},
+		// lock:     &sync.RWMutex{},
 		cache:    cache,
 		capacity: capacity,
 	}
@@ -43,8 +43,8 @@ func New(capacity int, preallocate bool) *LRUCache {
 
 // Add adds an entry to the LRUCache
 func (c *LRUCache) Add(blockHash *externalapi.DomainHash, index uint64, value *externalapi.BlockGHOSTDAGDataHashPair) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	// c.lock.Lock()
+	// defer c.lock.Unlock()
 	key := newKey(blockHash, index)
 	c.cache[key] = value
 
@@ -55,8 +55,8 @@ func (c *LRUCache) Add(blockHash *externalapi.DomainHash, index uint64, value *e
 
 // Get returns the entry for the given key, or (nil, false) otherwise
 func (c *LRUCache) Get(blockHash *externalapi.DomainHash, index uint64) (*externalapi.BlockGHOSTDAGDataHashPair, bool) {
-	c.lock.RLock()
-	defer c.lock.RUnlock()
+	// c.lock.RLock()
+	// defer c.lock.RUnlock()
 	key := newKey(blockHash, index)
 	value, ok := c.cache[key]
 	if !ok {
@@ -67,8 +67,8 @@ func (c *LRUCache) Get(blockHash *externalapi.DomainHash, index uint64) (*extern
 
 // Has returns whether the LRUCache contains the given key
 func (c *LRUCache) Has(blockHash *externalapi.DomainHash, index uint64) bool {
-	c.lock.RLock()
-	defer c.lock.RUnlock()
+	// c.lock.RLock()
+	// defer c.lock.RUnlock()
 	key := newKey(blockHash, index)
 	_, ok := c.cache[key]
 	return ok
@@ -77,8 +77,8 @@ func (c *LRUCache) Has(blockHash *externalapi.DomainHash, index uint64) bool {
 // Remove removes the entry for the the given key. Does nothing if
 // the entry does not exist
 func (c *LRUCache) Remove(blockHash *externalapi.DomainHash, index uint64) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	// c.lock.Lock()
+	// defer c.lock.Unlock()
 	key := newKey(blockHash, index)
 	delete(c.cache, key)
 }
