@@ -63,7 +63,12 @@ func (p *p2pServer) Connect(address string) (server.Connection, error) {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithContextDialer(dialer))
 	if err != nil {
-		return nil, errors.Wrapf(err, "%s error connecting to %s", p.name, address)
+		ctx, cancel := context.WithTimeout(context.Background(), dialTimeout)
+		defer cancel()
+		gRPCClientConnection, err = grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
+		if err != nil {
+			return nil, errors.Wrapf(err, "%s error connecting to %s", p.name, address)
+		}
 	}
 
 	client := protowire.NewP2PClient(gRPCClientConnection)
