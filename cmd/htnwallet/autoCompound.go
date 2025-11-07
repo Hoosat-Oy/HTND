@@ -17,6 +17,9 @@ import (
 var errRateLimited = errors.New("rate limited")
 
 func autoCompound(conf *autoCompoundConfig) error {
+	if conf.CompoundRate < 6 {
+		conf.CompoundRate = 60
+	}
 	tickerSecond := time.Duration(conf.CompoundRate) * time.Second
 	fmt.Printf("Hoosat Auto-Compounder STARTED → 1 compound tx every %d seconds\n", int(tickerSecond.Seconds()))
 
