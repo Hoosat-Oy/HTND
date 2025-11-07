@@ -81,7 +81,7 @@ func compoundOnce(
 	defer cancel()
 
 	// 1. Create unsigned tx
-	resp, err := client.CreateUnsignedCompoundTransaction(ctx, &pb.CreateUnsignedTransactionsRequest{
+	resp, err := client.CreateUnsignedCompoundTransaction(ctx, &pb.CreateUnsignedCompoundTransactionRequest{
 		From:                     conf.FromAddresses,
 		Address:                  conf.ToAddress,
 		UseExistingChangeAddress: conf.UseExistingChangeAddress,

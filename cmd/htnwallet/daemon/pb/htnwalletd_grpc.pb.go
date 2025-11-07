@@ -48,7 +48,7 @@ type HtnwalletdClient interface {
 	// Since SignRequest contains a password - this command should only be used on a trusted or secure connection
 	Sign(ctx context.Context, in *SignRequest, opts ...grpc.CallOption) (*SignResponse, error)
 	GetVersion(ctx context.Context, in *GetVersionRequest, opts ...grpc.CallOption) (*GetVersionResponse, error)
-	CreateUnsignedCompoundTransaction(ctx context.Context, in *CreateUnsignedTransactionsRequest, opts ...grpc.CallOption) (*CreateUnsignedTransactionsResponse, error)
+	CreateUnsignedCompoundTransaction(ctx context.Context, in *CreateUnsignedCompoundTransactionRequest, opts ...grpc.CallOption) (*CreateUnsignedCompoundTransactionResponse, error)
 }
 
 type htnwalletdClient struct {
@@ -159,9 +159,9 @@ func (c *htnwalletdClient) GetVersion(ctx context.Context, in *GetVersionRequest
 	return out, nil
 }
 
-func (c *htnwalletdClient) CreateUnsignedCompoundTransaction(ctx context.Context, in *CreateUnsignedTransactionsRequest, opts ...grpc.CallOption) (*CreateUnsignedTransactionsResponse, error) {
+func (c *htnwalletdClient) CreateUnsignedCompoundTransaction(ctx context.Context, in *CreateUnsignedCompoundTransactionRequest, opts ...grpc.CallOption) (*CreateUnsignedCompoundTransactionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CreateUnsignedTransactionsResponse)
+	out := new(CreateUnsignedCompoundTransactionResponse)
 	err := c.cc.Invoke(ctx, Htnwalletd_CreateUnsignedCompoundTransaction_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -185,7 +185,7 @@ type HtnwalletdServer interface {
 	// Since SignRequest contains a password - this command should only be used on a trusted or secure connection
 	Sign(context.Context, *SignRequest) (*SignResponse, error)
 	GetVersion(context.Context, *GetVersionRequest) (*GetVersionResponse, error)
-	CreateUnsignedCompoundTransaction(context.Context, *CreateUnsignedTransactionsRequest) (*CreateUnsignedTransactionsResponse, error)
+	CreateUnsignedCompoundTransaction(context.Context, *CreateUnsignedCompoundTransactionRequest) (*CreateUnsignedCompoundTransactionResponse, error)
 	mustEmbedUnimplementedHtnwalletdServer()
 }
 
@@ -226,7 +226,7 @@ func (UnimplementedHtnwalletdServer) Sign(context.Context, *SignRequest) (*SignR
 func (UnimplementedHtnwalletdServer) GetVersion(context.Context, *GetVersionRequest) (*GetVersionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVersion not implemented")
 }
-func (UnimplementedHtnwalletdServer) CreateUnsignedCompoundTransaction(context.Context, *CreateUnsignedTransactionsRequest) (*CreateUnsignedTransactionsResponse, error) {
+func (UnimplementedHtnwalletdServer) CreateUnsignedCompoundTransaction(context.Context, *CreateUnsignedCompoundTransactionRequest) (*CreateUnsignedCompoundTransactionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateUnsignedCompoundTransaction not implemented")
 }
 func (UnimplementedHtnwalletdServer) mustEmbedUnimplementedHtnwalletdServer() {}
@@ -431,7 +431,7 @@ func _Htnwalletd_GetVersion_Handler(srv interface{}, ctx context.Context, dec fu
 }
 
 func _Htnwalletd_CreateUnsignedCompoundTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateUnsignedTransactionsRequest)
+	in := new(CreateUnsignedCompoundTransactionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -443,7 +443,7 @@ func _Htnwalletd_CreateUnsignedCompoundTransaction_Handler(srv interface{}, ctx 
 		FullMethod: Htnwalletd_CreateUnsignedCompoundTransaction_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(HtnwalletdServer).CreateUnsignedCompoundTransaction(ctx, req.(*CreateUnsignedTransactionsRequest))
+		return srv.(HtnwalletdServer).CreateUnsignedCompoundTransaction(ctx, req.(*CreateUnsignedCompoundTransactionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

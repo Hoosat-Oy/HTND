@@ -35,8 +35,8 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 	return &pb.CreateUnsignedTransactionsResponse{UnsignedTransactions: unsignedTransactions}, nil
 }
 
-func (s *server) CreateUnsignedCompoundTransaction(_ context.Context, request *pb.CreateUnsignedTransactionsRequest) (
-	*pb.CreateUnsignedTransactionsResponse, error,
+func (s *server) CreateUnsignedCompoundTransaction(_ context.Context, request *pb.CreateUnsignedCompoundTransactionRequest) (
+	*pb.CreateUnsignedCompoundTransactionResponse, error,
 ) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -46,7 +46,7 @@ func (s *server) CreateUnsignedCompoundTransaction(_ context.Context, request *p
 		return nil, err
 	}
 
-	return &pb.CreateUnsignedTransactionsResponse{UnsignedTransactions: unsignedTransactions}, nil
+	return &pb.CreateUnsignedCompoundTransactionResponse{UnsignedTransactions: unsignedTransactions}, nil
 }
 
 func (s *server) createUnsignedCompoundTransaction(address string, fromAddressesString []string, useExistingChangeAddress bool) ([][]byte, error) {

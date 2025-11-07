@@ -177,110 +177,6 @@ func (x *AddressBalances) GetPending() uint64 {
 	return 0
 }
 
-type CreateUnsignedCompoundTransactionRequest struct {
-	state                    protoimpl.MessageState `protogen:"open.v1"`
-	Address                  string                 `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
-	From                     []string               `protobuf:"bytes,2,rep,name=from,proto3" json:"from,omitempty"`
-	UseExistingChangeAddress bool                   `protobuf:"varint,3,opt,name=useExistingChangeAddress,proto3" json:"useExistingChangeAddress,omitempty"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
-}
-
-func (x *CreateUnsignedCompoundTransactionRequest) Reset() {
-	*x = CreateUnsignedCompoundTransactionRequest{}
-	mi := &file_htnwalletd_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateUnsignedCompoundTransactionRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateUnsignedCompoundTransactionRequest) ProtoMessage() {}
-
-func (x *CreateUnsignedCompoundTransactionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_htnwalletd_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateUnsignedCompoundTransactionRequest.ProtoReflect.Descriptor instead.
-func (*CreateUnsignedCompoundTransactionRequest) Descriptor() ([]byte, []int) {
-	return file_htnwalletd_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *CreateUnsignedCompoundTransactionRequest) GetAddress() string {
-	if x != nil {
-		return x.Address
-	}
-	return ""
-}
-
-func (x *CreateUnsignedCompoundTransactionRequest) GetFrom() []string {
-	if x != nil {
-		return x.From
-	}
-	return nil
-}
-
-func (x *CreateUnsignedCompoundTransactionRequest) GetUseExistingChangeAddress() bool {
-	if x != nil {
-		return x.UseExistingChangeAddress
-	}
-	return false
-}
-
-type CreateUnsignedCompoundTransactionResponse struct {
-	state                protoimpl.MessageState `protogen:"open.v1"`
-	UnsignedTransactions [][]byte               `protobuf:"bytes,1,rep,name=unsignedTransactions,proto3" json:"unsignedTransactions,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
-}
-
-func (x *CreateUnsignedCompoundTransactionResponse) Reset() {
-	*x = CreateUnsignedCompoundTransactionResponse{}
-	mi := &file_htnwalletd_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateUnsignedCompoundTransactionResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateUnsignedCompoundTransactionResponse) ProtoMessage() {}
-
-func (x *CreateUnsignedCompoundTransactionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_htnwalletd_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateUnsignedCompoundTransactionResponse.ProtoReflect.Descriptor instead.
-func (*CreateUnsignedCompoundTransactionResponse) Descriptor() ([]byte, []int) {
-	return file_htnwalletd_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *CreateUnsignedCompoundTransactionResponse) GetUnsignedTransactions() [][]byte {
-	if x != nil {
-		return x.UnsignedTransactions
-	}
-	return nil
-}
-
 type CreateUnsignedTransactionsRequest struct {
 	state                    protoimpl.MessageState `protogen:"open.v1"`
 	Address                  string                 `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
@@ -294,7 +190,7 @@ type CreateUnsignedTransactionsRequest struct {
 
 func (x *CreateUnsignedTransactionsRequest) Reset() {
 	*x = CreateUnsignedTransactionsRequest{}
-	mi := &file_htnwalletd_proto_msgTypes[5]
+	mi := &file_htnwalletd_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -306,7 +202,7 @@ func (x *CreateUnsignedTransactionsRequest) String() string {
 func (*CreateUnsignedTransactionsRequest) ProtoMessage() {}
 
 func (x *CreateUnsignedTransactionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_htnwalletd_proto_msgTypes[5]
+	mi := &file_htnwalletd_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -319,7 +215,7 @@ func (x *CreateUnsignedTransactionsRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use CreateUnsignedTransactionsRequest.ProtoReflect.Descriptor instead.
 func (*CreateUnsignedTransactionsRequest) Descriptor() ([]byte, []int) {
-	return file_htnwalletd_proto_rawDescGZIP(), []int{5}
+	return file_htnwalletd_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CreateUnsignedTransactionsRequest) GetAddress() string {
@@ -366,7 +262,7 @@ type CreateUnsignedTransactionsResponse struct {
 
 func (x *CreateUnsignedTransactionsResponse) Reset() {
 	*x = CreateUnsignedTransactionsResponse{}
-	mi := &file_htnwalletd_proto_msgTypes[6]
+	mi := &file_htnwalletd_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -378,7 +274,7 @@ func (x *CreateUnsignedTransactionsResponse) String() string {
 func (*CreateUnsignedTransactionsResponse) ProtoMessage() {}
 
 func (x *CreateUnsignedTransactionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_htnwalletd_proto_msgTypes[6]
+	mi := &file_htnwalletd_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -391,10 +287,114 @@ func (x *CreateUnsignedTransactionsResponse) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use CreateUnsignedTransactionsResponse.ProtoReflect.Descriptor instead.
 func (*CreateUnsignedTransactionsResponse) Descriptor() ([]byte, []int) {
-	return file_htnwalletd_proto_rawDescGZIP(), []int{6}
+	return file_htnwalletd_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CreateUnsignedTransactionsResponse) GetUnsignedTransactions() [][]byte {
+	if x != nil {
+		return x.UnsignedTransactions
+	}
+	return nil
+}
+
+type CreateUnsignedCompoundTransactionRequest struct {
+	state                    protoimpl.MessageState `protogen:"open.v1"`
+	Address                  string                 `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	From                     []string               `protobuf:"bytes,2,rep,name=from,proto3" json:"from,omitempty"`
+	UseExistingChangeAddress bool                   `protobuf:"varint,3,opt,name=useExistingChangeAddress,proto3" json:"useExistingChangeAddress,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
+}
+
+func (x *CreateUnsignedCompoundTransactionRequest) Reset() {
+	*x = CreateUnsignedCompoundTransactionRequest{}
+	mi := &file_htnwalletd_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateUnsignedCompoundTransactionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateUnsignedCompoundTransactionRequest) ProtoMessage() {}
+
+func (x *CreateUnsignedCompoundTransactionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_htnwalletd_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateUnsignedCompoundTransactionRequest.ProtoReflect.Descriptor instead.
+func (*CreateUnsignedCompoundTransactionRequest) Descriptor() ([]byte, []int) {
+	return file_htnwalletd_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *CreateUnsignedCompoundTransactionRequest) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *CreateUnsignedCompoundTransactionRequest) GetFrom() []string {
+	if x != nil {
+		return x.From
+	}
+	return nil
+}
+
+func (x *CreateUnsignedCompoundTransactionRequest) GetUseExistingChangeAddress() bool {
+	if x != nil {
+		return x.UseExistingChangeAddress
+	}
+	return false
+}
+
+type CreateUnsignedCompoundTransactionResponse struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	UnsignedTransactions [][]byte               `protobuf:"bytes,1,rep,name=unsignedTransactions,proto3" json:"unsignedTransactions,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *CreateUnsignedCompoundTransactionResponse) Reset() {
+	*x = CreateUnsignedCompoundTransactionResponse{}
+	mi := &file_htnwalletd_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateUnsignedCompoundTransactionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateUnsignedCompoundTransactionResponse) ProtoMessage() {}
+
+func (x *CreateUnsignedCompoundTransactionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_htnwalletd_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateUnsignedCompoundTransactionResponse.ProtoReflect.Descriptor instead.
+func (*CreateUnsignedCompoundTransactionResponse) Descriptor() ([]byte, []int) {
+	return file_htnwalletd_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *CreateUnsignedCompoundTransactionResponse) GetUnsignedTransactions() [][]byte {
 	if x != nil {
 		return x.UnsignedTransactions
 	}
@@ -1377,13 +1377,7 @@ const file_htnwalletd_proto_rawDesc = "" +
 	"\x0fAddressBalances\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\tR\aaddress\x12\x1c\n" +
 	"\tavailable\x18\x02 \x01(\x04R\tavailable\x12\x18\n" +
-	"\apending\x18\x03 \x01(\x04R\apending\"\x94\x01\n" +
-	"(CreateUnsignedCompoundTransactionRequest\x12\x18\n" +
-	"\aaddress\x18\x01 \x01(\tR\aaddress\x12\x12\n" +
-	"\x04from\x18\x02 \x03(\tR\x04from\x12:\n" +
-	"\x18useExistingChangeAddress\x18\x03 \x01(\bR\x18useExistingChangeAddress\"_\n" +
-	")CreateUnsignedCompoundTransactionResponse\x122\n" +
-	"\x14unsignedTransactions\x18\x01 \x03(\fR\x14unsignedTransactions\"\xc3\x01\n" +
+	"\apending\x18\x03 \x01(\x04R\apending\"\xc3\x01\n" +
 	"!CreateUnsignedTransactionsRequest\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\tR\aaddress\x12\x16\n" +
 	"\x06amount\x18\x02 \x01(\x04R\x06amount\x12\x12\n" +
@@ -1391,6 +1385,12 @@ const file_htnwalletd_proto_rawDesc = "" +
 	"\x18useExistingChangeAddress\x18\x04 \x01(\bR\x18useExistingChangeAddress\x12\x1c\n" +
 	"\tisSendAll\x18\x05 \x01(\bR\tisSendAll\"X\n" +
 	"\"CreateUnsignedTransactionsResponse\x122\n" +
+	"\x14unsignedTransactions\x18\x01 \x03(\fR\x14unsignedTransactions\"\x94\x01\n" +
+	"(CreateUnsignedCompoundTransactionRequest\x12\x18\n" +
+	"\aaddress\x18\x01 \x01(\tR\aaddress\x12\x12\n" +
+	"\x04from\x18\x02 \x03(\tR\x04from\x12:\n" +
+	"\x18useExistingChangeAddress\x18\x03 \x01(\bR\x18useExistingChangeAddress\"_\n" +
+	")CreateUnsignedCompoundTransactionResponse\x122\n" +
 	"\x14unsignedTransactions\x18\x01 \x03(\fR\x14unsignedTransactions\"\x16\n" +
 	"\x14ShowAddressesRequest\"1\n" +
 	"\x15ShowAddressesResponse\x12\x18\n" +
@@ -1443,7 +1443,7 @@ const file_htnwalletd_proto_rawDesc = "" +
 	"\x12signedTransactions\x18\x01 \x03(\fR\x12signedTransactions\"\x13\n" +
 	"\x11GetVersionRequest\".\n" +
 	"\x12GetVersionResponse\x12\x18\n" +
-	"\aversion\x18\x01 \x01(\tR\aversion2\xe2\a\n" +
+	"\aversion\x18\x01 \x01(\tR\aversion2\xf0\a\n" +
 	"\n" +
 	"htnwalletd\x12M\n" +
 	"\n" +
@@ -1458,8 +1458,8 @@ const file_htnwalletd_proto_rawDesc = "" +
 	"\x04Send\x12\x17.htnwalletd.SendRequest\x1a\x18.htnwalletd.SendResponse\"\x00\x12;\n" +
 	"\x04Sign\x12\x17.htnwalletd.SignRequest\x1a\x18.htnwalletd.SignResponse\"\x00\x12M\n" +
 	"\n" +
-	"GetVersion\x12\x1d.htnwalletd.GetVersionRequest\x1a\x1e.htnwalletd.GetVersionResponse\"\x00\x12\x84\x01\n" +
-	"!CreateUnsignedCompoundTransaction\x12-.htnwalletd.CreateUnsignedTransactionsRequest\x1a..htnwalletd.CreateUnsignedTransactionsResponse\"\x00B3Z1github.com/Hoosat-Oy/HTND/cmd/htnwallet/daemon/pbb\x06proto3"
+	"GetVersion\x12\x1d.htnwalletd.GetVersionRequest\x1a\x1e.htnwalletd.GetVersionResponse\"\x00\x12\x92\x01\n" +
+	"!CreateUnsignedCompoundTransaction\x124.htnwalletd.CreateUnsignedCompoundTransactionRequest\x1a5.htnwalletd.CreateUnsignedCompoundTransactionResponse\"\x00B3Z1github.com/Hoosat-Oy/HTND/cmd/htnwallet/daemon/pbb\x06proto3"
 
 var (
 	file_htnwalletd_proto_rawDescOnce sync.Once
@@ -1478,10 +1478,10 @@ var file_htnwalletd_proto_goTypes = []any{
 	(*GetBalanceRequest)(nil),                         // 0: htnwalletd.GetBalanceRequest
 	(*GetBalanceResponse)(nil),                        // 1: htnwalletd.GetBalanceResponse
 	(*AddressBalances)(nil),                           // 2: htnwalletd.AddressBalances
-	(*CreateUnsignedCompoundTransactionRequest)(nil),  // 3: htnwalletd.CreateUnsignedCompoundTransactionRequest
-	(*CreateUnsignedCompoundTransactionResponse)(nil), // 4: htnwalletd.CreateUnsignedCompoundTransactionResponse
-	(*CreateUnsignedTransactionsRequest)(nil),         // 5: htnwalletd.CreateUnsignedTransactionsRequest
-	(*CreateUnsignedTransactionsResponse)(nil),        // 6: htnwalletd.CreateUnsignedTransactionsResponse
+	(*CreateUnsignedTransactionsRequest)(nil),         // 3: htnwalletd.CreateUnsignedTransactionsRequest
+	(*CreateUnsignedTransactionsResponse)(nil),        // 4: htnwalletd.CreateUnsignedTransactionsResponse
+	(*CreateUnsignedCompoundTransactionRequest)(nil),  // 5: htnwalletd.CreateUnsignedCompoundTransactionRequest
+	(*CreateUnsignedCompoundTransactionResponse)(nil), // 6: htnwalletd.CreateUnsignedCompoundTransactionResponse
 	(*ShowAddressesRequest)(nil),                      // 7: htnwalletd.ShowAddressesRequest
 	(*ShowAddressesResponse)(nil),                     // 8: htnwalletd.ShowAddressesResponse
 	(*NewAddressRequest)(nil),                         // 9: htnwalletd.NewAddressRequest
@@ -1511,7 +1511,7 @@ var file_htnwalletd_proto_depIdxs = []int32{
 	16, // 4: htnwalletd.GetExternalSpendableUTXOsResponse.Entries:type_name -> htnwalletd.UtxosByAddressesEntry
 	0,  // 5: htnwalletd.htnwalletd.GetBalance:input_type -> htnwalletd.GetBalanceRequest
 	19, // 6: htnwalletd.htnwalletd.GetExternalSpendableUTXOs:input_type -> htnwalletd.GetExternalSpendableUTXOsRequest
-	5,  // 7: htnwalletd.htnwalletd.CreateUnsignedTransactions:input_type -> htnwalletd.CreateUnsignedTransactionsRequest
+	3,  // 7: htnwalletd.htnwalletd.CreateUnsignedTransactions:input_type -> htnwalletd.CreateUnsignedTransactionsRequest
 	7,  // 8: htnwalletd.htnwalletd.ShowAddresses:input_type -> htnwalletd.ShowAddressesRequest
 	9,  // 9: htnwalletd.htnwalletd.NewAddress:input_type -> htnwalletd.NewAddressRequest
 	13, // 10: htnwalletd.htnwalletd.Shutdown:input_type -> htnwalletd.ShutdownRequest
@@ -1519,10 +1519,10 @@ var file_htnwalletd_proto_depIdxs = []int32{
 	21, // 12: htnwalletd.htnwalletd.Send:input_type -> htnwalletd.SendRequest
 	23, // 13: htnwalletd.htnwalletd.Sign:input_type -> htnwalletd.SignRequest
 	25, // 14: htnwalletd.htnwalletd.GetVersion:input_type -> htnwalletd.GetVersionRequest
-	5,  // 15: htnwalletd.htnwalletd.CreateUnsignedCompoundTransaction:input_type -> htnwalletd.CreateUnsignedTransactionsRequest
+	5,  // 15: htnwalletd.htnwalletd.CreateUnsignedCompoundTransaction:input_type -> htnwalletd.CreateUnsignedCompoundTransactionRequest
 	1,  // 16: htnwalletd.htnwalletd.GetBalance:output_type -> htnwalletd.GetBalanceResponse
 	20, // 17: htnwalletd.htnwalletd.GetExternalSpendableUTXOs:output_type -> htnwalletd.GetExternalSpendableUTXOsResponse
-	6,  // 18: htnwalletd.htnwalletd.CreateUnsignedTransactions:output_type -> htnwalletd.CreateUnsignedTransactionsResponse
+	4,  // 18: htnwalletd.htnwalletd.CreateUnsignedTransactions:output_type -> htnwalletd.CreateUnsignedTransactionsResponse
 	8,  // 19: htnwalletd.htnwalletd.ShowAddresses:output_type -> htnwalletd.ShowAddressesResponse
 	10, // 20: htnwalletd.htnwalletd.NewAddress:output_type -> htnwalletd.NewAddressResponse
 	14, // 21: htnwalletd.htnwalletd.Shutdown:output_type -> htnwalletd.ShutdownResponse
@@ -1530,7 +1530,7 @@ var file_htnwalletd_proto_depIdxs = []int32{
 	22, // 23: htnwalletd.htnwalletd.Send:output_type -> htnwalletd.SendResponse
 	24, // 24: htnwalletd.htnwalletd.Sign:output_type -> htnwalletd.SignResponse
 	26, // 25: htnwalletd.htnwalletd.GetVersion:output_type -> htnwalletd.GetVersionResponse
-	6,  // 26: htnwalletd.htnwalletd.CreateUnsignedCompoundTransaction:output_type -> htnwalletd.CreateUnsignedTransactionsResponse
+	6,  // 26: htnwalletd.htnwalletd.CreateUnsignedCompoundTransaction:output_type -> htnwalletd.CreateUnsignedCompoundTransactionResponse
 	16, // [16:27] is the sub-list for method output_type
 	5,  // [5:16] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name

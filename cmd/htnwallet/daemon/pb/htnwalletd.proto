@@ -16,6 +16,7 @@ service htnwalletd {
   // Since SignRequest contains a password - this command should only be used on a trusted or secure connection
   rpc Sign(SignRequest) returns (SignResponse) {}
   rpc GetVersion(GetVersionRequest) returns (GetVersionResponse) {}
+  rpc CreateUnsignedCompoundTransaction (CreateUnsignedCompoundTransactionRequest) returns (CreateUnsignedCompoundTransactionResponse) {}
 }
 
 message GetBalanceRequest {
@@ -42,6 +43,16 @@ message CreateUnsignedTransactionsRequest {
 }
 
 message CreateUnsignedTransactionsResponse {
+  repeated bytes unsignedTransactions = 1;
+}
+
+message CreateUnsignedCompoundTransactionRequest {
+  string address = 1;
+  repeated string from = 2;
+  bool useExistingChangeAddress = 3;
+}
+
+message CreateUnsignedCompoundTransactionResponse {
   repeated bytes unsignedTransactions = 1;
 }
 
