@@ -1,6 +1,7 @@
 package blockrelay
 
 import (
+	"strings"
 	"time"
 
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
@@ -271,7 +272,7 @@ func (flow *handleRelayInvsFlow) start() error {
 		missingParents, err := flow.processBlock(block, false)
 		if err != nil {
 			if errors.Is(err, ruleerrors.ErrPrunedBlock) {
-				log.Infof("Ignoring pruned block %s from %s", inv.Hash, flow.netConnection.Address())
+				log.Debugf("Ignoring pruned block %s from %s", inv.Hash, flow.netConnection.Address())
 				continue
 			}
 			if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
@@ -279,35 +280,46 @@ func (flow *handleRelayInvsFlow) start() error {
 				continue
 			}
 			if errors.Is(err, ruleerrors.ErrWrongBlockVersion) {
-				log.Infof("Ignoring block %s with invalid version from %s", inv.Hash, flow.netConnection.Address())
+				log.Debugf("Ignoring block %s with invalid version from %s", inv.Hash, flow.netConnection.Address())
 				continue
 			}
 			if errors.Is(err, ruleerrors.ErrCoinbaseTooManyOutputs) {
-				log.Infof("Ignoring block %s with with too many coinbase outputs and banning instantly. From %s", inv.Hash, flow.netConnection.Address())
+				log.Debugf("Ignoring block %s with with too many coinbase outputs and banning instantly. From %s", inv.Hash, flow.netConnection.Address())
 				flow.banConnection(true)
 				continue
 			}
 			if errors.Is(err, ruleerrors.ErrWrongCoinbaseSubsidy) {
-				log.Infof("Ignoring block %s with with wrong coinbase subsidy and banning instantly. From %s", inv.Hash, flow.netConnection.Address())
+				log.Debugf("Ignoring block %s with with wrong coinbase subsidy and banning instantly. From %s", inv.Hash, flow.netConnection.Address())
 				flow.banConnection(true)
 				continue
 			}
 			if errors.Is(err, ruleerrors.ErrInvalidAncestorBlock) {
-				log.Infof("Invalid ancestor block %s from %s", inv.Hash, flow.netConnection.Address())
+				log.Debugf("Invalid ancestor block %s from %s", inv.Hash, flow.netConnection.Address())
 				flow.banConnection(true)
 				continue
 			}
 			if errors.Is(err, ruleerrors.ErrInvalidPoW) {
 				if block.PoWHash != "" {
-					log.Infof("Ignoring invalid PoW %s, considering banning: %s", block.PoWHash, flow.netConnection.NetAddress().String())
+					log.Debugf("Ignoring invalid PoW %s, considering banning: %s", block.PoWHash, flow.netConnection.NetAddress().String())
 				} else {
-					log.Infof("Ignoring invalid empty PoW, considering banning: %s", flow.netConnection.NetAddress().String())
+					log.Debugf("Ignoring invalid empty PoW, considering banning: %s", flow.netConnection.NetAddress().String())
 				}
 				flow.banConnection(false)
 				continue
 			}
 			if errors.Is(err, ruleerrors.ErrUnfinalizedTx) {
-				log.Infof("Ignoring block %s with unfinalized transaction from %s", inv.Hash, flow.netConnection.Address())
+				log.Debugf("Ignoring block %s with unfinalized transaction from %s", inv.Hash, flow.netConnection.Address())
+				continue
+			}
+
+			if strings.Contains(err.Error(), "Expecting the pending tip") {
+				log.Debugf("Ignoring block %s due to pending tip not overcoming previous selected parent (transient). From %s",
+					inv.Hash, flow.netConnection.Address())
+				continue
+			}
+			if strings.Contains(err.Error(), "outpoint both in") {
+				log.Debugf("Ignoring block %s due modified diff. From %s", inv.Hash, flow.netConnection.Address())
+				flow.banConnection(true)
 				continue
 			}
 			return err
