@@ -56,7 +56,7 @@ func (p *p2pServer) Connect(address string) (server.Connection, error) {
 	dialer := func(ctx context.Context, addr string) (net.Conn, error) {
 		dialCtx, cancel := context.WithTimeout(ctx, dialTimeout)
 		defer cancel()
-		return (&net.Dialer{Timeout: dialTimeout}).DialContext(dialCtx, "tcp", addr)
+		return (&net.Dialer{}).DialContext(dialCtx, "tcp", addr)
 	}
 
 	gRPCClientConnection, err := grpc.NewClient(address,
