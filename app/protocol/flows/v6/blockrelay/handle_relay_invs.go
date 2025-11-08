@@ -274,31 +274,25 @@ func (flow *handleRelayInvsFlow) start() error {
 			if errors.Is(err, ruleerrors.ErrPrunedBlock) {
 				log.Debugf("Ignoring pruned block %s from %s", inv.Hash, flow.netConnection.Address())
 				continue
-			}
-			if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
+			} else if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 				log.Debugf("Ignoring duplicate block %s from %s", inv.Hash, flow.netConnection.Address())
 				continue
-			}
-			if errors.Is(err, ruleerrors.ErrWrongBlockVersion) {
+			} else if errors.Is(err, ruleerrors.ErrWrongBlockVersion) {
 				log.Debugf("Ignoring block %s with invalid version from %s", inv.Hash, flow.netConnection.Address())
 				continue
-			}
-			if errors.Is(err, ruleerrors.ErrCoinbaseTooManyOutputs) {
+			} else if errors.Is(err, ruleerrors.ErrCoinbaseTooManyOutputs) {
 				log.Debugf("Ignoring block %s with with too many coinbase outputs and banning instantly. From %s", inv.Hash, flow.netConnection.Address())
 				flow.banConnection(true)
 				continue
-			}
-			if errors.Is(err, ruleerrors.ErrWrongCoinbaseSubsidy) {
+			} else if errors.Is(err, ruleerrors.ErrWrongCoinbaseSubsidy) {
 				log.Debugf("Ignoring block %s with with wrong coinbase subsidy and banning instantly. From %s", inv.Hash, flow.netConnection.Address())
 				flow.banConnection(true)
 				continue
-			}
-			if errors.Is(err, ruleerrors.ErrInvalidAncestorBlock) {
+			} else if errors.Is(err, ruleerrors.ErrInvalidAncestorBlock) {
 				log.Debugf("Invalid ancestor block %s from %s", inv.Hash, flow.netConnection.Address())
 				flow.banConnection(true)
 				continue
-			}
-			if errors.Is(err, ruleerrors.ErrInvalidPoW) {
+			} else if errors.Is(err, ruleerrors.ErrInvalidPoW) {
 				if block.PoWHash != "" {
 					log.Debugf("Ignoring invalid PoW %s, considering banning: %s", block.PoWHash, flow.netConnection.NetAddress().String())
 				} else {
@@ -306,23 +300,21 @@ func (flow *handleRelayInvsFlow) start() error {
 				}
 				flow.banConnection(false)
 				continue
-			}
-			if errors.Is(err, ruleerrors.ErrUnfinalizedTx) {
+			} else if errors.Is(err, ruleerrors.ErrUnfinalizedTx) {
 				log.Debugf("Ignoring block %s with unfinalized transaction from %s", inv.Hash, flow.netConnection.Address())
 				continue
-			}
-
-			if strings.Contains(err.Error(), "Expecting the pending tip") {
+			} else if strings.Contains(err.Error(), "Expecting the pending tip") {
 				log.Debugf("Ignoring block %s due to pending tip not overcoming previous selected parent (transient). From %s",
 					inv.Hash, flow.netConnection.Address())
 				continue
-			}
-			if strings.Contains(err.Error(), "outpoint both in") {
+			} else if strings.Contains(err.Error(), " both in") {
 				log.Debugf("Ignoring block %s due modified diff. From %s", inv.Hash, flow.netConnection.Address())
 				flow.banConnection(true)
 				continue
+			} else {
+				log.Debugf("Error processing block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
+				flow.banConnection(false)
 			}
-			return err
 		}
 		if len(missingParents) > 0 {
 			err := flow.processOrphan(block)
