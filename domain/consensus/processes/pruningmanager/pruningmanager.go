@@ -1112,15 +1112,6 @@ func (pm *pruningManager) updatePruningPoint() error {
 		}
 	}
 	log.Infof("Deletion Depth: %d", pm.deletionDepth)
-	// if constants.GetBlockVersion() >= 5 {
-	// 	delete, deletionPoint := pm.CheckIfShouldDeletePastBlocks(stagingArea, pruningPoint)
-	// 	if delete {
-	// 		err = pm.deletePastBlocks(stagingArea, deletionPoint)
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 	}
-	// }
 	err = pm.deletePastBlocks(stagingArea, pruningPoint)
 	if err != nil {
 		return err
