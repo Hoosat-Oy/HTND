@@ -312,14 +312,15 @@ func (flow *handleRelayInvsFlow) start() error {
 				flow.banConnection(true)
 				continue
 			} else {
-				log.Debugf("Error processing block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
+				log.Info("Error processing block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
 				flow.banConnection(false)
 			}
 		}
 		if len(missingParents) > 0 {
 			err := flow.processOrphan(block)
 			if err != nil {
-				return err
+				log.Info("Error processing orphan block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
+				flow.banConnection(false)
 			}
 			continue
 		}
