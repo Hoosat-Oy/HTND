@@ -99,7 +99,7 @@ func (m *Manager) handleIncomingMessages(router *router.Router, incomingRoute *r
 
 		err = outgoingRoute.Enqueue(response)
 		if err != nil {
-			log.Warnf("Failed to enqueue RPC response for %s: %v", request.Command(), err)
+			log.Debugf("Failed to enqueue RPC response for %s: %v", request.Command(), err)
 			// continue processing further requests
 			continue
 		}
