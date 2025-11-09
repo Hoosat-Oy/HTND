@@ -35,6 +35,7 @@ type handleIBDFlow struct {
 	IBDContext
 	incomingRoute, outgoingRoute *router.Route
 	peer                         *peerpkg.Peer
+	usingStagingConsensus        bool
 }
 
 // HandleIBD handles IBD
@@ -84,6 +85,33 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	isFinishedSuccessfully := false
 	var err error
 	defer func() {
+		// Rollback or commit based on success
+		if flow.usingStagingConsensus {
+			if isFinishedSuccessfully {
+				// Commit the staging consensus to make changes permanent
+				commitErr := flow.Domain().CommitStagingConsensus()
+				if commitErr != nil {
+					log.Errorf("Failed to commit staging consensus after successful IBD: %s", commitErr)
+					// Try to rollback since commit failed
+					rollbackErr := flow.Domain().DeleteStagingConsensus()
+					if rollbackErr != nil {
+						log.Errorf("Failed to rollback staging consensus after commit failure: %s", rollbackErr)
+					} else {
+						log.Infof("Successfully rolled back staging consensus after commit failure")
+					}
+				} else {
+					log.Infof("Successfully committed staging consensus after IBD")
+				}
+			} else {
+				// Rollback by deleting the staging consensus
+				rollbackErr := flow.Domain().DeleteStagingConsensus()
+				if rollbackErr != nil {
+					log.Errorf("Failed to rollback staging consensus after IBD failure: %s", rollbackErr)
+				} else {
+					log.Infof("Successfully rolled back IBD changes")
+				}
+			}
+		}
 		flow.UnsetIBDRunning()
 		flow.logIBDFinished(isFinishedSuccessfully, err)
 	}()
@@ -110,12 +138,22 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	}
 
 	if shouldDownloadHeadersProof {
-		log.Infof("Starting IBD with headers proof")
+		log.Infof("Starting IBD with headers proof (manages its own staging consensus)")
 		err = flow.ibdWithHeadersProof(syncerHeaderSelectedTipHash, relayBlockHash, block.Header.DAAScore())
 		if err != nil {
 			return err
 		}
 	} else {
+		// Initialize staging consensus for reversible IBD
+		log.Infof("Initializing staging consensus for reversible IBD")
+		err = flow.Domain().InitStagingConsensusWithoutGenesis()
+		if err != nil {
+			log.Errorf("Failed to initialize staging consensus: %s", err)
+			return err
+		}
+		flow.usingStagingConsensus = true
+		log.Infof("Staging consensus initialized successfully")
+
 		if flow.Config().NetParams().DisallowDirectBlocksOnTopOfGenesis && !flow.Config().AllowSubmitBlockWhenNotSynced {
 			isGenesisVirtualSelectedParent, err := flow.isGenesisVirtualSelectedParent()
 			if err != nil {
@@ -129,8 +167,10 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 			}
 		}
 
+		// Use staging consensus for reversible IBD
+		consensusToUse := flow.Domain().StagingConsensus()
 		err = flow.syncPruningPointFutureHeaders(
-			flow.Domain().Consensus(),
+			consensusToUse,
 			syncerHeaderSelectedTipHash, highestKnownSyncerChainHash, relayBlockHash, block.Header.DAAScore())
 		if err != nil {
 			return err
@@ -138,11 +178,13 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	}
 
 	// We start by syncing missing bodies over the syncer selected chain
-	err = flow.syncMissingBlockBodies(syncerHeaderSelectedTipHash)
+	// Use staging consensus for reversible IBD
+	consensusToUse := flow.Domain().StagingConsensus()
+	err = flow.syncMissingBlockBodies(consensusToUse, syncerHeaderSelectedTipHash)
 	if err != nil {
 		return err
 	}
-	relayBlockInfo, err := flow.Domain().Consensus().GetBlockInfo(relayBlockHash)
+	relayBlockInfo, err := consensusToUse.GetBlockInfo(relayBlockHash)
 	if err != nil {
 		return err
 	}
@@ -151,7 +193,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	// Note: this operation can be slightly optimized to avoid the full chain search since relay block
 	// is in syncer virtual mergeset which has bounded size.
 	if relayBlockInfo.BlockStatus == externalapi.StatusHeaderOnly {
-		err = flow.syncMissingBlockBodies(relayBlockHash)
+		err = flow.syncMissingBlockBodies(consensusToUse, relayBlockHash)
 		if err != nil {
 			return err
 		}
@@ -664,8 +706,8 @@ func (flow *handleIBDFlow) receiveAndInsertPruningPointUTXOSet(
 	}
 }
 
-func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHash) error {
-	hashes, err := flow.Domain().Consensus().GetMissingBlockBodyHashes(highHash)
+func (flow *handleIBDFlow) syncMissingBlockBodies(consensus externalapi.Consensus, highHash *externalapi.DomainHash) error {
+	hashes, err := consensus.GetMissingBlockBodyHashes(highHash)
 	log.Infof("Found %d missing block bodies to sync.", len(hashes))
 	if err != nil {
 		return err
@@ -675,16 +717,16 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		return nil
 	}
 
-	updateVirtual, err := flow.Domain().Consensus().IsNearlySynced()
+	updateVirtual, err := consensus.IsNearlySynced()
 	if err != nil {
 		return err
 	}
 
-	lowBlockHeader, err := flow.Domain().Consensus().GetBlockHeader(hashes[0])
+	lowBlockHeader, err := consensus.GetBlockHeader(hashes[0])
 	if err != nil {
 		return err
 	}
-	highBlockHeader, err := flow.Domain().Consensus().GetBlockHeader(hashes[len(hashes)-1])
+	highBlockHeader, err := consensus.GetBlockHeader(hashes[len(hashes)-1])
 	if err != nil {
 		return err
 	}
@@ -737,7 +779,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 				updateVirtual = true
 			}
 			// Set updateVirtual to true only for the last block in the entire hashes list
-			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, updateVirtual, true)
+			err = consensus.ValidateAndInsertBlock(block, updateVirtual, true)
 			if err != nil {
 				if !errors.As(err, &ruleerrors.RuleError{}) {
 					return errors.Wrapf(err, "failed to process header %s during IBD", expectedHash)
@@ -765,7 +807,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 
 		progressReporter.reportProgress(len(hashesToRequest), highestProcessedDAAScore)
 	}
-	err = flow.resolveVirtual(highestProcessedDAAScore)
+	err = flow.resolveVirtual(consensus, highestProcessedDAAScore)
 	if err != nil {
 		return err
 	}
@@ -773,8 +815,8 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 	return flow.OnNewBlockTemplate()
 }
 
-func (flow *handleIBDFlow) resolveVirtual(estimatedVirtualDAAScoreTarget uint64) error {
-	err := flow.Domain().Consensus().ResolveVirtual(func(virtualDAAScoreStart uint64, virtualDAAScore uint64) {
+func (flow *handleIBDFlow) resolveVirtual(consensus externalapi.Consensus, estimatedVirtualDAAScoreTarget uint64) error {
+	err := consensus.ResolveVirtual(func(virtualDAAScoreStart uint64, virtualDAAScore uint64) {
 		var percents int
 		if estimatedVirtualDAAScoreTarget-virtualDAAScoreStart <= 0 {
 			percents = 100
