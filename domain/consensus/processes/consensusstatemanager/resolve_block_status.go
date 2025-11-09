@@ -251,6 +251,14 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 	if err != nil {
 		return 0, nil, err
 	}
+
+	// Ensure all blocks in the merge set have their acceptance data calculated
+	// This is necessary because acceptance data calculation depends on merge set blocks
+	err = csm.ensureMergeSetAcceptanceData(stagingArea, blockHash, blockGHOSTDAGData)
+	if err != nil {
+		return 0, nil, err
+	}
+
 	pastUTXOSet, acceptanceData, multiset, err := csm.calculatePastUTXOAndAcceptanceDataWithSelectedParentUTXO(
 		stagingArea, blockHash, selectedParentPastUTXOSet, blockGHOSTDAGData)
 	if err != nil {
@@ -373,4 +381,88 @@ func (csm *consensusStateManager) virtualSelectedParent(stagingArea *model.Stagi
 	}
 
 	return virtualGHOSTDAGData.SelectedParent(), nil
+}
+
+// ensureMergeSetAcceptanceData ensures that all blocks in the merge set have their acceptance data calculated and staged.
+// This is necessary because when calculating acceptance data for a block, it requires acceptance data from all blocks
+// in its merge set. During IBD, blocks may be added without having their acceptance data calculated, so we need to
+// calculate it on-demand when it's needed.
+func (csm *consensusStateManager) ensureMergeSetAcceptanceData(stagingArea *model.StagingArea,
+	blockHash *externalapi.DomainHash, blockGHOSTDAGData *externalapi.BlockGHOSTDAGData) error {
+
+	log.Tracef("ensureMergeSetAcceptanceData start for block %s", blockHash)
+	defer log.Tracef("ensureMergeSetAcceptanceData end for block %s", blockHash)
+
+	// Get all blocks in the merge set
+	mergeSetHashes, err := csm.ghostdagManager.GetSortedMergeSet(stagingArea, blockHash)
+	if err != nil {
+		return err
+	}
+
+	// For each block in the merge set, check if it has acceptance data
+	for _, mergeSetBlockHash := range mergeSetHashes {
+		// Check if acceptance data already exists
+		_, err := csm.acceptanceDataStore.Get(csm.databaseContext, stagingArea, mergeSetBlockHash)
+		if err == nil {
+			// Acceptance data exists, skip this block
+			continue
+		}
+		if !database.IsNotFoundError(err) {
+			// Real error, not just missing data
+			return err
+		}
+
+		// Acceptance data is missing, we need to calculate it
+		log.Debugf("Acceptance data missing for merge set block %s, calculating now", mergeSetBlockHash)
+
+		// Get the block to check if it's header-only or if it exists
+		mergeSetBlock, err := csm.blockStore.Block(csm.databaseContext, stagingArea, mergeSetBlockHash)
+		if database.IsNotFoundError(err) {
+			// Block doesn't exist yet (not downloaded during IBD), skip it
+			log.Debugf("Merge set block %s not found in database, skipping acceptance data calculation", mergeSetBlockHash)
+			continue
+		}
+		if err != nil {
+			return err
+		}
+
+		// Skip header-only blocks as they cannot have acceptance data calculated
+		isHeaderOnlyBlock := len(mergeSetBlock.Transactions) == 0
+		if isHeaderOnlyBlock {
+			log.Debugf("Merge set block %s is header-only, skipping acceptance data calculation", mergeSetBlockHash)
+			continue
+		}
+
+		// Calculate and stage acceptance data for this block
+		// We need to recursively ensure its dependencies are met first
+		mergeSetBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, mergeSetBlockHash, false)
+		if err != nil {
+			return err
+		}
+
+		// Recursively ensure this block's merge set has acceptance data
+		err = csm.ensureMergeSetAcceptanceData(stagingArea, mergeSetBlockHash, mergeSetBlockGHOSTDAGData)
+		if err != nil {
+			// If we can't ensure merge set acceptance data (e.g., missing blocks during IBD),
+			// skip this block and continue. It will be resolved later when all dependencies are available.
+			log.Debugf("Cannot ensure merge set acceptance data for %s, skipping: %s", mergeSetBlockHash, err)
+			continue
+		}
+
+		// Now calculate acceptance data for this block
+		_, acceptanceData, multiset, err := csm.CalculatePastUTXOAndAcceptanceData(stagingArea, mergeSetBlockHash)
+		if err != nil {
+			// If we can't calculate acceptance data (e.g., missing blocks in the merge set during IBD),
+			// skip this block. It will be resolved later when all dependencies are available.
+			log.Debugf("Cannot calculate acceptance data for merge set block %s, skipping: %s", mergeSetBlockHash, err)
+			continue
+		}
+
+		// Stage the acceptance data and multiset
+		log.Debugf("Staging acceptance data and multiset for merge set block %s", mergeSetBlockHash)
+		csm.acceptanceDataStore.Stage(stagingArea, mergeSetBlockHash, acceptanceData)
+		csm.multisetStore.Stage(stagingArea, mergeSetBlockHash, multiset)
+	}
+
+	return nil
 }

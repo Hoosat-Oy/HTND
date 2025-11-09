@@ -675,6 +675,11 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		return nil
 	}
 
+	updateVirtual, err := flow.Domain().Consensus().IsNearlySynced()
+	if err != nil {
+		return err
+	}
+
 	lowBlockHeader, err := flow.Domain().Consensus().GetBlockHeader(hashes[0])
 	if err != nil {
 		return err
@@ -723,14 +728,13 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		}
 
 		// Process blocks in the order of expected hashes
-		for _, expectedHash := range hashesToRequest {
+		for index, expectedHash := range hashesToRequest {
 			block, exists := receivedBlocks[*expectedHash]
 			if !exists {
 				return protocolerrors.Errorf(true, "expected block %s not found in received blocks", expectedHash)
 			}
-			updateVirtual, err := flow.Domain().Consensus().IsNearlySynced()
-			if err != nil {
-				return err
+			if index == len(hashesToRequest)-1 {
+				updateVirtual = true
 			}
 			// Set updateVirtual to true only for the last block in the entire hashes list
 			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, updateVirtual, true)
