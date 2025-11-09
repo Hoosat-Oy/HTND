@@ -43,7 +43,7 @@ func (flow *handleRequestBlockLocatorFlow) start() error {
 			if err != nil {
 				log.Debugf("Received error from CreateBlockLocatorFromPruningPoint: %s", err)
 			}
-			return protocolerrors.Errorf(true, "couldn't build a block "+
+			return protocolerrors.Errorf(false, "couldn't build a block "+
 				"locator between the pruning point and %s", highHash)
 		}
 

@@ -53,7 +53,7 @@ func (flow *handleRequestIBDChainBlockLocatorFlow) start() error {
 
 		if err != nil {
 			log.Debugf("Received error from CreateHeadersSelectedChainBlockLocator: %s", err)
-			return protocolerrors.Errorf(true, "couldn't build a block "+
+			return protocolerrors.Errorf(false, "couldn't build a block "+
 				"locator between %s and %s", lowHash, highHash)
 		}
 
