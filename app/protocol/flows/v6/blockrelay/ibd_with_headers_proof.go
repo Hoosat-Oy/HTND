@@ -2,6 +2,7 @@ package blockrelay
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
 	"github.com/Hoosat-Oy/HTND/app/protocol/common"
@@ -17,7 +18,22 @@ func (flow *handleIBDFlow) ibdWithHeadersProof(
 	flow.updateBlockVersionFromDAAScore(highBlockDAAScore)
 	err := flow.Domain().InitStagingConsensusWithoutGenesis()
 	if err != nil {
-		return err
+		// If a staging consensus already exists (due to interrupted IBD), clean it up and retry
+		if strings.Contains(err.Error(), "staging consensus already exists") {
+			log.Warnf("Staging consensus already exists from previous interrupted IBD, cleaning up before retry")
+			deleteStagingConsensusErr := flow.Domain().DeleteStagingConsensus()
+			if deleteStagingConsensusErr != nil {
+				log.Errorf("Failed to delete existing staging consensus: %s", deleteStagingConsensusErr)
+				return deleteStagingConsensusErr
+			}
+			// Retry initialization after cleanup
+			err = flow.Domain().InitStagingConsensusWithoutGenesis()
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
 	}
 
 	err = flow.downloadHeadersAndPruningUTXOSet(syncerHeaderSelectedTipHash, relayBlockHash, highBlockDAAScore)
