@@ -201,6 +201,7 @@ func (csm *consensusStateManager) applyMergeSetBlocks(stagingArea *model.Staging
 				for k, input := range transaction.Inputs {
 					if input.UTXOEntry == nil {
 						isAccepted = false
+						break
 					}
 					transactionInputUTXOEntries[k] = input.UTXOEntry
 				}
