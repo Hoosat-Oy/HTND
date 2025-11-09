@@ -254,10 +254,10 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 
 	// Ensure all blocks in the merge set have their acceptance data calculated
 	// This is necessary because acceptance data calculation depends on merge set blocks
-	err = csm.ensureMergeSetAcceptanceData(stagingArea, blockHash, blockGHOSTDAGData)
-	if err != nil {
-		return 0, nil, err
-	}
+	// err = csm.ensureMergeSetAcceptanceData(stagingArea, blockHash, blockGHOSTDAGData)
+	// if err != nil {
+	// 	return 0, nil, err
+	// }
 
 	pastUTXOSet, acceptanceData, multiset, err := csm.calculatePastUTXOAndAcceptanceDataWithSelectedParentUTXO(
 		stagingArea, blockHash, selectedParentPastUTXOSet, blockGHOSTDAGData)
@@ -401,8 +401,28 @@ func (csm *consensusStateManager) ensureMergeSetAcceptanceData(stagingArea *mode
 
 	// For each block in the merge set, check if it has acceptance data
 	for _, mergeSetBlockHash := range mergeSetHashes {
+		// First, get the block to check if it's header-only or if it exists
+		// This is more efficient than checking acceptance data store first during IBD
+		mergeSetBlock, err := csm.blockStore.Block(csm.databaseContext, stagingArea, mergeSetBlockHash)
+		if database.IsNotFoundError(err) {
+			// Block doesn't exist yet (not downloaded during IBD), skip it
+			log.Tracef("Merge set block %s not found in database, skipping acceptance data calculation", mergeSetBlockHash)
+			continue
+		}
+		if err != nil {
+			return err
+		}
+
+		// Skip header-only blocks as they cannot have acceptance data calculated
+		// This check MUST come before the acceptance data store lookup to avoid excessive DB queries during IBD
+		isHeaderOnlyBlock := len(mergeSetBlock.Transactions) == 0
+		if isHeaderOnlyBlock {
+			log.Tracef("Merge set block %s is header-only, skipping acceptance data calculation", mergeSetBlockHash)
+			continue
+		}
+
 		// Check if acceptance data already exists
-		_, err := csm.acceptanceDataStore.Get(csm.databaseContext, stagingArea, mergeSetBlockHash)
+		_, err = csm.acceptanceDataStore.Get(csm.databaseContext, stagingArea, mergeSetBlockHash)
 		if err == nil {
 			// Acceptance data exists, skip this block
 			continue
@@ -414,24 +434,6 @@ func (csm *consensusStateManager) ensureMergeSetAcceptanceData(stagingArea *mode
 
 		// Acceptance data is missing, we need to calculate it
 		log.Debugf("Acceptance data missing for merge set block %s, calculating now", mergeSetBlockHash)
-
-		// Get the block to check if it's header-only or if it exists
-		mergeSetBlock, err := csm.blockStore.Block(csm.databaseContext, stagingArea, mergeSetBlockHash)
-		if database.IsNotFoundError(err) {
-			// Block doesn't exist yet (not downloaded during IBD), skip it
-			log.Debugf("Merge set block %s not found in database, skipping acceptance data calculation", mergeSetBlockHash)
-			continue
-		}
-		if err != nil {
-			return err
-		}
-
-		// Skip header-only blocks as they cannot have acceptance data calculated
-		isHeaderOnlyBlock := len(mergeSetBlock.Transactions) == 0
-		if isHeaderOnlyBlock {
-			log.Debugf("Merge set block %s is header-only, skipping acceptance data calculation", mergeSetBlockHash)
-			continue
-		}
 
 		// Calculate and stage acceptance data for this block
 		// We need to recursively ensure its dependencies are met first
