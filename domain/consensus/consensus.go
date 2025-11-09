@@ -593,11 +593,9 @@ func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) 
 
 	stagingArea := model.NewStagingArea()
 
-	err := s.validateBlockHashExists(stagingArea, highHash)
-	if err != nil {
-		return nil, err
-	}
-
+	// Don't validate block existence here since during IBD with staging consensus,
+	// the highHash block may not exist in the database yet. The syncManager's
+	// missingBlockBodyHashes implementation already handles missing blocks gracefully.
 	return s.syncManager.GetMissingBlockBodyHashes(stagingArea, highHash)
 }
 
@@ -902,7 +900,7 @@ func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalap
 func (s *consensus) validateBlockHashExists(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
 	status, err := s.blockStatusStore.Get(s.databaseContext, stagingArea, blockHash)
 	if database.IsNotFoundError(err) {
-		return errors.Errorf("block %s does not exist", blockHash)
+		return errors.Wrapf(err, "block %s does not exist", blockHash)
 	}
 	if err != nil {
 		return err
