@@ -200,9 +200,7 @@ func (csm *consensusStateManager) applyMergeSetBlocks(stagingArea *model.Staging
 				transactionInputUTXOEntries = make([]externalapi.UTXOEntry, len(transaction.Inputs))
 				for k, input := range transaction.Inputs {
 					if input.UTXOEntry == nil {
-						log.Debugf("Transaction %s in block %s has nil UTXOEntry for input %d, skipping",
-							consensushashing.TransactionID(transaction), mergeSetBlockHash, k)
-						continue
+						isAccepted = false
 					}
 					transactionInputUTXOEntries[k] = input.UTXOEntry
 				}
