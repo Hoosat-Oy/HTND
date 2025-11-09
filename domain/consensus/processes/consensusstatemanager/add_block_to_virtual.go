@@ -18,7 +18,6 @@ func (csm *consensusStateManager) AddBlock(stagingArea *model.StagingArea, block
 	defer onEnd()
 
 	var reversalData *model.UTXODiffReversalData
-	skipVirtualUpdate := false
 	if updateVirtual {
 		log.Debugf("Resolving whether the block %s is the next virtual selected parent", blockHash)
 		isCandidateToBeNextVirtualSelectedParent, err := csm.isCandidateToBeNextVirtualSelectedParent(stagingArea, blockHash)
@@ -47,14 +46,7 @@ func (csm *consensusStateManager) AddBlock(stagingArea *model.StagingArea, block
 				var blockStatus externalapi.BlockStatus
 				blockStatus, reversalData, err = csm.resolveBlockStatus(stagingArea, blockHash, true)
 				if err != nil {
-					if database.IsNotFoundError(err) {
-						// Gracefully handle missing UTXO diffs: leave the block as pending verification
-						// and skip updating virtual for now.
-						log.Debugf("Deferring status resolution for %s due to missing UTXO diff: %s", blockHash, err)
-						skipVirtualUpdate = true
-					} else {
-						return nil, nil, nil, err
-					}
+					return nil, nil, nil, err
 				}
 
 				log.Debugf("Block %s resolved to status `%s`", blockHash, blockStatus)
@@ -72,7 +64,7 @@ func (csm *consensusStateManager) AddBlock(stagingArea *model.StagingArea, block
 	}
 	log.Debugf("After adding %s, the amount of new tips are %d", blockHash, len(newTips))
 
-	if !updateVirtual || skipVirtualUpdate {
+	if !updateVirtual {
 		return &externalapi.SelectedChainPath{}, utxo.NewUTXODiff(), nil, nil
 	}
 

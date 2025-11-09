@@ -67,7 +67,34 @@ func (csm *consensusStateManager) resolveBlockStatus(stagingArea *model.StagingA
 		}
 
 		if selectedParentStatus == externalapi.StatusDisqualifiedFromChain {
+			// Even when parent is disqualified, we need to calculate and stage UTXO diff for the child
+			// to maintain a complete diff chain for UTXO restoration
 			blockStatus = externalapi.StatusDisqualifiedFromChain
+
+			// Calculate the block's UTXO state even though it will be disqualified
+			blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingAreaForCurrentBlock, unverifiedBlockHash, false)
+			if err != nil {
+				return 0, nil, err
+			}
+
+			pastUTXOSet, acceptanceData, multiset, err := csm.calculatePastUTXOAndAcceptanceDataWithSelectedParentUTXO(
+				stagingAreaForCurrentBlock, unverifiedBlockHash, previousBlockUTXOSet, blockGHOSTDAGData)
+			if err != nil {
+				return 0, nil, err
+			}
+
+			// Stage the calculated data for consistency
+			csm.acceptanceDataStore.Stage(stagingAreaForCurrentBlock, unverifiedBlockHash, acceptanceData)
+			csm.multisetStore.Stage(stagingAreaForCurrentBlock, unverifiedBlockHash, multiset)
+
+			// Stage the UTXO diff with selectedParent as diffChild
+			utxoDiff, err := previousBlockUTXOSet.DiffFrom(pastUTXOSet)
+			if err != nil {
+				return 0, nil, err
+			}
+			csm.stageDiff(stagingAreaForCurrentBlock, unverifiedBlockHash, utxoDiff, previousBlockHash)
+
+			previousBlockUTXOSet = pastUTXOSet
 		} else {
 			oneBeforeLastResolvedBlockUTXOSet = previousBlockUTXOSet
 			oneBeforeLastResolvedBlockHash = previousBlockHash
@@ -230,9 +257,6 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 		return 0, nil, err
 	}
 
-	log.Tracef("Staging the calculated acceptance data of block %s", blockHash)
-	csm.acceptanceDataStore.Stage(stagingArea, blockHash, acceptanceData)
-
 	block, err := csm.blockStore.Block(csm.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return 0, nil, err
@@ -240,14 +264,21 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 
 	log.Tracef("verifying the UTXO of block %s", blockHash)
 	err = csm.verifyUTXO(stagingArea, block, blockHash, pastUTXOSet, acceptanceData, multiset)
+	isDisqualified := false
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			log.Debugf("UTXO verification for block %s failed: %s", blockHash, err)
-			return externalapi.StatusDisqualifiedFromChain, nil, nil
+			isDisqualified = true
+		} else {
+			return 0, nil, err
 		}
-		return 0, nil, err
+	} else {
+		log.Debugf("UTXO verification for block %s passed", blockHash)
 	}
-	log.Debugf("UTXO verification for block %s passed", blockHash)
+
+	// Stage the acceptance data and multiset even for disqualified blocks to maintain data consistency
+	log.Tracef("Staging the calculated acceptance data of block %s", blockHash)
+	csm.acceptanceDataStore.Stage(stagingArea, blockHash, acceptanceData)
 
 	log.Tracef("Staging the multiset of block %s", blockHash)
 	csm.multisetStore.Stage(stagingArea, blockHash, multiset)
@@ -255,6 +286,9 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 	if csm.genesisHash.Equal(blockHash) {
 		log.Tracef("Staging the utxoDiff of genesis")
 		csm.stageDiff(stagingArea, blockHash, pastUTXOSet, nil)
+		if isDisqualified {
+			return externalapi.StatusDisqualifiedFromChain, nil, nil
+		}
 		return externalapi.StatusUTXOValid, nil, nil
 	}
 
@@ -263,6 +297,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 		return 0, nil, err
 	}
 
+	// Stage UTXO diff for all blocks (including disqualified ones) to maintain a complete diff chain
 	if isResolveTip {
 		oldSelectedTipUTXOSet, err := csm.restorePastUTXO(stagingArea, oldSelectedTip)
 		if err != nil {
@@ -309,6 +344,10 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 		csm.stageDiff(stagingArea, blockHash, utxoDiff, selectedParentHash)
 	}
 
+	// Return the appropriate status
+	if isDisqualified {
+		return externalapi.StatusDisqualifiedFromChain, nil, nil
+	}
 	return externalapi.StatusUTXOValid, pastUTXOSet, nil
 }
 
