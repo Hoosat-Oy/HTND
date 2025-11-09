@@ -286,11 +286,9 @@ func (flow *handleRelayInvsFlow) start() error {
 				continue
 			} else if errors.Is(err, ruleerrors.ErrWrongCoinbaseSubsidy) {
 				log.Debugf("Ignoring block %s with with wrong coinbase subsidy and banning instantly. From %s", inv.Hash, flow.netConnection.Address())
-				flow.banConnection(true)
 				continue
 			} else if errors.Is(err, ruleerrors.ErrInvalidAncestorBlock) {
 				log.Debugf("Invalid ancestor block %s from %s", inv.Hash, flow.netConnection.Address())
-				flow.banConnection(true)
 				continue
 			} else if errors.Is(err, ruleerrors.ErrInvalidPoW) {
 				if block.PoWHash != "" {
@@ -309,18 +307,15 @@ func (flow *handleRelayInvsFlow) start() error {
 				continue
 			} else if strings.Contains(err.Error(), " both in") {
 				log.Debugf("Ignoring block %s due modified diff. From %s", inv.Hash, flow.netConnection.Address())
-				flow.banConnection(true)
 				continue
 			} else {
-				log.Info("Error processing block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
-				flow.banConnection(false)
+				log.Infof("Error processing block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
 			}
 		}
 		if len(missingParents) > 0 {
 			err := flow.processOrphan(block)
 			if err != nil {
 				log.Info("Error processing orphan block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
-				flow.banConnection(false)
 			}
 			continue
 		}
