@@ -309,7 +309,7 @@ func (flow *handleRelayInvsFlow) start() error {
 				log.Debugf("Ignoring block %s due modified diff. From %s", inv.Hash, flow.netConnection.Address())
 				continue
 			} else {
-				log.Info("Error processing block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
+				log.Infof("Error processing block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
 			}
 		}
 		if len(missingParents) > 0 {
