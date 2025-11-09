@@ -37,15 +37,16 @@ func (csm *consensusStateManager) verifyUTXO(stagingArea *model.StagingArea, blo
 	}
 	log.Debugf("AcceptedIDMerkleRoot validation passed for block %s", blockHash)
 
+	// Only validate coinbase if DAA score is above the threshold
+	// Note: coinbasemanager gracefully handles missing acceptance data for header-only blue blocks
 	if block.Header.DAAScore() >= 31557600*2.2 {
 		coinbaseTransaction := block.Transactions[0]
-		err = csm.validateCoinbaseTransaction(stagingArea, block, blockHash, coinbaseTransaction)
+		err = csm.validateCoinbaseTransaction(stagingArea, block, blockHash, coinbaseTransaction, acceptanceData)
 		if err != nil {
 			return err
 		}
+		log.Debugf("Coinbase transaction validation passed for block %s", blockHash)
 	}
-
-	log.Debugf("Coinbase transaction validation passed for block %s", blockHash)
 
 	log.Debugf("Validating transactions against past UTXO for block %s", blockHash)
 	err = csm.validateBlockTransactionsAgainstPastUTXO(stagingArea, block, pastUTXODiff)
@@ -158,7 +159,7 @@ func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData externalapi.Acceptan
 }
 
 func (csm *consensusStateManager) validateCoinbaseTransaction(stagingArea *model.StagingArea, block *externalapi.DomainBlock,
-	blockHash *externalapi.DomainHash, coinbaseTransaction *externalapi.DomainTransaction) error {
+	blockHash *externalapi.DomainHash, coinbaseTransaction *externalapi.DomainTransaction, acceptanceData externalapi.AcceptanceData) error {
 
 	log.Tracef("validateCoinbaseTransaction start for block %s", blockHash)
 	defer log.Tracef("validateCoinbaseTransaction end for block %s", blockHash)
@@ -172,7 +173,7 @@ func (csm *consensusStateManager) validateCoinbaseTransaction(stagingArea *model
 
 	log.Tracef("Calculating the expected coinbase transaction for the given coinbase data and block %s", blockHash)
 	expectedCoinbaseTransaction, _, err :=
-		csm.coinbaseManager.ExpectedCoinbaseTransaction(stagingArea, blockHash, coinbaseData)
+		csm.coinbaseManager.ExpectedCoinbaseTransactionWithAcceptanceData(stagingArea, blockHash, coinbaseData, acceptanceData)
 	if err != nil {
 		return err
 	}
