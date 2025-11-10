@@ -36,40 +36,13 @@ type coinbaseManager struct {
 	blockHeaderStore    model.BlockHeaderStore
 }
 
-// ExpectedCoinbaseTransaction builds the expected coinbase transaction for the given block by
-// fetching the required acceptance data from the store. In some hot paths we already have the
-// acceptance data available (e.g. during block validation) and calling this function caused a
-// redundant lookup and potential race where the acceptance data was staged in a different staging
-// area and not yet visible here. For those cases use
-// ExpectedCoinbaseTransactionWithAcceptanceData which eliminates the extra store read and the race.
+// ExpectedCoinbaseTransactionWithAcceptanceData implements model.CoinbaseManager.
+func (c *coinbaseManager) ExpectedCoinbaseTransactionWithAcceptanceData(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData, acceptanceData externalapi.AcceptanceData) (expectedTransaction *externalapi.DomainTransaction, hasRedReward bool, err error) {
+	panic("unimplemented")
+}
+
 func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
 	coinbaseData *externalapi.DomainCoinbaseData) (expectedTransaction *externalapi.DomainTransaction, hasRedReward bool, err error) {
-
-	acceptanceData, err := c.acceptanceDataStore.Get(c.databaseContext, stagingArea, blockHash)
-	if database.IsNotFoundError(err) {
-		// Improve log with additional context; callers can now choose to fallback to the variant
-		// that uses already-fetched acceptance data to avoid spurious failures.
-		log.Warnf("ExpectedCoinbaseTransaction: acceptance data missing for %s (likely called before staging commit)", blockHash)
-		return nil, false, err
-	}
-	if err != nil {
-		return nil, false, err
-	}
-
-	return c.expectedCoinbaseTransactionInternal(stagingArea, blockHash, coinbaseData, acceptanceData)
-}
-
-// ExpectedCoinbaseTransactionWithAcceptanceData is identical to ExpectedCoinbaseTransaction but
-// receives acceptanceData directly, avoiding an extra DB lookup and eliminating races between
-// staging areas.
-func (c *coinbaseManager) ExpectedCoinbaseTransactionWithAcceptanceData(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
-	coinbaseData *externalapi.DomainCoinbaseData, acceptanceData externalapi.AcceptanceData) (expectedTransaction *externalapi.DomainTransaction, hasRedReward bool, err error) {
-	return c.expectedCoinbaseTransactionInternal(stagingArea, blockHash, coinbaseData, acceptanceData)
-}
-
-// expectedCoinbaseTransactionInternal contains the core logic shared by both public variants.
-func (c *coinbaseManager) expectedCoinbaseTransactionInternal(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
-	coinbaseData *externalapi.DomainCoinbaseData, acceptanceData externalapi.AcceptanceData) (expectedTransaction *externalapi.DomainTransaction, hasRedReward bool, err error) {
 
 	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, stagingArea, blockHash, true)
 	// If there's ghostdag data with trusted data we prefer it because we need the original merge set non-pruned merge set.
@@ -78,6 +51,15 @@ func (c *coinbaseManager) expectedCoinbaseTransactionInternal(stagingArea *model
 		if err != nil {
 			return nil, false, err
 		}
+	}
+
+	acceptanceData, err := c.acceptanceDataStore.Get(c.databaseContext, stagingArea, blockHash)
+	if database.IsNotFoundError(err) {
+		log.Infof("ExpectedCoinbaseTransaction failed to retrieve with %s\n", blockHash)
+		return nil, false, err
+	}
+	if err != nil {
+		return nil, false, err
 	}
 
 	daaAddedBlocksSet, err := c.daaAddedBlocksSet(stagingArea, blockHash)
@@ -89,14 +71,7 @@ func (c *coinbaseManager) expectedCoinbaseTransactionInternal(stagingArea *model
 	acceptanceDataMap := acceptanceDataFromArrayToMap(acceptanceData)
 	if constants.GetBlockVersion() == 1 {
 		for _, blue := range ghostdagData.MergeSetBlues() {
-			blueAcceptanceData := acceptanceDataMap[*blue]
-			// Skip blue blocks that don't have acceptance data (e.g., header-only blocks during IBD)
-			if blueAcceptanceData == nil {
-				log.Debugf("Skipping blue block %s in coinbase calculation - no acceptance data available (likely header-only block)", blue)
-				continue
-			}
-
-			txOut, hasReward, err := c.coinbaseOutputForBlueBlockV1(stagingArea, blue, blueAcceptanceData, daaAddedBlocksSet)
+			txOut, hasReward, err := c.coinbaseOutputForBlueBlockV1(stagingArea, blue, acceptanceDataMap[*blue], daaAddedBlocksSet)
 			if err != nil {
 				return nil, false, err
 			}
@@ -117,14 +92,7 @@ func (c *coinbaseManager) expectedCoinbaseTransactionInternal(stagingArea *model
 		}
 	} else if constants.GetBlockVersion() >= 2 {
 		for _, blue := range ghostdagData.MergeSetBlues() {
-			blueAcceptanceData := acceptanceDataMap[*blue]
-			// Skip blue blocks that don't have acceptance data (e.g., header-only blocks during IBD)
-			if blueAcceptanceData == nil {
-				log.Debugf("Skipping blue block %s in coinbase calculation - no acceptance data available (likely header-only block)", blue)
-				continue
-			}
-
-			txOut, devTx, hasReward, err := c.coinbaseOutputForBlueBlockV2(stagingArea, blue, blueAcceptanceData, daaAddedBlocksSet)
+			txOut, devTx, hasReward, err := c.coinbaseOutputForBlueBlockV2(stagingArea, blue, acceptanceDataMap[*blue], daaAddedBlocksSet)
 			if err != nil {
 				return nil, false, err
 			}

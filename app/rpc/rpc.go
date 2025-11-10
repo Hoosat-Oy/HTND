@@ -1,8 +1,6 @@
 package rpc
 
 import (
-	"time"
-
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
 	"github.com/Hoosat-Oy/HTND/app/rpc/rpccontext"
 	"github.com/Hoosat-Oy/HTND/app/rpc/rpchandlers"
@@ -84,64 +82,16 @@ func (m *Manager) handleIncomingMessages(router *router.Router, incomingRoute *r
 		}
 		handler, ok := handlers[request.Command()]
 		if !ok {
-			log.Warnf("No handler for RPC message %s", request.Command())
-			// skip unknown message and continue processing further requests
-			continue
+			return err
 		}
-
 		response, err := handler(m.context, router, request)
 		if err != nil {
-			// Log the error but don't terminate the whole RPC goroutine for a single bad request.
-			log.Warnf("RPC handler for %s returned error: %v", request.Command(), err)
-			// Attempt to continue to next request instead of returning the error which would cause a panic upstream.
-			continue
+			return err
 		}
-
 		err = outgoingRoute.Enqueue(response)
 		if err != nil {
-			log.Debugf("Failed to enqueue RPC response for %s: %v", request.Command(), err)
-			// continue processing further requests
-			continue
+			return err
 		}
-	}
-}
-
-const (
-	maxOffenses      = 5
-	banThresholdSecs = 300
-)
-
-var offenseTracker = make(map[string][]time.Time)
-
-func (m *Manager) banConnection(offenseTimesOverrule bool, netConnection *netadapter.NetConnection) {
-	address := netConnection.Address()
-	now := time.Now()
-
-	// Track offenses
-	offenseTimes := offenseTracker[address]
-	offenseTimes = append(offenseTimes, now)
-
-	// Remove old offenses outside the threshold window
-	var recentOffenses []time.Time
-	for _, t := range offenseTimes {
-		if now.Sub(t).Seconds() <= banThresholdSecs {
-			recentOffenses = append(recentOffenses, t)
-		}
-	}
-	offenseTracker[address] = recentOffenses
-
-	if len(recentOffenses) >= maxOffenses || offenseTimesOverrule {
-		log.Infof("Banning connection: %s due to exceeding offense threshold", address)
-		_ = m.context.ConnectionManager.Ban(netConnection)
-		isBanned, _ := m.context.ConnectionManager.IsBanned(netConnection)
-		if isBanned {
-			log.Infof("Peer %s is banned. Disconnecting...", netConnection.NetAddress().IP)
-			netConnection.Disconnect()
-			delete(offenseTracker, address) // Clean up after ban
-			return
-		}
-	} else {
-		log.Infof("Peer %s offense recorded (%d/%d within threshold window)", address, len(recentOffenses), maxOffenses)
 	}
 }
 

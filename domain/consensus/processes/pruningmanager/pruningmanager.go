@@ -820,18 +820,10 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 		return nil, err
 	}
 	currentPruningGhostDAG, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningHash, false)
-	if database.IsNotFoundError(err) {
-		log.Infof("calculateDiffBetweenPreviousAndCurrentPruningPoints failed to retrieve with %s\n", currentPruningHash)
-		return nil, err
-	}
 	if err != nil {
 		return nil, err
 	}
 	previousPruningGhostDAG, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, previousPruningHash, false)
-	if database.IsNotFoundError(err) {
-		log.Infof("calculateDiffBetweenPreviousAndCurrentPruningPoints failed to retrieve with %s\n", previousPruningHash)
-		return nil, err
-	}
 	if err != nil {
 		return nil, err
 	}

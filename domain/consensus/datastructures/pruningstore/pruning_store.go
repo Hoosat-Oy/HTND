@@ -123,42 +123,32 @@ func (ps *pruningStore) IsStaged(stagingArea *model.StagingArea) bool {
 	return ps.stagingShard(stagingArea).isStaged()
 }
 
-// UpdatePruningPointUTXOSet applies a UTXO diff. Optimizations:
-// 1. Collect keys to delete before performing any writes (cache locality).
-// 2. Pre-serialize additions into slices to avoid reallocs in the write loop.
-// 3. Use batch-style loops that minimize interleaving Deletes/Puts to help storage engines optimize.
-// Caller is encouraged to invoke this inside a single DB transaction.
 func (ps *pruningStore) UpdatePruningPointUTXOSet(dbContext model.DBWriter, diff externalapi.UTXODiff) error {
-	// Phase 1: gather removals
 	toRemoveIterator := diff.ToRemove().Iterator()
 	defer toRemoveIterator.Close()
-	removeKeys := make([]model.DBKey, 0, 1024)
 	for ok := toRemoveIterator.First(); ok; ok = toRemoveIterator.Next() {
-		outpoint, _, err := toRemoveIterator.Get()
+		toRemoveOutpoint, _, err := toRemoveIterator.Get()
 		if err != nil {
 			return err
 		}
-		serializedOutpoint, err := serializeOutpoint(outpoint)
+		serializedOutpoint, err := serializeOutpoint(toRemoveOutpoint)
 		if err != nil {
 			return err
 		}
-		removeKeys = append(removeKeys, ps.pruningPointUTXOSetBucket.Key(serializedOutpoint))
+		err = dbContext.Delete(ps.pruningPointUTXOSetBucket.Key(serializedOutpoint))
+		if err != nil {
+			return err
+		}
 	}
 
-	// Phase 2: gather additions
 	toAddIterator := diff.ToAdd().Iterator()
 	defer toAddIterator.Close()
-	type putPair struct {
-		key   model.DBKey
-		value []byte
-	}
-	putPairs := make([]putPair, 0, 1024)
 	for ok := toAddIterator.First(); ok; ok = toAddIterator.Next() {
-		outpoint, entry, err := toAddIterator.Get()
+		toAddOutpoint, entry, err := toAddIterator.Get()
 		if err != nil {
 			return err
 		}
-		serializedOutpoint, err := serializeOutpoint(outpoint)
+		serializedOutpoint, err := serializeOutpoint(toAddOutpoint)
 		if err != nil {
 			return err
 		}
@@ -166,17 +156,8 @@ func (ps *pruningStore) UpdatePruningPointUTXOSet(dbContext model.DBWriter, diff
 		if err != nil {
 			return err
 		}
-		putPairs = append(putPairs, putPair{key: ps.pruningPointUTXOSetBucket.Key(serializedOutpoint), value: serializedUTXOEntry})
-	}
-
-	// Phase 3: deletes then puts (separate loops improve page reuse for some backends).
-	for _, k := range removeKeys {
-		if err := dbContext.Delete(k); err != nil {
-			return err
-		}
-	}
-	for _, p := range putPairs {
-		if err := dbContext.Put(p.key, p.value); err != nil {
+		err = dbContext.Put(ps.pruningPointUTXOSetBucket.Key(serializedOutpoint), serializedUTXOEntry)
+		if err != nil {
 			return err
 		}
 	}

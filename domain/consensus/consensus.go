@@ -593,9 +593,11 @@ func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) 
 
 	stagingArea := model.NewStagingArea()
 
-	// Don't validate block existence here since during IBD with staging consensus,
-	// the highHash block may not exist in the database yet. The syncManager's
-	// missingBlockBodyHashes implementation already handles missing blocks gracefully.
+	err := s.validateBlockHashExists(stagingArea, highHash)
+	if err != nil {
+		return nil, err
+	}
+
 	return s.syncManager.GetMissingBlockBodyHashes(stagingArea, highHash)
 }
 

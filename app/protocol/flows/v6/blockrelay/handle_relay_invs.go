@@ -277,8 +277,8 @@ func (flow *handleRelayInvsFlow) start() error {
 			err := flow.processOrphan(block)
 			if err != nil {
 				log.Info("Error processing orphan block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
-				continue
 			}
+			continue
 		}
 
 		oldVirtualParents := hashset.New()

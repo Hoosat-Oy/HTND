@@ -34,6 +34,10 @@ func (csm *consensusStateManager) resolveBlockStatus(stagingArea *model.StagingA
 		log.Debugf("There are not unverified blocks in %s's selected parent chain. "+
 			"This means that the block already has a UTXO-verified status.", blockHash)
 		status, err := csm.blockStatusStore.Get(csm.databaseContext, stagingArea, blockHash)
+		if database.IsNotFoundError(err) {
+			log.Infof("resolveBlockStatusfailed to retrieve with %s\n", blockHash)
+			return 0, nil, err
+		}
 		if err != nil {
 			return 0, nil, err
 		}
@@ -224,15 +228,14 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 	if err != nil {
 		return 0, nil, err
 	}
-
-	// Ensure all blocks in the merge set have their acceptance data calculated
-	// This is necessary because acceptance data calculation depends on merge set blocks
-
 	pastUTXOSet, acceptanceData, multiset, err := csm.calculatePastUTXOAndAcceptanceDataWithSelectedParentUTXO(
 		stagingArea, blockHash, selectedParentPastUTXOSet, blockGHOSTDAGData)
 	if err != nil {
 		return 0, nil, err
 	}
+
+	log.Tracef("Staging the calculated acceptance data of block %s", blockHash)
+	csm.acceptanceDataStore.Stage(stagingArea, blockHash, acceptanceData)
 
 	block, err := csm.blockStore.Block(csm.databaseContext, stagingArea, blockHash)
 	if err != nil {
@@ -241,21 +244,14 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 
 	log.Tracef("verifying the UTXO of block %s", blockHash)
 	err = csm.verifyUTXO(stagingArea, block, blockHash, pastUTXOSet, acceptanceData, multiset)
-	isDisqualified := false
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			log.Debugf("UTXO verification for block %s failed: %s", blockHash, err)
-			isDisqualified = true
-		} else {
-			return 0, nil, err
+			return externalapi.StatusDisqualifiedFromChain, nil, nil
 		}
-	} else {
-		log.Debugf("UTXO verification for block %s passed", blockHash)
+		return 0, nil, err
 	}
-
-	// Stage the acceptance data and multiset even for disqualified blocks to maintain data consistency
-	log.Tracef("Staging the calculated acceptance data of block %s", blockHash)
-	csm.acceptanceDataStore.Stage(stagingArea, blockHash, acceptanceData)
+	log.Debugf("UTXO verification for block %s passed", blockHash)
 
 	log.Tracef("Staging the multiset of block %s", blockHash)
 	csm.multisetStore.Stage(stagingArea, blockHash, multiset)
@@ -263,9 +259,6 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 	if csm.genesisHash.Equal(blockHash) {
 		log.Tracef("Staging the utxoDiff of genesis")
 		csm.stageDiff(stagingArea, blockHash, pastUTXOSet, nil)
-		if isDisqualified {
-			return externalapi.StatusDisqualifiedFromChain, nil, nil
-		}
 		return externalapi.StatusUTXOValid, nil, nil
 	}
 
@@ -274,7 +267,6 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 		return 0, nil, err
 	}
 
-	// Stage UTXO diff for all blocks (including disqualified ones) to maintain a complete diff chain
 	if isResolveTip {
 		oldSelectedTipUTXOSet, err := csm.restorePastUTXO(stagingArea, oldSelectedTip)
 		if err != nil {
@@ -321,10 +313,6 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 		csm.stageDiff(stagingArea, blockHash, utxoDiff, selectedParentHash)
 	}
 
-	// Return the appropriate status
-	if isDisqualified {
-		return externalapi.StatusDisqualifiedFromChain, nil, nil
-	}
 	return externalapi.StatusUTXOValid, pastUTXOSet, nil
 }
 

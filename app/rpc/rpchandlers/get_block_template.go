@@ -1,13 +1,10 @@
 package rpchandlers
 
 import (
-	"runtime/debug"
-
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
 	"github.com/Hoosat-Oy/HTND/app/rpc/rpccontext"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/txscript"
-	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
 	"github.com/Hoosat-Oy/HTND/util"
 	"github.com/Hoosat-Oy/HTND/version"
@@ -33,15 +30,6 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 
 	templateBlock, isNearlySynced, err := context.Domain.MiningManager().GetBlockTemplate(coinbaseData)
 	if err != nil {
-		if database.IsNotFoundError(err) {
-			stack := debug.Stack()
-			log.Infof("GetBlockTemplate gave database error not found: %v", templateBlock)
-			log.Infof("The node was %t synced", isNearlySynced)
-			log.Infof("Backtrace:\n%s", stack)
-			errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
-			errorMessage.Error = appmessage.RPCErrorf("Could not build block template with given coinbase data: missing block header (transient). Try again.")
-			return errorMessage, nil
-		}
 		return nil, err
 	}
 
