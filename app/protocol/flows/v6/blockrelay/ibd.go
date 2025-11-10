@@ -2,6 +2,7 @@ package blockrelay
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
@@ -15,7 +16,6 @@ import (
 	"github.com/Hoosat-Oy/HTND/infrastructure/config"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
-	"github.com/pkg/errors"
 )
 
 // IBDContext is the interface for the context needed for the HandleIBD flow.
@@ -599,10 +599,9 @@ func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlo
 	}
 	err = consensus.ValidateAndInsertBlock(block, false, true)
 	if err != nil {
-		var missingParentsErr *ruleerrors.ErrMissingParents
-		if errors.As(err, &missingParentsErr) {
-			log.Debugf("Skipping block header %s as it is missing parent", blockHash)
-			flow.orphanHashes = append(flow.orphanHashes, missingParentsErr.MissingParentHashes...)
+		if strings.Contains(err.Error(), "ErrMissingParents") {
+			log.Infof("Block %s has missing parents %v, adding to orphan processing", blockHash, err.(ruleerrors.ErrMissingParents).MissingParentHashes)
+			flow.orphanHashes = append(flow.orphanHashes, err.(ruleerrors.ErrMissingParents).MissingParentHashes...)
 		} else {
 			log.Infof("Rejected block header %s from %s during IBD: %s", blockHash, flow.peer, err)
 		}
@@ -715,8 +714,6 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 	// 	return err
 	// }
 
-	orphanHashes := make([]*externalapi.DomainHash, 0)
-
 	lowBlockHeader, err := flow.Domain().Consensus().GetBlockHeader(hashes[0])
 	if err != nil {
 		return err
@@ -772,10 +769,9 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 			}
 			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, true, true)
 			if err != nil {
-				var missingParentsErr *ruleerrors.ErrMissingParents
-				if errors.As(err, &missingParentsErr) {
-					log.Infof("Block %s has missing parents %v, adding to orphan processing", expectedHash, missingParentsErr.MissingParentHashes)
-					orphanHashes = append(orphanHashes, missingParentsErr.MissingParentHashes...)
+				if strings.Contains(err.Error(), "ErrMissingParents") {
+					log.Infof("Block %s has missing parents %v, adding to orphan processing", expectedHash, err.(ruleerrors.ErrMissingParents).MissingParentHashes)
+					flow.orphanHashes = append(flow.orphanHashes, err.(ruleerrors.ErrMissingParents).MissingParentHashes...)
 				} else {
 					log.Infof("Rejected block %s from %s during IBD: %s", expectedHash, flow.peer, err)
 				}
@@ -792,15 +788,15 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		progressReporter.reportProgress(len(hashesToRequest), highestProcessedDAAScore)
 	}
 
-	if len(orphanHashes) > 0 {
-		log.Infof("Found %d orphan block hashes to sync.", len(orphanHashes))
+	if len(flow.orphanHashes) > 0 {
+		log.Infof("Found %d orphan block hashes to sync.", len(flow.orphanHashes))
 		// Process orphan hashes in batches
-		for offset := 0; offset < len(orphanHashes); offset += ibdBatchSize {
+		for offset := 0; offset < len(flow.orphanHashes); offset += ibdBatchSize {
 			var hashesToRequest []*externalapi.DomainHash
-			if offset+ibdBatchSize < len(orphanHashes) {
-				hashesToRequest = orphanHashes[offset : offset+ibdBatchSize]
+			if offset+ibdBatchSize < len(flow.orphanHashes) {
+				hashesToRequest = flow.orphanHashes[offset : offset+ibdBatchSize]
 			} else {
-				hashesToRequest = orphanHashes[offset:]
+				hashesToRequest = flow.orphanHashes[offset:]
 			}
 
 			// Cache to store received blocks for this batch only
@@ -856,6 +852,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		}
 	}
 
+	flow.orphanHashes = nil
 	err = flow.resolveVirtual(highestProcessedDAAScore)
 	if err != nil {
 		return err
