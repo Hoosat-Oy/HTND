@@ -736,7 +736,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 	}
 	progressReporter := newIBDProgressReporter(lowBlockHeader.DAAScore(), highBlockHeader.DAAScore(), "blocks")
 	highestProcessedDAAScore := lowBlockHeader.DAAScore()
-	nearlySynced, err := flow.Domain().Consensus().IsNearlySynced()
+	updateVirtual, err := flow.Domain().Consensus().IsNearlySynced()
 	if err != nil {
 		return err
 	}
@@ -784,7 +784,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 				return protocolerrors.Errorf(true, "expected block %s not found in received blocks", expectedHash)
 			}
 
-			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, nearlySynced, true)
+			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, updateVirtual, true)
 			if err != nil {
 				var missingParentsErr ruleerrors.ErrMissingParents
 				if errors.As(err, &missingParentsErr) {
