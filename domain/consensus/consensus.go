@@ -1244,3 +1244,10 @@ func (s *consensus) GetBlockByTransactionID(transactionID *externalapi.DomainTra
 
 	return nil, errors.New("Transaction not found in any block")
 }
+
+// ValidateUTXODiffChildChains validates and repairs UTXO diff child chains
+func (s *consensus) ValidateUTXODiffChildChains() error {
+	// Don't hold the consensus lock during validation/repair as it can take several minutes
+	// The validation logic only reads data and uses its own staging areas for commits
+	return s.consensusStateManager.ValidateUTXODiffChildChains()
+}

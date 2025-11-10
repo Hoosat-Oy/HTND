@@ -215,6 +215,7 @@ func (flow *handleIBDFlow) downloadHeadersAndPruningUTXOSet(
 		return nil
 	}
 	log.Debugf("Finished syncing the current pruning point UTXO set")
+
 	return nil
 }
 

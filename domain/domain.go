@@ -48,23 +48,6 @@ func (d *domain) Consensus() externalapi.Consensus {
 
 func (d *domain) StagingConsensus() externalapi.Consensus {
 	d.stagingConsensusLock.RLock()
-	if d.stagingConsensus != nil {
-		defer d.stagingConsensusLock.RUnlock()
-		return *d.stagingConsensus
-	}
-	d.stagingConsensusLock.RUnlock()
-
-	// If staging consensus is not initialized, initialize it without genesis
-	// We need to upgrade from RLock to Lock
-	err := d.InitStagingConsensusWithoutGenesis()
-	if err != nil {
-		// If we can't initialize staging consensus, log and fall back to regular consensus
-		// This should not normally happen, but prevents panic during error conditions
-		log.Warnf("Failed to initialize staging consensus: %s, falling back to regular consensus", err)
-		return *d.consensus
-	}
-
-	d.stagingConsensusLock.RLock()
 	defer d.stagingConsensusLock.RUnlock()
 	return *d.stagingConsensus
 }

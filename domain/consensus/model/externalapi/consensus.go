@@ -60,4 +60,5 @@ type Consensus interface {
 	VirtualMergeDepthRoot() (*DomainHash, error)
 	IsNearlySynced() (bool, error)
 	GetBlockByTransactionID(transactionID *DomainTransactionID) (*DomainBlock, error)
+	ValidateUTXODiffChildChains() error
 }

@@ -70,11 +70,6 @@ func (csm *consensusStateManager) calculatePastUTXOAndAcceptanceDataWithSelected
 		return nil, nil, nil, errors.Errorf("blockGHOSTDAGData is nil for block %s", blockHash)
 	}
 
-	if selectedParentPastUTXO == nil {
-		log.Warnf("selectedParentPastUTXO is nil for block %s, using empty UTXO diff", blockHash)
-		selectedParentPastUTXO = utxo.NewUTXODiff()
-	}
-
 	daaScore, err := csm.daaBlocksStore.DAAScore(csm.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return nil, nil, nil, err
@@ -209,28 +204,14 @@ func (csm *consensusStateManager) applyMergeSetBlocks(stagingArea *model.Staging
 			if isAccepted {
 				transactionInputUTXOEntries = make([]externalapi.UTXOEntry, len(transaction.Inputs))
 				for k, input := range transaction.Inputs {
-					if input.UTXOEntry == nil {
-						isAccepted = false
-						break
-					}
 					transactionInputUTXOEntries[k] = input.UTXOEntry
 				}
 			}
-			if isAccepted {
-				blockAcceptanceData.TransactionAcceptanceData[j] = &externalapi.TransactionAcceptanceData{
-					Transaction:                 transaction,
-					Fee:                         transaction.Fee,
-					IsAccepted:                  isAccepted,
-					TransactionInputUTXOEntries: transactionInputUTXOEntries,
-				}
-			} else {
-				var emptyTransactionInputUTXOEntries []externalapi.UTXOEntry
-				blockAcceptanceData.TransactionAcceptanceData[j] = &externalapi.TransactionAcceptanceData{
-					Transaction:                 transaction,
-					Fee:                         transaction.Fee,
-					IsAccepted:                  false,
-					TransactionInputUTXOEntries: emptyTransactionInputUTXOEntries,
-				}
+			blockAcceptanceData.TransactionAcceptanceData[j] = &externalapi.TransactionAcceptanceData{
+				Transaction:                 transaction,
+				Fee:                         transaction.Fee,
+				IsAccepted:                  isAccepted,
+				TransactionInputUTXOEntries: transactionInputUTXOEntries,
 			}
 
 		}

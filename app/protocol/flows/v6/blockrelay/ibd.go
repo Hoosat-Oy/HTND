@@ -2,6 +2,7 @@ package blockrelay
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
@@ -35,7 +36,6 @@ type handleIBDFlow struct {
 	IBDContext
 	incomingRoute, outgoingRoute *router.Route
 	peer                         *peerpkg.Peer
-	usingStagingConsensus        bool
 }
 
 // HandleIBD handles IBD
@@ -111,7 +111,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	}
 
 	if shouldDownloadHeadersProof {
-		log.Infof("Starting IBD with headers proof (manages its own staging consensus)")
+		log.Infof("Starting IBD with headers proof")
 		err = flow.ibdWithHeadersProof(syncerHeaderSelectedTipHash, relayBlockHash, block.Header.DAAScore())
 		if err != nil {
 			return err
@@ -130,10 +130,8 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 			}
 		}
 
-		// Use staging consensus for reversible IBD
-		consensusToUse := flow.Domain().Consensus()
 		err = flow.syncPruningPointFutureHeaders(
-			consensusToUse,
+			flow.Domain().Consensus(),
 			syncerHeaderSelectedTipHash, highestKnownSyncerChainHash, relayBlockHash, block.Header.DAAScore())
 		if err != nil {
 			return err
@@ -141,13 +139,11 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	}
 
 	// We start by syncing missing bodies over the syncer selected chain
-	// Use staging consensus for reversible IBD
-	consensusToUse := flow.Domain().Consensus()
-	err = flow.syncMissingBlockBodies(consensusToUse, syncerHeaderSelectedTipHash)
+	err = flow.syncMissingBlockBodies(syncerHeaderSelectedTipHash)
 	if err != nil {
 		return err
 	}
-	relayBlockInfo, err := consensusToUse.GetBlockInfo(relayBlockHash)
+	relayBlockInfo, err := flow.Domain().Consensus().GetBlockInfo(relayBlockHash)
 	if err != nil {
 		return err
 	}
@@ -156,7 +152,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	// Note: this operation can be slightly optimized to avoid the full chain search since relay block
 	// is in syncer virtual mergeset which has bounded size.
 	if relayBlockInfo.BlockStatus == externalapi.StatusHeaderOnly {
-		err = flow.syncMissingBlockBodies(consensusToUse, relayBlockHash)
+		err = flow.syncMissingBlockBodies(relayBlockHash)
 		if err != nil {
 			return err
 		}
@@ -669,8 +665,8 @@ func (flow *handleIBDFlow) receiveAndInsertPruningPointUTXOSet(
 	}
 }
 
-func (flow *handleIBDFlow) syncMissingBlockBodies(consensus externalapi.Consensus, highHash *externalapi.DomainHash) error {
-	hashes, err := consensus.GetMissingBlockBodyHashes(highHash)
+func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHash) error {
+	hashes, err := flow.Domain().Consensus().GetMissingBlockBodyHashes(highHash)
 	log.Infof("Found %d missing block bodies to sync.", len(hashes))
 	if err != nil {
 		return err
@@ -679,25 +675,21 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(consensus externalapi.Consensu
 		log.Debugf("No missing block body hashes found.")
 		return nil
 	}
+	// updateVirtual, err := flow.Domain().Consensus().IsNearlySynced()
+	// if err != nil {
+	// 	return err
+	// }
 
-	updateVirtual, err := consensus.IsNearlySynced()
+	lowBlockHeader, err := flow.Domain().Consensus().GetBlockHeader(hashes[0])
 	if err != nil {
 		return err
 	}
-
-	lowBlockHeader, err := consensus.GetBlockHeader(hashes[0])
-	if err != nil {
-		return err
-	}
-	highBlockHeader, err := consensus.GetBlockHeader(hashes[len(hashes)-1])
+	highBlockHeader, err := flow.Domain().Consensus().GetBlockHeader(hashes[len(hashes)-1])
 	if err != nil {
 		return err
 	}
 	progressReporter := newIBDProgressReporter(lowBlockHeader.DAAScore(), highBlockHeader.DAAScore(), "blocks")
 	highestProcessedDAAScore := lowBlockHeader.DAAScore()
-
-	// Cache to store received blocks
-	receivedBlocks := make(map[externalapi.DomainHash]*externalapi.DomainBlock)
 
 	ibdBatchSize := getIBDBatchSize()
 	for offset := 0; offset < len(hashes); offset += ibdBatchSize {
@@ -707,6 +699,9 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(consensus externalapi.Consensu
 		} else {
 			hashesToRequest = hashes[offset:]
 		}
+
+		// Cache to store received blocks for this batch only
+		receivedBlocks := make(map[externalapi.DomainHash]*externalapi.DomainBlock, len(hashesToRequest))
 
 		// Request blocks
 		err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDBlocks(hashesToRequest))
@@ -733,30 +728,34 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(consensus externalapi.Consensu
 		}
 
 		// Process blocks in the order of expected hashes
-		for index, expectedHash := range hashesToRequest {
+		for _, expectedHash := range hashesToRequest {
 			block, exists := receivedBlocks[*expectedHash]
 			if !exists {
 				return protocolerrors.Errorf(true, "expected block %s not found in received blocks", expectedHash)
 			}
-			if index == len(hashesToRequest)-1 {
-				updateVirtual = true
-			}
-			// Set updateVirtual to true only for the last block in the entire hashes list
-			err = consensus.ValidateAndInsertBlock(block, updateVirtual, true)
+			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, true, true)
 			if err != nil {
+				// Gracefully skip UTXO diff conflict errors to avoid crashing nearly synced short IBDs
+				if strings.Contains(err.Error(), "both in") {
+					log.Warnf("Skipping block %s due to UTXO diff conflict: %s", expectedHash, err)
+					continue
+				}
 				if !errors.As(err, &ruleerrors.RuleError{}) {
 					return errors.Wrapf(err, "failed to process header %s during IBD", expectedHash)
 				}
 				var missingParentsErr *ruleerrors.ErrMissingParents
 				if errors.Is(err, ruleerrors.ErrUnexpectedDifficulty) {
-					log.Infof("Skipping block header %s as it is a has incorrect difficulty.", expectedHash)
+					log.Debugf("Skipping block header %s as it is a has incorrect difficulty.", expectedHash)
+					continue
 				} else if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-					log.Infof("Skipping block header %s as it is a duplicate", expectedHash)
+					log.Debugf("Skipping block header %s as it is a duplicate", expectedHash)
+					continue
 				} else if errors.As(err, &missingParentsErr) {
-					log.Infof("Skipping block header %s as it is missing parent", expectedHash)
+					log.Debugf("Skipping block header %s as it is missing parent", expectedHash)
+					continue
 				} else {
 					log.Infof("Rejected block header %s from %s during IBD: %s", expectedHash, flow.peer, err)
-					return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", expectedHash)
+					continue
 				}
 			}
 			err = flow.OnNewBlock(block)
@@ -765,12 +764,12 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(consensus externalapi.Consensu
 			}
 
 			highestProcessedDAAScore = block.Header.DAAScore()
-			delete(receivedBlocks, *expectedHash) // Clean up cache
 		}
 
 		progressReporter.reportProgress(len(hashesToRequest), highestProcessedDAAScore)
 	}
-	err = flow.resolveVirtual(consensus, highestProcessedDAAScore)
+
+	err = flow.resolveVirtual(highestProcessedDAAScore)
 	if err != nil {
 		return err
 	}
@@ -778,8 +777,8 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(consensus externalapi.Consensu
 	return flow.OnNewBlockTemplate()
 }
 
-func (flow *handleIBDFlow) resolveVirtual(consensus externalapi.Consensus, estimatedVirtualDAAScoreTarget uint64) error {
-	err := consensus.ResolveVirtual(func(virtualDAAScoreStart uint64, virtualDAAScore uint64) {
+func (flow *handleIBDFlow) resolveVirtual(estimatedVirtualDAAScoreTarget uint64) error {
+	err := flow.Domain().Consensus().ResolveVirtual(func(virtualDAAScoreStart uint64, virtualDAAScore uint64) {
 		var percents int
 		if estimatedVirtualDAAScoreTarget-virtualDAAScoreStart <= 0 {
 			percents = 100

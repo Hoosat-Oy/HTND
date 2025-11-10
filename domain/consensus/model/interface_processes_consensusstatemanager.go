@@ -14,4 +14,5 @@ type ConsensusStateManager interface {
 	RecoverUTXOIfRequired() error
 	ReverseUTXODiffs(tipHash *externalapi.DomainHash, reversalData *UTXODiffReversalData) error
 	ResolveVirtual(maxBlocksToResolve uint64) (*externalapi.VirtualChangeSet, bool, error)
+	ValidateUTXODiffChildChains() error
 }

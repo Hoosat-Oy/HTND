@@ -110,6 +110,14 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 		return nil, err
 	}
 
+	// Validate and repair UTXO diff child chains at node startup
+	// log.Info("Validating UTXO diff child chains at node startup...")
+	// err = domain.Consensus().ValidateUTXODiffChildChains()
+	// if err != nil {
+	// 	log.Warnf("UTXO diff child chain validation failed (non-fatal): %s", err)
+	// 	// Continue anyway - this is not a fatal error
+	// }
+
 	netAdapter, err := netadapter.NewNetAdapter(cfg)
 	if err != nil {
 		return nil, err
