@@ -276,7 +276,7 @@ func (flow *handleRelayInvsFlow) start() error {
 		if len(missingParents) > 0 {
 			err := flow.processOrphan(block)
 			if err != nil {
-				log.Info("Error processing orphan block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
+				log.Infof("Error processing orphan block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
 			}
 			continue
 		}
