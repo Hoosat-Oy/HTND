@@ -56,6 +56,14 @@ func (v *blockValidator) checkParentsLimit(header externalapi.BlockHeader) error
 }
 
 func (v *blockValidator) checkBlockVersion(header externalapi.BlockHeader) error {
+	var version uint16 = 1
+	daaScore := header.DAAScore()
+	for _, powScore := range v.POWScores {
+		if daaScore >= powScore {
+			version = version + 1
+		}
+	}
+	constants.SetBlockVersion(version)
 	if header.Version() != constants.GetBlockVersion() {
 		return errors.Wrapf(
 			ruleerrors.ErrWrongBlockVersion, "The block version %d should be %d", header.Version(), constants.GetBlockVersion())
