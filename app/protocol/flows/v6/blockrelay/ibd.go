@@ -725,10 +725,10 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		log.Debugf("No missing block body hashes found.")
 		return nil
 	}
-	// updateVirtual, err := flow.Domain().Consensus().IsNearlySynced()
-	// if err != nil {
-	// 	return err
-	// }
+	updateVirtual, err := flow.Domain().Consensus().IsNearlySynced()
+	if err != nil {
+		return err
+	}
 
 	lowBlockHeader, err := flow.Domain().Consensus().GetBlockHeader(hashes[0])
 	if err != nil {
@@ -783,7 +783,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 			if !exists {
 				return protocolerrors.Errorf(true, "expected block %s not found in received blocks", expectedHash)
 			}
-			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, true, true)
+			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, updateVirtual, true)
 			if err != nil {
 				var missingParentsErr ruleerrors.ErrMissingParents
 				if errors.As(err, &missingParentsErr) {
@@ -873,8 +873,21 @@ func (flow *handleIBDFlow) processOrphans(orphanHashes []*externalapi.DomainHash
 					continue
 				}
 				err = flow.Domain().Consensus().ValidateAndInsertBlock(block, true, true)
+				var missingParentsErr ruleerrors.ErrMissingParents
+
 				if err != nil {
-					log.Infof("Rejected orphan block %s from %s during IBD: %s", expectedHash, flow.peer, err)
+					if errors.As(err, &missingParentsErr) {
+						log.Infof("Block %s has missing parents %v, adding to orphan processing", expectedHash, missingParentsErr.MissingParentHashes)
+						var orphanHashes []*externalapi.DomainHash
+						orphanHashes = append(orphanHashes, missingParentsErr.MissingParentHashes...)
+						flow.processOrphans(orphanHashes, lowBlockHeader, highBlockHeader)
+						err = flow.Domain().Consensus().ValidateAndInsertBlock(block, true, true)
+						if err != nil {
+							log.Infof("Rejected block %s from %s during IBD: %s", expectedHash, flow.peer, err)
+						}
+					} else {
+						log.Infof("Rejected orphan block %s from %s during IBD: %s", expectedHash, flow.peer, err)
+					}
 					continue
 				}
 				err = flow.OnNewBlock(block)
