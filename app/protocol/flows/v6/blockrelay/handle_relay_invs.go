@@ -268,20 +268,9 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 		// We need the PoW hash for processBlock from P2P.
-		missingParents, err := flow.processBlock(block, false)
-		if err != nil && len(missingParents) == 0 {
-			if database.IsNotFoundError(err) {
-				missingParents = append(missingParents, inv.Hash)
-			} else {
-				log.Infof("Error processing block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
-				continue
-			}
-		}
-		if len(missingParents) > 0 {
-			err := flow.processOrphan(block)
-			if err != nil {
-				log.Infof("Error processing orphan block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
-			}
+		err = flow.processBlock(inv.Hash, block, false)
+		if err != nil {
+			log.Infof("Error processing block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
 			continue
 		}
 
@@ -419,16 +408,30 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (msgBlock *appmessage.MsgBlock, 
 	}
 }
 
-func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock, powSkip bool) ([]*externalapi.DomainHash, error) {
+func (flow *handleRelayInvsFlow) addToRelayInv(hash *externalapi.DomainHash) {
+	flow.invsQueue = append([]invRelayBlock{{Hash: hash, IsOrphanRoot: false}}, flow.invsQueue...)
+	flow.SharedRequestedBlocks().Remove(hash)
+	log.Debugf("Re-queued block %s to relay INV queue (missing data in DB)", hash)
+}
+
+func (flow *handleRelayInvsFlow) processBlock(hash *externalapi.DomainHash, block *externalapi.DomainBlock, powSkip bool) error {
 	err := flow.Domain().Consensus().ValidateAndInsertBlock(block, true, powSkip)
 	if err != nil {
 		missingParentsError := &ruleerrors.ErrMissingParents{}
 		if errors.As(err, missingParentsError) {
-			return missingParentsError.MissingParentHashes, nil
+			if len(missingParentsError.MissingParentHashes) > 0 {
+				err := flow.processOrphan(block)
+				if err != nil {
+					log.Infof("Error processing orphan block %s from %s: %s", hash, flow.netConnection.Address(), err)
+				}
+			}
+		} else if database.IsNotFoundError(err) {
+			flow.addToRelayInv(hash)
+			return err
 		}
-		return nil, err
+		return err
 	}
-	return nil, nil
+	return nil
 }
 
 func (flow *handleRelayInvsFlow) relayBlock(block *externalapi.DomainBlock) error {
