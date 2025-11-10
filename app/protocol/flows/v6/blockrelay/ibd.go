@@ -33,7 +33,6 @@ type handleIBDFlow struct {
 	IBDContext
 	incomingRoute, outgoingRoute *router.Route
 	peer                         *peerpkg.Peer
-	orphanHashes                 []*externalapi.DomainHash
 }
 
 // HandleIBD handles IBD
@@ -47,25 +46,6 @@ func HandleIBD(context IBDContext, incomingRoute *router.Route, outgoingRoute *r
 		peer:          peer,
 	}
 	return flow.start()
-}
-
-// deduplicateHashes removes duplicate hashes from a slice while preserving order
-func deduplicateHashes(hashes []*externalapi.DomainHash) []*externalapi.DomainHash {
-	if len(hashes) == 0 {
-		return hashes
-	}
-
-	seen := make(map[externalapi.DomainHash]bool)
-	var result []*externalapi.DomainHash
-
-	for _, hash := range hashes {
-		if !seen[*hash] {
-			seen[*hash] = true
-			result = append(result, hash)
-		}
-	}
-
-	return result
 }
 
 func (flow *handleIBDFlow) start() error {
