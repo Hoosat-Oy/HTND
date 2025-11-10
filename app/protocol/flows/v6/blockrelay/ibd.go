@@ -35,6 +35,7 @@ type handleIBDFlow struct {
 	IBDContext
 	incomingRoute, outgoingRoute *router.Route
 	peer                         *peerpkg.Peer
+	orphanHashes                 []*externalapi.DomainHash
 }
 
 // HandleIBD handles IBD
@@ -159,6 +160,49 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 
 	log.Infof("Finished syncing blocks up to %s", relayBlockHash)
 	isFinishedSuccessfully = true
+
+	if len(flow.orphanHashes) > 0 {
+		log.Infof("Processing %d orphan blocks", len(flow.orphanHashes))
+		ibdBatchSize := getIBDBatchSize()
+		for offset := 0; offset < len(flow.orphanHashes); offset += ibdBatchSize {
+			var hashesToRequest []*externalapi.DomainHash
+			if offset+ibdBatchSize < len(flow.orphanHashes) {
+				hashesToRequest = flow.orphanHashes[offset : offset+ibdBatchSize]
+			} else {
+				hashesToRequest = flow.orphanHashes[offset:]
+			}
+
+			err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDBlocks(hashesToRequest))
+			if err != nil {
+				return err
+			}
+
+			for i := 0; i < len(hashesToRequest); i++ {
+				message, err := flow.incomingRoute.Dequeue()
+				if err != nil {
+					return err
+				}
+
+				msgIBDBlock, ok := message.(*appmessage.MsgIBDBlock)
+				if !ok {
+					return protocolerrors.Errorf(true, "received unexpected message type. expected: %s, got: %s", appmessage.CmdIBDBlock, message.Command())
+				}
+
+				block := appmessage.MsgBlockToDomainBlock(msgIBDBlock.MsgBlock)
+				blockHash := consensushashing.BlockHash(block)
+				err = flow.Domain().Consensus().ValidateAndInsertBlock(block, true, true)
+				if err != nil {
+					log.Infof("Rejected orphan block %s from %s during IBD: %s", blockHash, flow.peer, err)
+					continue
+				}
+				err = flow.OnNewBlock(block)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -555,19 +599,12 @@ func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlo
 	}
 	err = consensus.ValidateAndInsertBlock(block, false, true)
 	if err != nil {
-		if !errors.As(err, &ruleerrors.RuleError{}) {
-			return errors.Wrapf(err, "failed to process header %s during IBD", blockHash)
-		}
 		var missingParentsErr *ruleerrors.ErrMissingParents
-		if errors.Is(err, ruleerrors.ErrUnexpectedDifficulty) {
-			log.Debugf("Skipping block header %s as it is a has incorrect difficulty.", blockHash)
-		} else if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-			log.Debugf("Skipping block header %s as it is a duplicate", blockHash)
-		} else if errors.As(err, &missingParentsErr) {
+		if errors.As(err, &missingParentsErr) {
 			log.Debugf("Skipping block header %s as it is missing parent", blockHash)
+			flow.orphanHashes = append(flow.orphanHashes, missingParentsErr.MissingParentHashes...)
 		} else {
 			log.Infof("Rejected block header %s from %s during IBD: %s", blockHash, flow.peer, err)
-			return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", blockHash)
 		}
 	}
 
