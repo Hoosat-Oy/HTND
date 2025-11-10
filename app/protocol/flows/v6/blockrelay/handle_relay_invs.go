@@ -277,8 +277,8 @@ func (flow *handleRelayInvsFlow) start() error {
 					if err != nil {
 						log.Infof("Error processing orphan block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
 					}
+					continue
 				}
-				continue
 			} else if database.IsNotFoundError(err) {
 				flow.addToRelayInv(inv.Hash)
 				continue
