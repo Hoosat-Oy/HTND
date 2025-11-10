@@ -1,7 +1,6 @@
 package blockrelay
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/Hoosat-Oy/HTND/app/protocol/protocolerrors"
 	"github.com/Hoosat-Oy/HTND/domain"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
-	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/infrastructure/config"
@@ -786,19 +784,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 
 			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, updateVirtual, true)
 			if err != nil {
-				var missingParentsErr ruleerrors.ErrMissingParents
-				if errors.As(err, &missingParentsErr) {
-					log.Infof("Block %s has missing parents %v, adding to orphan processing", expectedHash, missingParentsErr.MissingParentHashes)
-					var orphanHashes []*externalapi.DomainHash
-					orphanHashes = append(orphanHashes, missingParentsErr.MissingParentHashes...)
-					flow.processOrphans(orphanHashes, lowBlockHeader, highBlockHeader)
-					err = flow.Domain().Consensus().ValidateAndInsertBlock(block, updateVirtual, true)
-					if err != nil {
-						log.Infof("Rejected block %s from %s during IBD: %s", expectedHash, flow.peer, err)
-					}
-				} else {
-					log.Infof("Rejected block %s from %s during IBD: %s", expectedHash, flow.peer, err)
-				}
+				log.Infof("Rejected block %s from %s during IBD: %s", expectedHash, flow.peer, err)
 				continue
 			}
 			err = flow.OnNewBlock(block)
@@ -806,9 +792,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 				return err
 			}
 
-			if block.Header.DAAScore() > highestProcessedDAAScore {
-				highestProcessedDAAScore = block.Header.DAAScore()
-			}
+			highestProcessedDAAScore = block.Header.DAAScore()
 		}
 
 		progressReporter.reportProgress(len(hashesToRequest), highestProcessedDAAScore)
@@ -822,91 +806,6 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 	}
 
 	return flow.OnNewBlockTemplate()
-}
-
-func (flow *handleIBDFlow) processOrphans(orphanHashes []*externalapi.DomainHash, lowBlockHeader externalapi.BlockHeader, highBlockHeader externalapi.BlockHeader) error {
-	if len(orphanHashes) > 0 {
-		progressReporter := newIBDProgressReporter(lowBlockHeader.DAAScore(), highBlockHeader.DAAScore(), "blocks")
-		highestProcessedDAAScore := lowBlockHeader.DAAScore()
-		// Remove duplicates from orphan hashes to avoid requesting the same block multiple times
-		orphanHashes = deduplicateHashes(orphanHashes)
-		log.Infof("Found %d orphan block hashes to sync.", len(orphanHashes))
-		// Process orphan hashes in batches
-		ibdBatchSize := getIBDBatchSize()
-		for offset := 0; offset < len(orphanHashes); offset += ibdBatchSize {
-			var hashesToRequest []*externalapi.DomainHash
-			if offset+ibdBatchSize < len(orphanHashes) {
-				hashesToRequest = orphanHashes[offset : offset+ibdBatchSize]
-			} else {
-				hashesToRequest = orphanHashes[offset:]
-			}
-
-			// Cache to store received blocks for this batch only
-			receivedBlocks := make(map[externalapi.DomainHash]*externalapi.DomainBlock, len(hashesToRequest))
-
-			// Request blocks
-			err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDBlocks(hashesToRequest))
-			if err != nil {
-				return err
-			}
-			// Dequeue all messages for the requested hashes
-			for i := 0; i < len(hashesToRequest); i++ {
-				message, err := flow.incomingRoute.Dequeue()
-				if err != nil {
-					return err
-				}
-
-				msgIBDBlock, ok := message.(*appmessage.MsgIBDBlock)
-				if !ok {
-					return protocolerrors.Errorf(true, "received unexpected message type. "+
-						"expected: %s, got: %s", appmessage.CmdIBDBlock, message.Command())
-				}
-
-				block := appmessage.MsgBlockToDomainBlock(msgIBDBlock.MsgBlock)
-				blockHash := consensushashing.BlockHash(block)
-				receivedBlocks[*blockHash] = block
-				log.Debugf("Received orphan block %s and stored in cache", blockHash)
-			}
-
-			// Process blocks in the order of expected hashes
-			for _, expectedHash := range hashesToRequest {
-				block, exists := receivedBlocks[*expectedHash]
-				if !exists {
-					log.Warnf("Expected orphan block %s not found in received blocks", expectedHash)
-					continue
-				}
-				err = flow.Domain().Consensus().ValidateAndInsertBlock(block, true, true)
-				var missingParentsErr ruleerrors.ErrMissingParents
-
-				if err != nil {
-					if errors.As(err, &missingParentsErr) {
-						log.Infof("Block %s has missing parents %v, adding to orphan processing", expectedHash, missingParentsErr.MissingParentHashes)
-						var orphanHashes []*externalapi.DomainHash
-						orphanHashes = append(orphanHashes, missingParentsErr.MissingParentHashes...)
-						flow.processOrphans(orphanHashes, lowBlockHeader, highBlockHeader)
-						err = flow.Domain().Consensus().ValidateAndInsertBlock(block, true, true)
-						if err != nil {
-							log.Infof("Rejected block %s from %s during IBD: %s", expectedHash, flow.peer, err)
-						}
-					} else {
-						log.Infof("Rejected orphan block %s from %s during IBD: %s", expectedHash, flow.peer, err)
-					}
-					continue
-				}
-				err = flow.OnNewBlock(block)
-				if err != nil {
-					return err
-				}
-
-				if block.Header.DAAScore() > highestProcessedDAAScore {
-					highestProcessedDAAScore = block.Header.DAAScore()
-				}
-			}
-
-			progressReporter.reportProgress(len(hashesToRequest), highestProcessedDAAScore)
-		}
-	}
-	return nil
 }
 
 func (flow *handleIBDFlow) resolveVirtual(estimatedVirtualDAAScoreTarget uint64) error {
