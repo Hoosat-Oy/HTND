@@ -425,6 +425,7 @@ func (flow *handleRelayInvsFlow) processBlock(hash *externalapi.DomainHash, bloc
 					log.Infof("Error processing orphan block %s from %s: %s", hash, flow.netConnection.Address(), err)
 				}
 			}
+			return err
 		} else if database.IsNotFoundError(err) {
 			flow.addToRelayInv(hash)
 			return err
