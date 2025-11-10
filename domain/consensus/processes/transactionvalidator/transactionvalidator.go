@@ -2,7 +2,6 @@ package transactionvalidator
 
 import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
-	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/txscript"
 	"github.com/Hoosat-Oy/HTND/util/txmass"
 )
@@ -19,7 +18,7 @@ type transactionValidator struct {
 	daaBlocksStore                          model.DAABlocksStore
 	enableNonNativeSubnetworks              bool
 	maxCoinbasePayloadLength                uint64
-	ghostdagK                               []externalapi.KType
+	MergeSetSizeLimit                       uint
 	coinbasePayloadScriptPublicKeyMaxLength uint8
 	sigCache                                *txscript.SigCache
 	sigCacheECDSA                           *txscript.SigCacheECDSA
@@ -30,7 +29,7 @@ type transactionValidator struct {
 func New(blockCoinbaseMaturity uint64,
 	enableNonNativeSubnetworks bool,
 	maxCoinbasePayloadLength uint64,
-	ghostdagK []externalapi.KType,
+	MergeSetSizeLimit uint,
 	coinbasePayloadScriptPublicKeyMaxLength uint8,
 	databaseContext model.DBReader,
 	pastMedianTimeManager model.PastMedianTimeManager,
@@ -42,7 +41,7 @@ func New(blockCoinbaseMaturity uint64,
 		blockCoinbaseMaturity:                   blockCoinbaseMaturity,
 		enableNonNativeSubnetworks:              enableNonNativeSubnetworks,
 		maxCoinbasePayloadLength:                maxCoinbasePayloadLength,
-		ghostdagK:                               ghostdagK,
+		MergeSetSizeLimit:                       MergeSetSizeLimit,
 		coinbasePayloadScriptPublicKeyMaxLength: coinbasePayloadScriptPublicKeyMaxLength,
 		databaseContext:                         databaseContext,
 		pastMedianTimeManager:                   pastMedianTimeManager,

@@ -219,7 +219,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	transactionValidator := transactionvalidator.New(config.BlockCoinbaseMaturity,
 		config.EnableNonNativeSubnetworks,
 		config.MaxCoinbasePayloadLength,
-		config.K,
+		config.MergeSetSizeLimit,
 		config.CoinbasePayloadScriptPublicKeyMaxLength,
 		dbManager,
 		pastMedianTimeManager,
