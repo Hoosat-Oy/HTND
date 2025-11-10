@@ -779,7 +779,11 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 			if !exists {
 				return protocolerrors.Errorf(true, "expected block %s not found in received blocks", expectedHash)
 			}
-			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, true, true)
+			nearlySynced, err := flow.Domain().Consensus().IsNearlySynced()
+			if err != nil {
+				return err
+			}
+			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, nearlySynced, true)
 			if err != nil {
 				var missingParentsErr ruleerrors.ErrMissingParents
 				if errors.As(err, &missingParentsErr) {
