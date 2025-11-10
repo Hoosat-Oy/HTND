@@ -2,7 +2,6 @@ package blockrelay
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
@@ -556,7 +555,6 @@ func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlo
 	}
 	err = consensus.ValidateAndInsertBlock(block, false, true)
 	if err != nil {
-
 		if !errors.As(err, &ruleerrors.RuleError{}) {
 			return errors.Wrapf(err, "failed to process header %s during IBD", blockHash)
 		}
@@ -735,28 +733,8 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 			}
 			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, true, true)
 			if err != nil {
-				// Gracefully skip UTXO diff conflict errors to avoid crashing nearly synced short IBDs
-				if strings.Contains(err.Error(), "both in") {
-					log.Warnf("Skipping block %s due to UTXO diff conflict: %s", expectedHash, err)
-					continue
-				}
-				if !errors.As(err, &ruleerrors.RuleError{}) {
-					return errors.Wrapf(err, "failed to process header %s during IBD", expectedHash)
-				}
-				var missingParentsErr *ruleerrors.ErrMissingParents
-				if errors.Is(err, ruleerrors.ErrUnexpectedDifficulty) {
-					log.Debugf("Skipping block header %s as it is a has incorrect difficulty.", expectedHash)
-					continue
-				} else if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-					log.Debugf("Skipping block header %s as it is a duplicate", expectedHash)
-					continue
-				} else if errors.As(err, &missingParentsErr) {
-					log.Debugf("Skipping block header %s as it is missing parent", expectedHash)
-					continue
-				} else {
-					log.Infof("Rejected block header %s from %s during IBD: %s", expectedHash, flow.peer, err)
-					continue
-				}
+				log.Infof("Rejected block header %s from %s during IBD: %s", expectedHash, flow.peer, err)
+				continue
 			}
 			err = flow.OnNewBlock(block)
 			if err != nil {

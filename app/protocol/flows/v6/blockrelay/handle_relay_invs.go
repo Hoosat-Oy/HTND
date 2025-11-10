@@ -1,7 +1,6 @@
 package blockrelay
 
 import (
-	"strings"
 	"time"
 
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
@@ -271,53 +270,15 @@ func (flow *handleRelayInvsFlow) start() error {
 		// We need the PoW hash for processBlock from P2P.
 		missingParents, err := flow.processBlock(block, false)
 		if err != nil {
-			if errors.Is(err, ruleerrors.ErrPrunedBlock) {
-				log.Debugf("Ignoring pruned block %s from %s", inv.Hash, flow.netConnection.Address())
-				continue
-			} else if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-				log.Debugf("Ignoring duplicate block %s from %s", inv.Hash, flow.netConnection.Address())
-				continue
-			} else if errors.Is(err, ruleerrors.ErrWrongBlockVersion) {
-				log.Debugf("Ignoring block %s with invalid version from %s", inv.Hash, flow.netConnection.Address())
-				continue
-			} else if errors.Is(err, ruleerrors.ErrCoinbaseTooManyOutputs) {
-				log.Debugf("Ignoring block %s with with too many coinbase outputs and banning instantly. From %s", inv.Hash, flow.netConnection.Address())
-				flow.banConnection(true)
-				continue
-			} else if errors.Is(err, ruleerrors.ErrWrongCoinbaseSubsidy) {
-				log.Debugf("Ignoring block %s with with wrong coinbase subsidy and banning instantly. From %s", inv.Hash, flow.netConnection.Address())
-				continue
-			} else if errors.Is(err, ruleerrors.ErrInvalidAncestorBlock) {
-				log.Debugf("Invalid ancestor block %s from %s", inv.Hash, flow.netConnection.Address())
-				continue
-			} else if errors.Is(err, ruleerrors.ErrInvalidPoW) {
-				if block.PoWHash != "" {
-					log.Debugf("Ignoring invalid PoW %s, considering banning: %s", block.PoWHash, flow.netConnection.NetAddress().String())
-				} else {
-					log.Debugf("Ignoring invalid empty PoW, considering banning: %s", flow.netConnection.NetAddress().String())
-				}
-				flow.banConnection(false)
-				continue
-			} else if errors.Is(err, ruleerrors.ErrUnfinalizedTx) {
-				log.Debugf("Ignoring block %s with unfinalized transaction from %s", inv.Hash, flow.netConnection.Address())
-				continue
-			} else if strings.Contains(err.Error(), "Expecting the pending tip") {
-				log.Debugf("Ignoring block %s due to pending tip not overcoming previous selected parent (transient). From %s",
-					inv.Hash, flow.netConnection.Address())
-				continue
-			} else if strings.Contains(err.Error(), " both in") {
-				log.Debugf("Ignoring block %s due modified diff. From %s", inv.Hash, flow.netConnection.Address())
-				continue
-			} else {
-				log.Infof("Error processing block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
-			}
+			log.Infof("Error processing block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
+			continue
 		}
 		if len(missingParents) > 0 {
 			err := flow.processOrphan(block)
 			if err != nil {
 				log.Info("Error processing orphan block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
+				continue
 			}
-			continue
 		}
 
 		oldVirtualParents := hashset.New()

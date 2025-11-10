@@ -8,7 +8,6 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
 	"github.com/Hoosat-Oy/HTND/util/staging"
-	"github.com/pkg/errors"
 )
 
 // tipsInDecreasingGHOSTDAGParentSelectionOrder returns the current DAG tips in decreasing parent selection order.
@@ -148,8 +147,9 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*ex
 		// Otherwise, internal UTXO diff logic gets all messed up
 		for !isNewVirtualSelectedParent {
 			if processingPointIndex == 0 {
-				return nil, false, errors.Errorf(
-					"Expecting the pending tip %s to overcome the previous selected parent %s", pendingTip, previousVirtualSelectedParent)
+				log.Warnf("Skipping chunk: pending tip %s did not overcome previous selected parent %s during IBD", pendingTip, previousVirtualSelectedParent)
+				// Gracefully skip this chunk and signal not completely resolved
+				return nil, false, nil
 			}
 			processingPointIndex--
 			processingPoint = unverifiedBlocks[processingPointIndex]
