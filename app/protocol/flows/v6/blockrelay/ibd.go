@@ -85,33 +85,6 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	isFinishedSuccessfully := false
 	var err error
 	defer func() {
-		// Rollback or commit based on success
-		if flow.usingStagingConsensus {
-			if isFinishedSuccessfully {
-				// Commit the staging consensus to make changes permanent
-				commitErr := flow.Domain().CommitStagingConsensus()
-				if commitErr != nil {
-					log.Errorf("Failed to commit staging consensus after successful IBD: %s", commitErr)
-					// Try to rollback since commit failed
-					rollbackErr := flow.Domain().DeleteStagingConsensus()
-					if rollbackErr != nil {
-						log.Errorf("Failed to rollback staging consensus after commit failure: %s", rollbackErr)
-					} else {
-						log.Infof("Successfully rolled back staging consensus after commit failure")
-					}
-				} else {
-					log.Infof("Successfully committed staging consensus after IBD")
-				}
-			} else {
-				// Rollback by deleting the staging consensus
-				rollbackErr := flow.Domain().DeleteStagingConsensus()
-				if rollbackErr != nil {
-					log.Errorf("Failed to rollback staging consensus after IBD failure: %s", rollbackErr)
-				} else {
-					log.Infof("Successfully rolled back IBD changes")
-				}
-			}
-		}
 		flow.UnsetIBDRunning()
 		flow.logIBDFinished(isFinishedSuccessfully, err)
 	}()
@@ -144,16 +117,6 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 			return err
 		}
 	} else {
-		// Initialize staging consensus for reversible IBD
-		log.Infof("Initializing staging consensus for reversible IBD")
-		err = flow.Domain().InitStagingConsensusWithoutGenesis()
-		if err != nil {
-			log.Errorf("Failed to initialize staging consensus: %s", err)
-			return err
-		}
-		flow.usingStagingConsensus = true
-		log.Infof("Staging consensus initialized successfully")
-
 		if flow.Config().NetParams().DisallowDirectBlocksOnTopOfGenesis && !flow.Config().AllowSubmitBlockWhenNotSynced {
 			isGenesisVirtualSelectedParent, err := flow.isGenesisVirtualSelectedParent()
 			if err != nil {
@@ -168,7 +131,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 		}
 
 		// Use staging consensus for reversible IBD
-		consensusToUse := flow.Domain().StagingConsensus()
+		consensusToUse := flow.Domain().Consensus()
 		err = flow.syncPruningPointFutureHeaders(
 			consensusToUse,
 			syncerHeaderSelectedTipHash, highestKnownSyncerChainHash, relayBlockHash, block.Header.DAAScore())
@@ -179,7 +142,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 
 	// We start by syncing missing bodies over the syncer selected chain
 	// Use staging consensus for reversible IBD
-	consensusToUse := flow.Domain().StagingConsensus()
+	consensusToUse := flow.Domain().Consensus()
 	err = flow.syncMissingBlockBodies(consensusToUse, syncerHeaderSelectedTipHash)
 	if err != nil {
 		return err
