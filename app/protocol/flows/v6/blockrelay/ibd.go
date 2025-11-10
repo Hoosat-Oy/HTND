@@ -792,7 +792,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 					var orphanHashes []*externalapi.DomainHash
 					orphanHashes = append(orphanHashes, missingParentsErr.MissingParentHashes...)
 					flow.processOrphans(orphanHashes, lowBlockHeader, highBlockHeader)
-					err = flow.Domain().Consensus().ValidateAndInsertBlock(block, true, true)
+					err = flow.Domain().Consensus().ValidateAndInsertBlock(block, updateVirtual, true)
 					if err != nil {
 						log.Infof("Rejected block %s from %s during IBD: %s", expectedHash, flow.peer, err)
 					}
