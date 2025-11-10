@@ -269,7 +269,7 @@ func (flow *handleRelayInvsFlow) start() error {
 		}
 		// We need the PoW hash for processBlock from P2P.
 		missingParents, err := flow.processBlock(block, false)
-		if err != nil {
+		if err != nil && len(missingParents) == 0 {
 			if database.IsNotFoundError(err) {
 				missingParents = append(missingParents, inv.Hash)
 			} else {
