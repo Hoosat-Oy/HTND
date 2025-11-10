@@ -145,7 +145,7 @@ func (v *transactionValidator) checkCoinbaseInIsolation(tx *externalapi.DomainTr
 		return errors.Wrap(ruleerrors.ErrCoinbaseWithInputs, "coinbase has inputs")
 	}
 
-	outputsLimit := uint64(v.MergeSetSizeLimit + 2)
+	outputsLimit := v.MergeSetSizeLimit + 2
 	// Make the outputsLimits twice the size because of developer fee in outputs with coinbase outputs.
 	outputsLimit *= 2
 	if uint64(len(tx.Outputs)) > outputsLimit {
