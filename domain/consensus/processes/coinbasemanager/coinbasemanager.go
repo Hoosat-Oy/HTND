@@ -38,11 +38,23 @@ type coinbaseManager struct {
 
 // ExpectedCoinbaseTransactionWithAcceptanceData implements model.CoinbaseManager.
 func (c *coinbaseManager) ExpectedCoinbaseTransactionWithAcceptanceData(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData, acceptanceData externalapi.AcceptanceData) (expectedTransaction *externalapi.DomainTransaction, hasRedReward bool, err error) {
-	panic("unimplemented")
+	return c.ExpectedCoinbaseTransactionInternal(stagingArea, blockHash, coinbaseData, acceptanceData)
 }
 
 func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
 	coinbaseData *externalapi.DomainCoinbaseData) (expectedTransaction *externalapi.DomainTransaction, hasRedReward bool, err error) {
+	acceptanceData, err := c.acceptanceDataStore.Get(c.databaseContext, stagingArea, blockHash)
+	if database.IsNotFoundError(err) {
+		log.Infof("ExpectedCoinbaseTransaction failed to retrieve with %s\n", blockHash)
+		return nil, false, err
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	return c.ExpectedCoinbaseTransactionInternal(stagingArea, blockHash, coinbaseData, acceptanceData)
+}
+
+func (c *coinbaseManager) ExpectedCoinbaseTransactionInternal(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData, acceptanceData externalapi.AcceptanceData) (expectedTransaction *externalapi.DomainTransaction, hasRedReward bool, err error) {
 
 	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, stagingArea, blockHash, true)
 	// If there's ghostdag data with trusted data we prefer it because we need the original merge set non-pruned merge set.
@@ -51,15 +63,6 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 		if err != nil {
 			return nil, false, err
 		}
-	}
-
-	acceptanceData, err := c.acceptanceDataStore.Get(c.databaseContext, stagingArea, blockHash)
-	if database.IsNotFoundError(err) {
-		log.Infof("ExpectedCoinbaseTransaction failed to retrieve with %s\n", blockHash)
-		return nil, false, err
-	}
-	if err != nil {
-		return nil, false, err
 	}
 
 	daaAddedBlocksSet, err := c.daaAddedBlocksSet(stagingArea, blockHash)
