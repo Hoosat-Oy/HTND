@@ -789,9 +789,12 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 				if errors.As(err, &missingParentsErr) {
 					log.Infof("Block %s has missing parents %v, adding to orphan processing", expectedHash, missingParentsErr.MissingParentHashes)
 					var orphanHashes []*externalapi.DomainHash
-					orphanHashes = append(orphanHashes, expectedHash)
 					orphanHashes = append(orphanHashes, missingParentsErr.MissingParentHashes...)
 					flow.processOrphans(orphanHashes, lowBlockHeader, highBlockHeader)
+					err = flow.Domain().Consensus().ValidateAndInsertBlock(block, true, true)
+					if err != nil {
+						log.Infof("Rejected block %s from %s during IBD: %s", expectedHash, flow.peer, err)
+					}
 				} else {
 					log.Infof("Rejected block %s from %s during IBD: %s", expectedHash, flow.peer, err)
 				}
