@@ -178,50 +178,6 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	log.Infof("Finished syncing blocks up to %s", relayBlockHash)
 	isFinishedSuccessfully = true
 
-	if len(flow.orphanHashes) > 0 {
-		// Remove duplicates from orphan hashes to avoid requesting the same block multiple times
-		flow.orphanHashes = deduplicateHashes(flow.orphanHashes)
-		log.Infof("Processing %d orphan blocks", len(flow.orphanHashes))
-		ibdBatchSize := getIBDBatchSize()
-		for offset := 0; offset < len(flow.orphanHashes); offset += ibdBatchSize {
-			var hashesToRequest []*externalapi.DomainHash
-			if offset+ibdBatchSize < len(flow.orphanHashes) {
-				hashesToRequest = flow.orphanHashes[offset : offset+ibdBatchSize]
-			} else {
-				hashesToRequest = flow.orphanHashes[offset:]
-			}
-
-			err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDBlocks(hashesToRequest))
-			if err != nil {
-				return err
-			}
-
-			for i := 0; i < len(hashesToRequest); i++ {
-				message, err := flow.incomingRoute.Dequeue()
-				if err != nil {
-					return err
-				}
-
-				msgIBDBlock, ok := message.(*appmessage.MsgIBDBlock)
-				if !ok {
-					return protocolerrors.Errorf(true, "received unexpected message type. expected: %s, got: %s", appmessage.CmdIBDBlock, message.Command())
-				}
-
-				block := appmessage.MsgBlockToDomainBlock(msgIBDBlock.MsgBlock)
-				blockHash := consensushashing.BlockHash(block)
-				err = flow.Domain().Consensus().ValidateAndInsertBlock(block, true, true)
-				if err != nil {
-					log.Infof("Rejected orphan block %s from %s during IBD: %s", blockHash, flow.peer, err)
-					continue
-				}
-				err = flow.OnNewBlock(block)
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
-
 	return nil
 }
 
