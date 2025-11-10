@@ -199,7 +199,7 @@ func IsDevFeeOutput(reward uint64, block *externalapi.DomainBlock, output *exter
 }
 
 func (v *blockValidator) checkDevFee(stagingArea *model.StagingArea, block *externalapi.DomainBlock, reward uint64) error {
-	if block.Header.Version() < 2 {
+	if block.Header.Version() < 2 || block.Transactions[0].Version == 0 {
 		return nil
 	}
 	// Check for nodeFee in block outputs

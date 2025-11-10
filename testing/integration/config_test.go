@@ -10,26 +10,26 @@ import (
 )
 
 const (
-	p2pAddress1 = "127.0.0.1:54321"
-	p2pAddress2 = "127.0.0.1:54322"
-	p2pAddress3 = "127.0.0.1:54323"
-	p2pAddress4 = "127.0.0.1:54324"
-	p2pAddress5 = "127.0.0.1:54325"
+	p2pAddress1 = "127.0.0.1:45321"
+	p2pAddress2 = "127.0.0.1:45322"
+	p2pAddress3 = "127.0.0.1:45323"
+	p2pAddress4 = "127.0.0.1:45324"
+	p2pAddress5 = "127.0.0.1:45325"
 
-	rpcAddress1 = "127.0.0.1:12345"
-	rpcAddress2 = "127.0.0.1:12346"
-	rpcAddress3 = "127.0.0.1:12347"
-	rpcAddress4 = "127.0.0.1:12348"
-	rpcAddress5 = "127.0.0.1:12349"
+	rpcAddress1 = "127.0.0.1:21345"
+	rpcAddress2 = "127.0.0.1:21346"
+	rpcAddress3 = "127.0.0.1:21347"
+	rpcAddress4 = "127.0.0.1:21348"
+	rpcAddress5 = "127.0.0.1:21349"
 
-	miningAddress1           = "hoosatsim:qqqqnc0pxg7qw3qkc7l6sge8kfhsvvyt7mkw8uamtndqup27ftnd6c769gn66"
-	miningAddress1PrivateKey = "0d81045b0deb2af36a25403c2154c87aa82d89dd337b575bae27ce7f5de53cee"
+	miningAddress1           = "hoosatsim:qznzhj4n5dd796qrqzueryfglvnesxpl5fywr9c5057ndvgx7y0j7x92q58rs"
+	miningAddress1PrivateKey = "hoosatsim:qznzhj4n5dd796qrqzueryfglvnesxpl5fywr9c5057ndvgx7y0j7x92q58rs"
 
-	miningAddress2           = "hoosatsim:qqqqnc0pxg7qw3qkc7l6sge8kfhsvvyt7mkw8uamtndqup27ftnd6c769gn66"
-	miningAddress2PrivateKey = "0d81045b0deb2af36a25403c2154c87aa82d89dd337b575bae27ce7f5de53cee"
+	miningAddress2           = "hoosatsim:qznzhj4n5dd796qrqzueryfglvnesxpl5fywr9c5057ndvgx7y0j7x92q58rs"
+	miningAddress2PrivateKey = "hoosatsim:qznzhj4n5dd796qrqzueryfglvnesxpl5fywr9c5057ndvgx7y0j7x92q58rs"
 
-	miningAddress3           = "hoosatsim:qqq754f2gdcjcnykwuwwr60c82rh5u6mxxe7yqxljnrxz9fu0h95kduq9ezng"
-	miningAddress3PrivateKey = "f6c8f31fd359cbb97007034780bc4021f6ad01c6bc10499b79849efd4cc7ca39"
+	miningAddress3           = "hoosatsim:qznzhj4n5dd796qrqzueryfglvnesxpl5fywr9c5057ndvgx7y0j7x92q58rs"
+	miningAddress3PrivateKey = "955da5fe765a921d22ccba5102a31f3b893b79607e48195c3d63a795486473ba"
 
 	defaultTimeout = 30 * time.Second
 )

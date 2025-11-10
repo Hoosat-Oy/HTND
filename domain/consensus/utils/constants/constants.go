@@ -13,6 +13,7 @@ var (
 	// 3 HoohashV1.0.1
 	// 4 HoohashV1.0.1 + Pow hash validation network wide
 	// 5 HoohashV1.1.0 + Pow hash validation network wide
+	// 6 HoohashV1.1.0 + additional features
 	blockVersion uint32 = 1
 
 	PoWIntegrityMinVersion uint16 = 4

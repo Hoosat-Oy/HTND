@@ -15,11 +15,11 @@ import (
 // Environment variables for tuning (all optional):
 //
 //	HTND_BLOOM_FILTER_LEVEL - Bloom filter bits per key (default: 14 for ~0.1% false positive)
-//	HTND_PEBBLE_CACHE_MB - Cache size in MB (default: 4096 MB)
-//	HTND_MEMTABLE_SIZE_MB - MemTable size in MB (default: 32 MB)
-//	HTND_MEMTABLE_THRESHOLD - Number of memtables before stalling writes (default: 24)
-//	HTND_L0_COMPACTION_THRESHOLD - L0 compaction trigger (default: 12)
-//	HTND_L0_STOP_WRITES_THRESHOLD - L0 write stall threshold (default: 32)
+//	HTND_PEBBLE_CACHE_MB - Cache size in MB (default: 8192 MB)
+//	HTND_MEMTABLE_SIZE_MB - MemTable size in MB (default: 128 MB)
+//	HTND_MEMTABLE_THRESHOLD - Number of memtables before stalling writes (default: 32)
+//	HTND_L0_COMPACTION_THRESHOLD - L0 compaction trigger (default: 8)
+//	HTND_L0_STOP_WRITES_THRESHOLD - L0 write stall threshold (default: 48)
 //
 // Legacy environment variables (for backward compatibility):
 //
@@ -49,14 +49,14 @@ func Options() *pebble.Options {
 	// Define MemTable size and thresholds. Larger memtables and higher thresholds
 	// reduce flush frequency and write stalls at the cost of more peak RAM usage.
 	// These are conservative for modern machines and can be adjusted via env vars.
-	memTableSize := int64(32 * 1024 * 1024) // 32 MiB (less frequent flushes)
+	memTableSize := int64(128 * 1024 * 1024) // 128 MiB (less frequent flushes)
 	if v := os.Getenv("HTND_MEMTABLE_SIZE_MB"); v != "" {
 		if mb, err := strconv.Atoi(v); err == nil && mb > 0 {
 			memTableSize = int64(mb) * 1024 * 1024
 		}
 	}
 
-	memTableStopWritesThreshold := 24 // allow more memtables before stalling
+	memTableStopWritesThreshold := 32 // allow more memtables before stalling
 	if v := os.Getenv("HTND_MEMTABLE_THRESHOLD"); v != "" {
 		if threshold, err := strconv.Atoi(v); err == nil && threshold > 0 {
 			memTableStopWritesThreshold = threshold
@@ -65,9 +65,9 @@ func Options() *pebble.Options {
 
 	baseFileSize := memTableSize * int64(memTableStopWritesThreshold)
 
-	// Cache size: increased default to 4 GiB for better key lookup performance
+	// Cache size: increased default to 8 GiB for better key lookup performance
 	// Use HTND_PEBBLE_CACHE_MB or PEBBLE_CACHE_MB if set.
-	cacheBytes := int64(4 * 1024 * 1024 * 1024) // 4 GiB default
+	cacheBytes := int64(8 * 1024 * 1024 * 1024) // 8 GiB default
 	if v := os.Getenv("HTND_PEBBLE_CACHE_MB"); v != "" {
 		if mb, err := strconv.Atoi(v); err == nil && mb > 0 {
 			cacheBytes = int64(mb) * 1024 * 1024
@@ -103,15 +103,15 @@ func Options() *pebble.Options {
 		// Write/flush tuning
 		MemTableSize:                uint64(memTableSize),
 		MemTableStopWritesThreshold: memTableStopWritesThreshold,
-		// More conservative L0 thresholds to ensure data consistency during IBD
-		// Reduced thresholds help prevent key lookup failures during heavy write loads
+		// More aggressive L0 thresholds for high-throughput operation
+		// Prevents write stalls during sustained high TPS loads
 		L0CompactionThreshold: func() int {
 			if v := os.Getenv("HTND_L0_COMPACTION_THRESHOLD"); v != "" {
 				if threshold, err := strconv.Atoi(v); err == nil && threshold > 0 {
 					return threshold
 				}
 			}
-			return 12
+			return 8
 		}(),
 		L0StopWritesThreshold: func() int {
 			if v := os.Getenv("HTND_L0_STOP_WRITES_THRESHOLD"); v != "" {
@@ -119,7 +119,7 @@ func Options() *pebble.Options {
 					return threshold
 				}
 			}
-			return 32
+			return 48
 		}(),
 
 		// v2: Dynamic compaction concurrency

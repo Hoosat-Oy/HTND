@@ -270,8 +270,12 @@ func (flow *handleRelayInvsFlow) start() error {
 		// We need the PoW hash for processBlock from P2P.
 		missingParents, err := flow.processBlock(block, false)
 		if err != nil {
-			log.Infof("Error processing block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
-			continue
+			if database.IsNotFoundError(err) {
+				missingParents = append(missingParents, inv.Hash)
+			} else {
+				log.Infof("Error processing block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
+				continue
+			}
 		}
 		if len(missingParents) > 0 {
 			err := flow.processOrphan(block)
