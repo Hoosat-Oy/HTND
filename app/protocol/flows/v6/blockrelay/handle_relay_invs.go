@@ -270,8 +270,22 @@ func (flow *handleRelayInvsFlow) start() error {
 		// We need the PoW hash for processBlock from P2P.
 		err = flow.processBlock(inv.Hash, block, false)
 		if err != nil {
-			log.Infof("Error processing block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
-			continue
+			missingParentsError := &ruleerrors.ErrMissingParents{}
+			if errors.As(err, missingParentsError) {
+				if len(missingParentsError.MissingParentHashes) > 0 {
+					err := flow.processOrphan(block)
+					if err != nil {
+						log.Infof("Error processing orphan block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
+					}
+				}
+				continue
+			} else if database.IsNotFoundError(err) {
+				flow.addToRelayInv(inv.Hash)
+				continue
+			} else {
+				log.Infof("Error processing block %s from %s: %s", inv.Hash, flow.netConnection.Address(), err)
+				continue
+			}
 		}
 
 		oldVirtualParents := hashset.New()
@@ -417,19 +431,6 @@ func (flow *handleRelayInvsFlow) addToRelayInv(hash *externalapi.DomainHash) {
 func (flow *handleRelayInvsFlow) processBlock(hash *externalapi.DomainHash, block *externalapi.DomainBlock, powSkip bool) error {
 	err := flow.Domain().Consensus().ValidateAndInsertBlock(block, true, powSkip)
 	if err != nil {
-		missingParentsError := &ruleerrors.ErrMissingParents{}
-		if errors.As(err, missingParentsError) {
-			if len(missingParentsError.MissingParentHashes) > 0 {
-				err := flow.processOrphan(block)
-				if err != nil {
-					log.Infof("Error processing orphan block %s from %s: %s", hash, flow.netConnection.Address(), err)
-				}
-			}
-			return err
-		} else if database.IsNotFoundError(err) {
-			flow.addToRelayInv(hash)
-			return err
-		}
 		return err
 	}
 	return nil
