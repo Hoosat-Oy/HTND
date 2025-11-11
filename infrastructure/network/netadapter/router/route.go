@@ -112,6 +112,21 @@ func (r *Route) DequeueWithTimeout(timeout time.Duration) (appmessage.Message, e
 	}
 }
 
+func (r *Route) DequeueWithTimeoutAndRetry(timeout time.Duration, maxRetries int) (appmessage.Message, error) {
+	for i := 0; i < maxRetries; i++ {
+		select {
+		case <-time.After(timeout):
+			continue
+		case message, isOpen := <-r.channel:
+			if !isOpen {
+				return nil, errors.WithStack(ErrRouteClosed)
+			}
+			return message, nil
+		}
+	}
+	return nil, errors.Wrapf(ErrTimeout, "route '%s' got timeout after %s and %d retries", r.name, timeout, maxRetries)
+}
+
 // Close closes this route
 func (r *Route) Close() {
 	r.closeLock.Lock()
