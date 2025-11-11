@@ -9,11 +9,13 @@ import (
 	"github.com/Hoosat-Oy/HTND/app/protocol/protocolerrors"
 	"github.com/Hoosat-Oy/HTND/domain"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/infrastructure/config"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
+	"github.com/pkg/errors"
 )
 
 // IBDContext is the interface for the context needed for the HandleIBD flow.
@@ -136,10 +138,12 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	}
 
 	// We start by syncing missing bodies over the syncer selected chain
+	log.Infof("Starting sync missing block bodies")
 	err = flow.syncMissingBlockBodies(syncerHeaderSelectedTipHash)
 	if err != nil {
 		return err
 	}
+	log.Info("Check if relay block hash is in the anticone of the syncer selected tip")
 	relayBlockInfo, err := flow.Domain().Consensus().GetBlockInfo(relayBlockHash)
 	if err != nil {
 		return err
@@ -718,10 +722,14 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 				return protocolerrors.Errorf(true, "expected block %s not found in received blocks", expectedHash)
 			}
 
-			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, updateVirtual, true)
+			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, updateVirtual, false)
 			if err != nil {
-				log.Infof("Rejected block %s from %s during IBD: %s", expectedHash, flow.peer, err)
-				continue
+				if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
+					continue
+				} else {
+					log.Infof("Rejected block %s from %s during IBD: %s", expectedHash, flow.peer, err)
+					continue
+				}
 			}
 			err = flow.OnNewBlock(block)
 			if err != nil {

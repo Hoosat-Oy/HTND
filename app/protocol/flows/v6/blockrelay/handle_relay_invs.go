@@ -279,6 +279,8 @@ func (flow *handleRelayInvsFlow) start() error {
 					}
 					continue
 				}
+			} else if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
+				continue
 			} else if database.IsNotFoundError(err) {
 				flow.addToRelayInv(inv.Hash)
 				continue
