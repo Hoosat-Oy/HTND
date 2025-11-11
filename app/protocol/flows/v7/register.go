@@ -1,14 +1,14 @@
-package v6
+package v7
 
 import (
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
 	"github.com/Hoosat-Oy/HTND/app/protocol/common"
 	"github.com/Hoosat-Oy/HTND/app/protocol/flowcontext"
-	"github.com/Hoosat-Oy/HTND/app/protocol/flows/v6/addressexchange"
-	"github.com/Hoosat-Oy/HTND/app/protocol/flows/v6/blockrelay"
-	"github.com/Hoosat-Oy/HTND/app/protocol/flows/v6/ping"
-	"github.com/Hoosat-Oy/HTND/app/protocol/flows/v6/rejects"
-	"github.com/Hoosat-Oy/HTND/app/protocol/flows/v6/transactionrelay"
+	"github.com/Hoosat-Oy/HTND/app/protocol/flows/v7/addressexchange"
+	"github.com/Hoosat-Oy/HTND/app/protocol/flows/v7/blockrelay"
+	"github.com/Hoosat-Oy/HTND/app/protocol/flows/v7/ping"
+	"github.com/Hoosat-Oy/HTND/app/protocol/flows/v7/rejects"
+	"github.com/Hoosat-Oy/HTND/app/protocol/flows/v7/transactionrelay"
 	peerpkg "github.com/Hoosat-Oy/HTND/app/protocol/peer"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter"
 	routerpkg "github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"

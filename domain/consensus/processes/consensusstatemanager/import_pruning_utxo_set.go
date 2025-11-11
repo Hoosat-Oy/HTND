@@ -3,11 +3,13 @@ package consensusstatemanager
 import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/transactionhelper"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/utxo"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
 	"github.com/Hoosat-Oy/HTND/util/staging"
+	"github.com/pkg/errors"
 )
 
 func (csm *consensusStateManager) ImportPruningPointUTXOSet(stagingArea *model.StagingArea, newPruningPoint *externalapi.DomainHash) error {
@@ -45,11 +47,11 @@ func (csm *consensusStateManager) importPruningPointUTXOSet(stagingArea *model.S
 	log.Debugf("The UTXO commitment of the pruning point: %s",
 		newPruningPointHeader.UTXOCommitment())
 
-	// if !newPruningPointHeader.UTXOCommitment().Equal(importedPruningPointMultiset.Hash()) {
-	// 	return errors.Wrapf(ruleerrors.ErrBadPruningPointUTXOSet, "the expected multiset hash of the pruning "+
-	// 		"point UTXO set is %s but got %s\n",
-	// 		newPruningPointHeader.UTXOCommitment(), *importedPruningPointMultiset.Hash())
-	// }
+	if !newPruningPointHeader.UTXOCommitment().Equal(importedPruningPointMultiset.Hash()) {
+		return errors.Wrapf(ruleerrors.ErrBadPruningPointUTXOSet, "the expected multiset hash of the pruning "+
+			"point UTXO set is %s but got %s\n. This is most likely because missing UTXO diff which are caused by disqualified blocks. Please find another node to sync from",
+			newPruningPointHeader.UTXOCommitment(), *importedPruningPointMultiset.Hash())
+	}
 
 	log.Debugf("The new pruning point UTXO commitment validation passed")
 

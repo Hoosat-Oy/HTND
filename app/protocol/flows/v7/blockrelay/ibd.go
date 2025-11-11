@@ -13,6 +13,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/infrastructure/config"
+	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
 	"github.com/Hoosat-Oy/HTND/infrastructure/logger"
 	"github.com/Hoosat-Oy/HTND/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
@@ -768,6 +769,10 @@ func (flow *handleIBDFlow) resolveVirtual(estimatedVirtualDAAScoreTarget uint64)
 		log.Infof("Resolving virtual. Estimated progress: %d%%", percents)
 	})
 	if err != nil {
+		if database.IsNotFoundError(err) {
+			log.Infof("Resolve virtual failed because could not find block UTXO diff or some other required data, that is most likely because you are trying to sync to a chain which has disqualified blocks. Find another peer to connect to.")
+			return err
+		}
 		return err
 	}
 
