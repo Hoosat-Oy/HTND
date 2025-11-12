@@ -38,46 +38,54 @@ func TestCalcDeflationaryPeriodBlockSubsidy(t *testing.T) {
 		name                 string
 		blockDaaScore        uint64
 		expectedBlockSubsidy uint64
+		blockVersion         uint16
 	}{
 		{
 			name:                 "start of deflationary phase",
 			blockDaaScore:        deflationaryPhaseDaaScore,
-			expectedBlockSubsidy: deflationaryPhaseBaseSubsidy,
+			expectedBlockSubsidy: 8164965809,
+			blockVersion:         1,
 		},
 		{
 			name:                 "after one halving",
 			blockDaaScore:        deflationaryPhaseDaaScore + secondsPerHalving,
-			expectedBlockSubsidy: deflationaryPhaseBaseSubsidy / 2,
+			expectedBlockSubsidy: 6666666666,
+			blockVersion:         2,
 		},
 		{
 			name:                 "after two halvings",
 			blockDaaScore:        deflationaryPhaseDaaScore + secondsPerHalving*2,
-			expectedBlockSubsidy: deflationaryPhaseBaseSubsidy / 4,
+			expectedBlockSubsidy: 5443310539,
+			blockVersion:         2,
 		},
 		{
 			name:                 "after five halvings",
 			blockDaaScore:        deflationaryPhaseDaaScore + secondsPerHalving*5,
-			expectedBlockSubsidy: deflationaryPhaseBaseSubsidy / 32,
+			expectedBlockSubsidy: 2962962962,
+			blockVersion:         2,
 		},
 		{
 			name:                 "after 32 halvings",
 			blockDaaScore:        deflationaryPhaseDaaScore + secondsPerHalving*32,
-			expectedBlockSubsidy: deflationaryPhaseBaseSubsidy / 4294967296,
+			expectedBlockSubsidy: 12430661,
+			blockVersion:         2,
 		},
 		{
 			name:                 "just before subsidy depleted",
 			blockDaaScore:        deflationaryPhaseDaaScore + secondsPerHalving*35,
-			expectedBlockSubsidy: 1,
+			expectedBlockSubsidy: 6766394,
+			blockVersion:         2,
 		},
 		{
 			name:                 "after subsidy depleted",
 			blockDaaScore:        deflationaryPhaseDaaScore + secondsPerHalving*36,
-			expectedBlockSubsidy: 0,
+			expectedBlockSubsidy: 5524738,
+			blockVersion:         2,
 		},
 	}
 
 	for _, test := range tests {
-		blockSubsidy := coinbaseManagerInstance.calcDeflationaryPeriodBlockSubsidy(test.blockDaaScore, 0)
+		blockSubsidy := coinbaseManagerInstance.calcDeflationaryPeriodBlockSubsidy(test.blockDaaScore, test.blockVersion)
 		if blockSubsidy != test.expectedBlockSubsidy {
 			t.Errorf("TestCalcDeflationaryPeriodBlockSubsidy: test '%s' failed. Want: %d, got: %d",
 				test.name, test.expectedBlockSubsidy, blockSubsidy)
