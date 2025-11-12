@@ -104,7 +104,7 @@ func (s *server) createUnsignedCompoundTransaction(address string, fromAddresses
 }
 
 // Add this constant next to your others
-const targetCompoundInputs = 88
+var targetCompoundInputs = 88
 
 func (s *server) selectCompoundUTXOs(feePerInput int, fromAddresses []*walletAddress) (
 	selectedUTXOs []*libhtnwallet.UTXO, totalReceived uint64, changeSompi uint64, err error) {
@@ -115,6 +115,32 @@ func (s *server) selectCompoundUTXOs(feePerInput int, fromAddresses []*walletAdd
 	dagInfo, err := s.rpcClient.GetBlockDAGInfo()
 	if err != nil {
 		return nil, 0, 0, errors.Wrap(err, "failed to get DAG info")
+	}
+
+	s.sortUTXOsByAmountDescending()
+	for _, highestUTXO := range s.utxosSortedByAmount {
+		if len(selectedUTXOs) >= 1 {
+			break
+		}
+		if (fromAddresses != nil && !walletAddressesContain(fromAddresses, highestUTXO.address)) ||
+			!s.isUTXOSpendable(highestUTXO, dagInfo.VirtualDAAScore) {
+			continue
+		}
+
+		if broadcastTime, ok := s.usedOutpoints[*highestUTXO.Outpoint]; ok {
+			if s.usedOutpointHasExpired(broadcastTime) {
+				delete(s.usedOutpoints, *highestUTXO.Outpoint)
+			} else {
+				continue
+			}
+		}
+
+		selectedUTXOs = append(selectedUTXOs, &libhtnwallet.UTXO{
+			Outpoint:       highestUTXO.Outpoint,
+			UTXOEntry:      highestUTXO.UTXOEntry,
+			DerivationPath: s.walletAddressPath(highestUTXO.address),
+		})
+		totalValue += highestUTXO.UTXOEntry.Amount()
 	}
 
 	s.sortUTXOsByAmountAscending()
