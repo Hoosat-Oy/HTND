@@ -61,42 +61,60 @@ func (v *transactionValidator) ValidateTransactionInContextIgnoringUTXO(stagingA
 // populates its fee field.
 //
 // Note: if the function fails, there's no guarantee that the transaction fee field will remain unaffected.
-func (v *transactionValidator) ValidateTransactionInContextAndPopulateFee(stagingArea *model.StagingArea,
-	tx *externalapi.DomainTransaction, povBlockHash *externalapi.DomainHash, povDAAScore uint64) error {
+func (v *transactionValidator) ValidateTransactionInContextAndPopulateFee(
+	stagingArea *model.StagingArea,
+	tx *externalapi.DomainTransaction,
+	povBlockHash *externalapi.DomainHash,
+	povDAAScore uint64,
+) error {
 
-	err := v.checkTransactionCoinbaseMaturity(stagingArea, povBlockHash, tx, povDAAScore)
-	if err != nil {
-		return err
-	}
-
+	// 1. Compute the fee – this as it is always needed
 	totalSompiIn, err := v.checkTransactionInputAmounts(tx)
 	if err != nil {
 		return err
 	}
-
 	totalSompiOut, err := v.checkTransactionOutputAmounts(tx, totalSompiIn)
 	if err != nil {
 		return err
 	}
-
 	tx.Fee = totalSompiIn - totalSompiOut
 
-	err = v.checkTransactionSequenceLock(stagingArea, povBlockHash, tx, povDAAScore)
-	if err != nil {
-		return err
+	// 2. The remaining checks can run in parallel.
+	type result struct {
+		idx int   // original order (optional, for debugging)
+		err error // nil on success
 	}
 
-	err = v.validateTransactionSigOpCounts(tx)
-	if err != nil {
-		return err
-	}
+	// channels
+	errCh := make(chan result, 4)
 
-	err = v.validateTransactionScripts(tx)
-	if err != nil {
-		return err
-	}
+	// launch goroutines
+	go func() {
+		err := v.checkTransactionCoinbaseMaturity(stagingArea, povBlockHash, tx, povDAAScore)
+		errCh <- result{idx: 0, err: err}
+	}()
+	go func() {
+		err := v.checkTransactionSequenceLock(stagingArea, povBlockHash, tx, povDAAScore)
+		errCh <- result{idx: 1, err: err}
+	}()
+	go func() {
+		err := v.validateTransactionSigOpCounts(tx)
+		errCh <- result{idx: 2, err: err}
+	}()
+	go func() {
+		err := v.validateTransactionScripts(tx)
+		errCh <- result{idx: 3, err: err}
+	}()
 
-	return nil
+	// collect results – return the *first* error
+	var firstErr error
+	for i := 0; i < 4; i++ {
+		res := <-errCh
+		if res.err != nil && firstErr == nil {
+			firstErr = res.err // keep the first one
+		}
+	}
+	return firstErr
 }
 
 func (v *transactionValidator) checkTransactionCoinbaseMaturity(stagingArea *model.StagingArea,

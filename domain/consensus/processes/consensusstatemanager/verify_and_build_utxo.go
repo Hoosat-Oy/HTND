@@ -2,6 +2,7 @@ package consensusstatemanager
 
 import (
 	"sort"
+	"sync"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/transactionhelper"
@@ -71,31 +72,64 @@ func (csm *consensusStateManager) validateBlockTransactionsAgainstPastUTXO(stagi
 	}
 	log.Tracef("The past median time of %s is %d", blockHash, selectedParentMedianTime)
 
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var stagingMu sync.Mutex
+	var firstErr error
+	done := make(chan struct{}) // Signal to stop other goroutines on first error
+
 	for i, transaction := range block.Transactions {
-		transactionID := consensushashing.TransactionID(transaction)
-		log.Tracef("Validating transaction %s in block %s against "+
-			"the block's past UTXO", transactionID, blockHash)
 		if i == transactionhelper.CoinbaseTransactionIndex {
-			log.Tracef("Skipping transaction %s because it is the coinbase", transactionID)
+			log.Tracef("Skipping transaction %s because it is the coinbase", consensushashing.TransactionID(transaction))
 			continue
 		}
 
-		log.Tracef("Populating transaction %s with UTXO entries", transactionID)
-		err = csm.populateTransactionWithUTXOEntriesFromVirtualOrDiff(stagingArea, transaction, pastUTXODiff)
-		if err != nil {
-			return err
-		}
+		wg.Add(1)
+		go func(tx *externalapi.DomainTransaction) {
+			defer wg.Done()
 
-		log.Tracef("Validating transaction %s and populating it with fee", transactionID)
-		err = csm.transactionValidator.ValidateTransactionInContextAndPopulateFee(
-			stagingArea, transaction, blockHash, block.Header.DAAScore())
-		if err != nil {
-			return err
-		}
-		log.Tracef("Validation against the block's past UTXO "+
-			"passed for transaction %s in block %s", transactionID, blockHash)
+			select {
+			case <-done:
+				return // Early exit if another goroutine found an error
+			default:
+			}
+
+			transactionID := consensushashing.TransactionID(tx)
+			log.Tracef("Validating transaction %s in block %s against the block's past UTXO", transactionID, blockHash)
+
+			// Populate UTXO entries
+			stagingMu.Lock()
+			err := csm.populateTransactionWithUTXOEntriesFromVirtualOrDiff(stagingArea, tx, pastUTXODiff)
+			stagingMu.Unlock()
+			if err != nil {
+				mu.Lock()
+				if firstErr == nil {
+					firstErr = err
+					close(done) // Signal others to stop
+				}
+				mu.Unlock()
+				return
+			}
+
+			// Validate transaction
+			err = csm.transactionValidator.ValidateTransactionInContextAndPopulateFee(
+				stagingArea, tx, blockHash, block.Header.DAAScore())
+			if err != nil {
+				mu.Lock()
+				if firstErr == nil {
+					firstErr = err
+					close(done)
+				}
+				mu.Unlock()
+				return
+			}
+
+			log.Tracef("Validation against the block's past UTXO passed for transaction %s in block %s", transactionID, blockHash)
+		}(transaction)
 	}
-	return nil
+
+	wg.Wait()
+	return firstErr
 }
 
 func (csm *consensusStateManager) validateAcceptedIDMerkleRoot(block *externalapi.DomainBlock,
