@@ -230,6 +230,19 @@ func (s *server) sortUTXOsByAmountAscending() {
 	})
 }
 
+func (s *server) sortUTXOsByAmountDescending() {
+	slices.SortStableFunc(s.utxosSortedByAmount, func(a, b *walletUTXO) int {
+		switch {
+		case a.UTXOEntry.Amount() < b.UTXOEntry.Amount():
+			return 1
+		case a.UTXOEntry.Amount() > b.UTXOEntry.Amount():
+			return -1
+		default:
+			return 0
+		}
+	})
+}
+
 func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uint64, fromAddresses []*walletAddress) (
 	selectedUTXOs []*libhtnwallet.UTXO, totalReceived uint64, changeSompi uint64, err error) {
 
@@ -241,7 +254,7 @@ func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uin
 		return nil, 0, 0, err
 	}
 
-	s.sortUTXOsByAmountAscending()
+	s.sortUTXOsByAmountDescending()
 
 	for _, utxo := range s.utxosSortedByAmount {
 		if (fromAddresses != nil && !walletAddressesContain(fromAddresses, utxo.address)) ||
