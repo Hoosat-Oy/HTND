@@ -1203,6 +1203,7 @@ func (s *consensus) isNearlySyncedNoLock() (bool, error) {
 }
 
 func (s *consensus) GetBlockByTransactionID(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainBlock, error) {
+
 	stagingArea := model.NewStagingArea()
 
 	// Get an iterator to go through all blocks
@@ -1220,8 +1221,10 @@ func (s *consensus) GetBlockByTransactionID(transactionID *externalapi.DomainTra
 				return nil, err
 			}
 
-			// Get the block
+			// Hold lock briefly for block retrieval
+			s.lock.Lock()
 			block, err := s.blockStore.Block(s.databaseContext, stagingArea, blockHash)
+			s.lock.Unlock()
 			if err != nil {
 				// Skip blocks that can't be retrieved (might be pruned)
 				if !iterator.Next() {
