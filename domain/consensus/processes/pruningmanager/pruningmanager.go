@@ -1099,7 +1099,7 @@ func (pm *pruningManager) updatePruningPoint() error {
 		return err
 	}
 
-	log.Info("Restoring the pruning point UTXO set")
+	// log.Info("Restoring the pruning point UTXO set")
 	// utxoSetDiff, err := pm.calculateDiffBetweenPreviousAndCurrentPruningPoints(stagingArea, pruningPoint)
 	// log.Info("Restored the pruning point UTXO set")
 	// if err != nil {
