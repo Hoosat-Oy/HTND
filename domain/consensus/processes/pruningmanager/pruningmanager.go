@@ -787,6 +787,7 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.calculateDiffBetweenPreviousAndCurrentPruningPoints")
 	defer onEnd()
 	if currentPruningHash.Equal(pm.genesisHash) {
+		log.Infof("Current pruning point hash is equal to genesis")
 		iter, err := pm.consensusStateManager.RestorePastUTXOSetIterator(stagingArea, currentPruningHash)
 		if err != nil {
 			return nil, err
@@ -806,6 +807,7 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 		return utxo.NewUTXODiffFromCollections(utxo.NewUTXOCollection(set), utxo.NewUTXOCollection(make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)))
 	}
 
+	log.Infof("Getting current pruning point index")
 	pruningPointIndex, err := pm.pruningStore.CurrentPruningPointIndex(pm.databaseContext, stagingArea)
 	if err != nil {
 		return nil, err
@@ -815,14 +817,17 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 		return nil, errors.Errorf("previous pruning point doesn't exist")
 	}
 
+	log.Infof("Getting previous pruning point hash")
 	previousPruningHash, err := pm.pruningStore.PruningPointByIndex(pm.databaseContext, stagingArea, pruningPointIndex-1)
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("Getting currnet pruning point ghostdag data")
 	currentPruningGhostDAG, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningHash, false)
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("Getting previous pruning point ghostdag data")
 	previousPruningGhostDAG, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, previousPruningHash, false)
 	if err != nil {
 		return nil, err
@@ -838,6 +843,8 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 
 	var diffHashesFromPrevious []*externalapi.DomainHash
 	var diffHashesFromCurrent []*externalapi.DomainHash
+
+	log.Infof("Start loop 1")
 	for {
 		// if currentPruningCurrentDiffChildBlueWork > previousPruningCurrentDiffChildBlueWork
 		if currentPruningCurrentDiffChildBlueWork.Cmp(previousPruningCurrentDiffChildBlueWork) == 1 {
@@ -866,19 +873,29 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 			currentPruningCurrentDiffChildBlueWork = diffChildGhostDag.BlueWork()
 		}
 	}
+	log.Infof("End loop 1")
 	// The order in which we apply the diffs should be from top to bottom, but we traversed from bottom to top
 	// so we apply the diffs in reverse order.
+
+	log.Infof("Start old diff loop")
 	oldDiff := utxo.NewMutableUTXODiff()
+	log.Infof("Diff hashes from previous %d", len(diffHashesFromPrevious))
 	for i := len(diffHashesFromPrevious) - 1; i >= 0; i-- {
+		log.Infof("Get utxodiff %d", i)
 		utxoDiff, err := pm.utxoDiffStore.UTXODiff(pm.databaseContext, stagingArea, diffHashesFromPrevious[i])
 		if err != nil {
 			return nil, err
 		}
+		log.Infof("Got utxodiff %d", i)
+		log.Infof("With Diff in place %d", i)
 		err = oldDiff.WithDiffInPlace(utxoDiff)
 		if err != nil {
 			return nil, err
 		}
+		log.Infof("Done with Diff in place %d", i)
 	}
+	log.Infof("End old diff loop")
+	log.Infof("Start new diff loop")
 	newDiff := utxo.NewMutableUTXODiff()
 	for i := len(diffHashesFromCurrent) - 1; i >= 0; i-- {
 		utxoDiff, err := pm.utxoDiffStore.UTXODiff(pm.databaseContext, stagingArea, diffHashesFromCurrent[i])
@@ -890,6 +907,7 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 			return nil, err
 		}
 	}
+	log.Infof("End end diff loop")
 	return oldDiff.DiffFrom(newDiff.ToImmutable())
 }
 
@@ -1075,46 +1093,50 @@ func (pm *pruningManager) updatePruningPoint() error {
 	defer logger.LogMemoryStats(log, "updatePruningPoint end")
 
 	stagingArea := model.NewStagingArea()
-	log.Debugf("Getting the pruning point")
+	log.Info("Getting the pruning point")
 	pruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
 	if err != nil {
 		return err
 	}
 
-	log.Debugf("Restoring the pruning point UTXO set")
-	utxoSetDiff, err := pm.calculateDiffBetweenPreviousAndCurrentPruningPoints(stagingArea, pruningPoint)
+	log.Info("Restoring the pruning point UTXO set")
+	// utxoSetDiff, err := pm.calculateDiffBetweenPreviousAndCurrentPruningPoints(stagingArea, pruningPoint)
+	// log.Info("Restored the pruning point UTXO set")
+	// if err != nil {
+	// 	log.Infof("Calculating pruning points diff through utxo diff children failed %s. Falling back to calculation "+
+	// 		"through acceptance data", err)
+	// 	return err
+	// }
+	log.Info("Restoring the pruning point UTXO set from acceptance")
+	utxoSetDiff, err := pm.calculateDiffBetweenPreviousAndCurrentPruningPointsUsingAcceptanceData(stagingArea, pruningPoint)
 	if err != nil {
-		log.Infof("Calculating pruning points diff through utxo diff children failed %s. Falling back to calculation "+
-			"through acceptance data", err)
-
-		utxoSetDiff, err = pm.calculateDiffBetweenPreviousAndCurrentPruningPointsUsingAcceptanceData(stagingArea, pruningPoint)
-		if err != nil {
-			return err
-		}
+		return err
 	}
-	log.Debugf("Updating the pruning point UTXO set")
+	log.Info("Updating the pruning point UTXO set")
 	err = pm.pruningStore.UpdatePruningPointUTXOSet(pm.databaseContext, utxoSetDiff)
 	if err != nil {
 		return err
 	}
+	log.Info("Validating the UTXO set fits commitment")
 	if pm.shouldSanityCheckPruningUTXOSet && !pruningPoint.Equal(pm.genesisHash) {
 		err = pm.validateUTXOSetFitsCommitment(stagingArea, pruningPoint)
 		if err != nil {
 			return err
 		}
 	}
-	log.Infof("Deletion Depth: %d", pm.deletionDepth)
+	log.Infof("Deletion of past blocks")
 	err = pm.deletePastBlocks(stagingArea, pruningPoint)
 	if err != nil {
 		return err
 	}
 
+	log.Info("Commit all changes")
 	err = staging.CommitAllChanges(pm.databaseContext, stagingArea)
 	if err != nil {
 		return err
 	}
 
-	log.Debugf("Finishing updating the pruning point UTXO set")
+	log.Info("Finishing updating the pruning point UTXO set")
 	return pm.pruningStore.FinishUpdatingPruningPointUTXOSet(pm.databaseContext)
 }
 
