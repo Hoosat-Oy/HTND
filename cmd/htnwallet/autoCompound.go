@@ -121,7 +121,9 @@ func compoundOnce(
 		if strings.Contains(err.Error(), "Compound transaction rate limit exceeded") {
 			return errRateLimited
 		}
-		return errors.Wrap(err, "broadcast failed")
+		fmt.Printf("[%s] NOTHING TO COMPOUND, backing off for 30s\n", time.Now().Format("15:04:05"))
+		time.Sleep(30 * time.Second)
+		return nil
 	}
 
 	// 4. Success
