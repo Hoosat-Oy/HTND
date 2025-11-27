@@ -90,6 +90,13 @@ func (iud *immutableUTXODiff) Reversed() externalapi.UTXODiff {
 	}
 }
 
+func (iud *immutableUTXODiff) Equal(other externalapi.UTXODiff) bool {
+	if iud.isInvalidated {
+		panic(errors.New("Attempt to read from an invalidated UTXODiff"))
+	}
+	return iud.mutableUTXODiff.Equal(other)
+}
+
 func (iud *immutableUTXODiff) cloneMutable() *mutableUTXODiff {
 	if iud == nil {
 		return nil

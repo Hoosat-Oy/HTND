@@ -16,6 +16,7 @@ type UTXODiff interface {
 	DiffFrom(other UTXODiff) (UTXODiff, error)
 	Reversed() UTXODiff
 	CloneMutable() MutableUTXODiff
+	Equal(other UTXODiff) bool
 }
 
 // MutableUTXODiff represents a UTXO-Diff that can be mutated

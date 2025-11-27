@@ -147,10 +147,10 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	}
 
 	blockStatusStore := blockstatusstore.New(prefixBucket, pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
-	multisetStore := multisetstore.New(prefixBucket, 1000, preallocateCaches)
+	multisetStore := multisetstore.New(prefixBucket, 50_000, preallocateCaches)
 	pruningStore := pruningstore.New(prefixBucket, 2, preallocateCaches)
-	utxoDiffStore := utxodiffstore.New(prefixBucket, 1000, preallocateCaches)
-	consensusStateStore := consensusstatestore.New(prefixBucket, 25_000, preallocateCaches)
+	utxoDiffStore := utxodiffstore.New(prefixBucket, 50_000, preallocateCaches)
+	consensusStateStore := consensusstatestore.New(prefixBucket, 50_000, preallocateCaches)
 
 	headersSelectedTipStore := headersselectedtipstore.New(prefixBucket)
 	finalityStore := finalitystore.New(prefixBucket, 1000, preallocateCaches)

@@ -93,6 +93,34 @@ func (mud *mutableUTXODiff) ToAdd() externalapi.UTXOCollection {
 func (mud *mutableUTXODiff) ToRemove() externalapi.UTXOCollection {
 	return mud.toRemove
 }
+
+func (mud *mutableUTXODiff) Equal(other externalapi.UTXODiff) bool {
+	otherToAdd := other.ToAdd()
+	otherToRemove := other.ToRemove()
+	return utxoCollectionsEqual(mud.toAdd, otherToAdd) && utxoCollectionsEqual(mud.toRemove, otherToRemove)
+}
+
+func utxoCollectionsEqual(a, b externalapi.UTXOCollection) bool {
+	if a.Len() != b.Len() {
+		return false
+	}
+	iterator := a.Iterator()
+	for iterator.First(); iterator.Next(); {
+		outpoint, entryA, err := iterator.Get()
+		if err != nil {
+			return false
+		}
+		entryB, ok := b.Get(outpoint)
+		if !ok {
+			return false
+		}
+		if !entryA.Equal(entryB) {
+			return false
+		}
+	}
+	return true
+}
+
 func (mud *mutableUTXODiff) AddTransaction(transaction *externalapi.DomainTransaction, blockDAAScore uint64) error {
 	mud.invalidateImmutableReferences()
 
