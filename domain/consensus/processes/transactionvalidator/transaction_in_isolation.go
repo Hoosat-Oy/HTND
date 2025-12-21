@@ -216,8 +216,9 @@ func IsValidJSONObject(data []byte) (bool, error) {
 	}
 
 	// Optimized binary/file detection with early termination
-	if hasEncodedFileContent(obj, 0) {
-		return false, fmt.Errorf("contains encoded file or binary data")
+	err = hasEncodedFileContent(obj, 0)
+	if err != nil {
+		return false, fmt.Errorf("contains encoded file or binary data %v", err)
 	}
 
 	return true, nil
@@ -264,11 +265,11 @@ func containsSuspiciousBinarySignatures(data []byte) bool {
 }
 
 // hasEncodedFileContent recursively checks JSON object for encoded binary content with depth limit
-func hasEncodedFileContent(data interface{}, depth int) bool {
+func hasEncodedFileContent(data interface{}, depth int) error {
 	// Prevent deep recursion that could cause stack overflow
 	const maxDepth = 10
 	if depth > maxDepth {
-		return true // Suspicious deeply nested structure
+		return errors.New("suspicious deeply nested structure") // Suspicious deeply nested structure
 	}
 
 	switch v := data.(type) {
@@ -279,36 +280,36 @@ func hasEncodedFileContent(data interface{}, depth int) bool {
 		for key, val := range v {
 			keyCount++
 			if keyCount > maxKeys {
-				return true // Too many keys, suspicious
+				return errors.New("too many keys in object") // Too many keys, suspicious
 			}
 
 			// Check for suspicious key names
 			if isSuspiciousKey(key) {
-				return true
+				return errors.New("suspicious key name found")
 			}
 
-			if hasEncodedFileContent(val, depth+1) {
-				return true
+			if err := hasEncodedFileContent(val, depth+1); err != nil {
+				return err
 			}
 		}
 	case []interface{}:
 		// Limit array size for performance
 		const maxArraySize = 100
 		if len(v) > maxArraySize {
-			return true // Suspicious large array
+			return errors.New("suspicious large array")
 		}
 
 		for _, val := range v {
-			if hasEncodedFileContent(val, depth+1) {
-				return true
+			if err := hasEncodedFileContent(val, depth+1); err != nil {
+				return err
 			}
 		}
 	case string:
 		return isEncodedBinaryString(v)
 	case []byte:
-		return true // Direct byte slices are binary
+		return errors.New("direct byte slices are binary")
 	}
-	return false
+	return nil
 }
 
 // isSuspiciousKey checks for key names that commonly indicate file content
@@ -329,10 +330,10 @@ func isSuspiciousKey(key string) bool {
 }
 
 // isEncodedBinaryString optimized check for encoded binary content
-func isEncodedBinaryString(s string) bool {
+func isEncodedBinaryString(s string) error {
 	// Quick length checks for performance
 	if len(s) == 0 {
-		return false
+		return nil
 	}
 
 	// Strings over a certain size are more likely to be encoded files
@@ -340,7 +341,7 @@ func isEncodedBinaryString(s string) bool {
 	if len(s) > suspiciousLength {
 		// Check entropy - high entropy suggests encoded binary
 		if hasHighEntropy(s) {
-			return true
+			return errors.New("high entropy string detected")
 		}
 	}
 
@@ -349,7 +350,7 @@ func isEncodedBinaryString(s string) bool {
 		decoded, err := base64.StdEncoding.DecodeString(s)
 		if err == nil && len(decoded) > suspiciousLength { // Only check larger decoded content
 			if hasFileSignature(decoded) || isLikelyImage(decoded) {
-				return true
+				return errors.New("encoded file or binary data detected")
 			}
 		}
 
@@ -357,7 +358,7 @@ func isEncodedBinaryString(s string) bool {
 		decoded, err = base64.URLEncoding.DecodeString(s)
 		if err == nil && len(decoded) > suspiciousLength {
 			if hasFileSignature(decoded) || isLikelyImage(decoded) {
-				return true
+				return errors.New("encoded file or binary data detected")
 			}
 		}
 	}
@@ -367,12 +368,12 @@ func isEncodedBinaryString(s string) bool {
 		decoded, err := hex.DecodeString(strings.ToLower(s))
 		if err == nil {
 			if hasFileSignature(decoded) || isLikelyImage(decoded) {
-				return true
+				return errors.New("encoded file or binary data detected")
 			}
 		}
 	}
 
-	return false
+	return nil
 }
 
 // hasHighEntropy checks if string has high entropy (indicating encoded data)
@@ -398,7 +399,7 @@ func hasHighEntropy(s string) bool {
 	}
 
 	// High entropy threshold (close to random) - adjusted for more realistic detection
-	return entropy > 2.5
+	return entropy > 4.5
 }
 
 // isLikelyBase64 fast check for base64 patterns

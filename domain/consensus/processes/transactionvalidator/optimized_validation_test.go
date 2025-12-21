@@ -82,6 +82,28 @@ func TestIsValidJSONObjectOptimized(t *testing.T) {
 			expected: true,
 		},
 		{
+			name: "Valid poll creation JSON with longer text",
+			input: []byte(`{
+  "type": "poll_create",
+  "v": 1,
+  "title": "[HTN] Should Tonto stop addressing FUD? ",
+  "description": "We have our HTN voting platform and every person who is spreading FUD can instead come here to create polls to see what HTN community thinks about their opinions. ",
+  "options": [
+    "Whatever, don't really care.",
+    "Yes! Tell them to voice their opinions here and stop addressing the FUD.",
+    "Just continue addressing the FUD!",
+    "Both! Keep addressing the FUD and tell them to voice their opinions here. "
+  ],
+  "startDate": 1766154300000,
+  "endDate": 1772288700000,
+  "votingType": "single",
+  "votingMode": "standard",
+  "category": "community",
+  "minBalance": 100
+}`),
+			expected: true,
+		},
+		{
 			name: "valid vote cast JSON",
 			input: []byte(`{
   "type": "vote_cast",
@@ -99,7 +121,8 @@ func TestIsValidJSONObjectOptimized(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			isValid, err := IsValidJSONObject(tt.input)
 			if isValid != tt.expected {
-				t.Errorf("IsValidJSONObject() = %v, expected %v", isValid, tt.expected)
+				t.Errorf("%v", err.Error())
+				t.Errorf("%s IsValidJSONObject() = %v, expected %v", tt.name, isValid, tt.expected)
 			}
 			if !tt.expected && err == nil {
 				t.Errorf("Expected error but got none")
