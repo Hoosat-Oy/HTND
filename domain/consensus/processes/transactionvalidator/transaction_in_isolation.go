@@ -399,7 +399,7 @@ func hasHighEntropy(s string, DAAScore uint64) bool {
 
 	// High entropy threshold (close to random) - adjusted for more realistic detection
 	// TODO: update current DAA Score when doing release.
-	if DAAScore >= 110_883_879+12_960_000 {
+	if DAAScore >= 110_996_218+12_960_000 {
 		return entropy > 4.5
 	} else {
 		return entropy > 2
