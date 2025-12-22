@@ -119,7 +119,7 @@ func TestIsValidJSONObjectOptimized(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			isValid, err := IsValidJSONObject(tt.input)
+			isValid, err := IsValidJSONObject(tt.input, 0)
 			if isValid != tt.expected {
 				t.Errorf("%v", err.Error())
 				t.Errorf("%s IsValidJSONObject() = %v, expected %v", tt.name, isValid, tt.expected)
@@ -161,7 +161,7 @@ func TestHasHighEntropy(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := hasHighEntropy(tt.input)
+			result := hasHighEntropy(tt.input, 0)
 			if result != tt.expected {
 				t.Errorf("hasHighEntropy() = %v, expected %v", result, tt.expected)
 			}
@@ -342,7 +342,7 @@ func BenchmarkIsValidJSONObjectSimple(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = IsValidJSONObject(testData)
+		_, _ = IsValidJSONObject(testData, 0)
 	}
 }
 
@@ -353,7 +353,7 @@ func BenchmarkIsValidJSONObjectWithEncodedData(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = IsValidJSONObject(testData)
+		_, _ = IsValidJSONObject(testData, 0)
 	}
 }
 
@@ -414,7 +414,7 @@ func TestDataTransactionPayloadValidation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			isValid, err := IsValidJSONObject(tt.payload)
+			isValid, err := IsValidJSONObject(tt.payload, 0)
 			if isValid != tt.expected {
 				t.Errorf("IsValidJSONObject() = %v, expected %v. Error: %v", isValid, tt.expected, err)
 			}
