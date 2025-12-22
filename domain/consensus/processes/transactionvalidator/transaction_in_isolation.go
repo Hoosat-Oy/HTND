@@ -45,7 +45,7 @@ func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.Do
 		return err
 	}
 
-	err = v.checkDataTransactionPayload(tx)
+	err = v.checkDataTransactionPayload(tx, povDAAScore)
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,6 @@ func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.Do
 		return err
 	}
 
-	// TODO: fill it with the node's subnetwork id.
 	err = v.checkTransactionSubnetwork(tx, nil, povDAAScore)
 	if err != nil {
 		return err
@@ -191,7 +190,7 @@ func (v *transactionValidator) checkNativeTransactionPayload(tx *externalapi.Dom
 	return nil
 }
 
-func IsValidJSONObject(data []byte) (bool, error) {
+func IsValidJSONObject(data []byte, DAAScore uint64) (bool, error) {
 	if len(data) == 0 {
 		return false, fmt.Errorf("empty input data")
 	}
@@ -216,7 +215,7 @@ func IsValidJSONObject(data []byte) (bool, error) {
 	}
 
 	// Optimized binary/file detection with early termination
-	err = hasEncodedFileContent(obj, 0)
+	err = hasEncodedFileContent(obj, 0, DAAScore)
 	if err != nil {
 		return false, fmt.Errorf("contains encoded file or binary data %v", err)
 	}
@@ -265,7 +264,7 @@ func containsSuspiciousBinarySignatures(data []byte) bool {
 }
 
 // hasEncodedFileContent recursively checks JSON object for encoded binary content with depth limit
-func hasEncodedFileContent(data interface{}, depth int) error {
+func hasEncodedFileContent(data interface{}, depth int, DAAScore uint64) error {
 	// Prevent deep recursion that could cause stack overflow
 	const maxDepth = 10
 	if depth > maxDepth {
@@ -288,7 +287,7 @@ func hasEncodedFileContent(data interface{}, depth int) error {
 				return errors.New("suspicious key name found")
 			}
 
-			if err := hasEncodedFileContent(val, depth+1); err != nil {
+			if err := hasEncodedFileContent(val, depth+1, DAAScore); err != nil {
 				return err
 			}
 		}
@@ -300,12 +299,12 @@ func hasEncodedFileContent(data interface{}, depth int) error {
 		}
 
 		for _, val := range v {
-			if err := hasEncodedFileContent(val, depth+1); err != nil {
+			if err := hasEncodedFileContent(val, depth+1, DAAScore); err != nil {
 				return err
 			}
 		}
 	case string:
-		return isEncodedBinaryString(v)
+		return isEncodedBinaryString(v, DAAScore)
 	case []byte:
 		return errors.New("direct byte slices are binary")
 	}
@@ -330,7 +329,7 @@ func isSuspiciousKey(key string) bool {
 }
 
 // isEncodedBinaryString optimized check for encoded binary content
-func isEncodedBinaryString(s string) error {
+func isEncodedBinaryString(s string, DAAScore uint64) error {
 	// Quick length checks for performance
 	if len(s) == 0 {
 		return nil
@@ -340,7 +339,7 @@ func isEncodedBinaryString(s string) error {
 	const suspiciousLength = 64
 	if len(s) > suspiciousLength {
 		// Check entropy - high entropy suggests encoded binary
-		if hasHighEntropy(s) {
+		if hasHighEntropy(s, DAAScore) {
 			return errors.New("high entropy string detected")
 		}
 	}
@@ -377,7 +376,7 @@ func isEncodedBinaryString(s string) error {
 }
 
 // hasHighEntropy checks if string has high entropy (indicating encoded data)
-func hasHighEntropy(s string) bool {
+func hasHighEntropy(s string, DAAScore uint64) bool {
 	if len(s) < 16 {
 		return false
 	}
@@ -399,7 +398,12 @@ func hasHighEntropy(s string) bool {
 	}
 
 	// High entropy threshold (close to random) - adjusted for more realistic detection
-	return entropy > 4.5
+	// TODO: update current DAA Score when doing release.
+	if DAAScore >= 110_883_879+12_960_000 {
+		return entropy > 4.5
+	} else {
+		return entropy > 2
+	}
 }
 
 // isLikelyBase64 fast check for base64 patterns
@@ -466,7 +470,7 @@ func isLikelyHexString(s string) bool {
 	return true
 }
 
-func (v *transactionValidator) checkDataTransactionPayload(tx *externalapi.DomainTransaction) error {
+func (v *transactionValidator) checkDataTransactionPayload(tx *externalapi.DomainTransaction, DAAScore uint64) error {
 	if tx.SubnetworkID != subnetworks.SubnetworkIDData || len(tx.Payload) <= 0 {
 		return nil
 	}
@@ -475,7 +479,7 @@ func (v *transactionValidator) checkDataTransactionPayload(tx *externalapi.Domai
 		return errors.Wrapf(ruleerrors.ErrTooLargePayload, "data subnetwork transaction payload is too large!")
 	}
 
-	if isValid, err := IsValidJSONObject(tx.Payload); !isValid {
+	if isValid, err := IsValidJSONObject(tx.Payload, DAAScore); !isValid {
 		return errors.Wrapf(ruleerrors.ErrInvalidPayload, "data subnetwork transaction payload is not valid JSON: %v", err)
 	}
 
