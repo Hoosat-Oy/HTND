@@ -135,13 +135,13 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 
 	// Data Structures
 	mergeDepthRootStore := mergedepthrootstore.New(prefixBucket, 1000, preallocateCaches)
-	daaWindowStore := daawindowstore.New(prefixBucket, 5_000, preallocateCaches)
+	daaWindowStore := daawindowstore.New(prefixBucket, 10_000, preallocateCaches)
 	acceptanceDataStore := acceptancedatastore.New(prefixBucket, 1000, preallocateCaches)
 	blockStore, err := blockstore.New(dbManager, prefixBucket, 1000, preallocateCaches)
 	if err != nil {
 		return nil, false, err
 	}
-	blockHeaderStore, err := blockheaderstore.New(dbManager, prefixBucket, 5_000, preallocateCaches)
+	blockHeaderStore, err := blockheaderstore.New(dbManager, prefixBucket, 50_000, preallocateCaches)
 	if err != nil {
 		return nil, false, err
 	}
@@ -150,13 +150,13 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	multisetStore := multisetstore.New(prefixBucket, 1000, preallocateCaches)
 	pruningStore := pruningstore.New(prefixBucket, 2, preallocateCaches)
 	utxoDiffStore := utxodiffstore.New(prefixBucket, 1000, preallocateCaches)
-	consensusStateStore := consensusstatestore.New(prefixBucket, 1000, preallocateCaches)
+	consensusStateStore := consensusstatestore.New(prefixBucket, 50_000, preallocateCaches)
 
 	headersSelectedTipStore := headersselectedtipstore.New(prefixBucket)
 	finalityStore := finalitystore.New(prefixBucket, 1000, preallocateCaches)
 	headersSelectedChainStore := headersselectedchainstore.New(prefixBucket, pruningWindowSizeForCaches, preallocateCaches)
 	daaBlocksStore := daablocksstore.New(prefixBucket, pruningWindowSizeForCaches, int(config.FinalityDepth()), preallocateCaches)
-	windowHeapSliceStore := blockwindowheapslicestore.New(1000, preallocateCaches)
+	windowHeapSliceStore := blockwindowheapslicestore.New(10_000, preallocateCaches)
 
 	newReachabilityDataStore := reachabilitydatastore.New(prefixBucket, pruningWindowSizePlusFinalityDepthForCache*2, preallocateCaches)
 	blockRelationStores, reachabilityDataStores, ghostdagDataStores := dagStores(config, prefixBucket, pruningWindowSizePlusFinalityDepthForCache, pruningWindowSizeForCaches, preallocateCaches)
