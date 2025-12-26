@@ -65,9 +65,8 @@ func Options() *pebble.Options {
 
 	baseFileSize := memTableSize * int64(memTableStopWritesThreshold)
 
-	// Cache size: increased default to 8 GiB for better key lookup performance
 	// Use HTND_PEBBLE_CACHE_MB or PEBBLE_CACHE_MB if set.
-	cacheBytes := int64(8 * 1024 * 1024 * 1024) // 8 GiB default
+	cacheBytes := int64(1 * 1024 * 1024 * 1024) // 1 GiB default
 	if v := os.Getenv("HTND_PEBBLE_CACHE_MB"); v != "" {
 		if mb, err := strconv.Atoi(v); err == nil && mb > 0 {
 			cacheBytes = int64(mb) * 1024 * 1024
