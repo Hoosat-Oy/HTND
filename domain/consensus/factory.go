@@ -41,11 +41,11 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/blockvalidator"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/coinbasemanager"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/consensusstatemanager"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/dagknight"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/dagtopologymanager"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/dagtraversalmanager"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/difficultymanager"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/finalitymanager"
-	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/ghostdagmanager"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/headersselectedtipmanager"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/mergedepthmanager"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/pastmediantimemanager"
@@ -106,7 +106,7 @@ type factory struct {
 // NewFactory creates a new Consensus factory
 func NewFactory() Factory {
 	return &factory{
-		ghostdagConstructor:      ghostdagmanager.New,
+		ghostdagConstructor:      dagknight.New,
 		pastMedianTimeConsructor: pastmediantimemanager.New,
 		difficultyConstructor:    difficultymanager.New,
 	}
