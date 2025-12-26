@@ -10,9 +10,9 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/datastructures/reachabilitydatastore"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
-	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/dagknight"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/dagtopologymanager"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/dagtraversalmanager"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/ghostdagmanager"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/processes/reachabilitymanager"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
@@ -620,7 +620,7 @@ func (ppm *pruningProofManager) dagProcesses(
 			blockRelationStores[i],
 			ghostdagDataStores[i])
 
-		ghostdagManagers[i] = dagknight.New(
+		ghostdagManagers[i] = ghostdagmanager.New(
 			ppm.databaseContext,
 			dagTopologyManagers[i],
 			ghostdagDataStores[i],
@@ -659,7 +659,7 @@ func (ppm *pruningProofManager) populateProofReachabilityAndHeaders(pruningPoint
 	targetReachabilityManager := reachabilitymanager.New(ppm.databaseContext, ghostdagDataStoreForTargetReachabilityManager, targetReachabilityDataStore)
 	blockRelationStoreForTargetReachabilityManager := blockrelationstore.New(bucket, 0, false)
 	dagTopologyManagerForTargetReachabilityManager := dagtopologymanager.New(ppm.databaseContext, targetReachabilityManager, blockRelationStoreForTargetReachabilityManager, nil)
-	ghostdagManagerForTargetReachabilityManager := dagknight.New(ppm.databaseContext, dagTopologyManagerForTargetReachabilityManager, ghostdagDataStoreForTargetReachabilityManager, ppm.blockHeaderStore, ppm.k, nil)
+	ghostdagManagerForTargetReachabilityManager := ghostdagmanager.New(ppm.databaseContext, dagTopologyManagerForTargetReachabilityManager, ghostdagDataStoreForTargetReachabilityManager, ppm.blockHeaderStore, ppm.k, nil)
 	err := dagTopologyManagerForTargetReachabilityManager.SetParents(stagingArea, model.VirtualGenesisBlockHash, nil)
 	if err != nil {
 		return err
@@ -667,7 +667,7 @@ func (ppm *pruningProofManager) populateProofReachabilityAndHeaders(pruningPoint
 
 	dagTopologyManager := dagtopologymanager.New(ppm.databaseContext, targetReachabilityManager, nil, nil)
 	ghostdagDataStore := ghostdagdatastore.New(bucket, 0, false)
-	tmpGHOSTDAGManager := dagknight.New(ppm.databaseContext, nil, ghostdagDataStore, nil, []externalapi.KType{0}, nil)
+	tmpGHOSTDAGManager := ghostdagmanager.New(ppm.databaseContext, nil, ghostdagDataStore, nil, []externalapi.KType{0}, nil)
 	dagTraversalManager := dagtraversalmanager.New(ppm.databaseContext, nil, ghostdagDataStore, nil, tmpGHOSTDAGManager, nil, nil, nil, []int{0})
 	allProofBlocksUpHeap := dagTraversalManager.NewUpHeap(tmpStagingArea)
 	dag := make(map[externalapi.DomainHash]struct {

@@ -146,6 +146,10 @@ func (dk *dagknighthelper) DAGKNIGHT(stagingArea *model.StagingArea, blockCandid
 
 	// We add up all the *work*(not blueWork) that all our blues and selected parent did
 	for _, blue := range mergeSetBlues {
+		// Virtual genesis has no header; skip adding its work.
+		if blue.Equal(model.VirtualGenesisBlockHash) {
+			continue
+		}
 		header, err := dk.headerStore.BlockHeader(dk.dbAccess, stagingArea, blue)
 		if err != nil {
 			return err
@@ -513,13 +517,32 @@ func (dk *dagknighthelper) Agrees(stagingArea *model.StagingArea, b *externalapi
 		return false, err
 	}
 	// Child in selected-parent chain from g towards each block
-	childB, err := dk.dagTopologyManager.ChildInSelectedParentChainOf(stagingArea, g, b)
-	if err != nil {
-		return false, err
+	var childB *externalapi.DomainHash
+	var childC *externalapi.DomainHash
+	// Guard: if g == b or g == c, skip child lookup (strict ancestor required)
+	if g != nil && !g.Equal(b) {
+		inChainB, err := dk.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, g, b)
+		if err != nil {
+			return false, err
+		}
+		if inChainB {
+			childB, err = dk.dagTopologyManager.ChildInSelectedParentChainOf(stagingArea, g, b)
+			if err != nil {
+				return false, err
+			}
+		}
 	}
-	childC, err := dk.dagTopologyManager.ChildInSelectedParentChainOf(stagingArea, g, c)
-	if err != nil {
-		return false, err
+	if g != nil && !g.Equal(c) {
+		inChainC, err := dk.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, g, c)
+		if err != nil {
+			return false, err
+		}
+		if inChainC {
+			childC, err = dk.dagTopologyManager.ChildInSelectedParentChainOf(stagingArea, g, c)
+			if err != nil {
+				return false, err
+			}
+		}
 	}
 	// Both on the same branch (including the case g == b or g == c)
 	if childB == nil && childC == nil {

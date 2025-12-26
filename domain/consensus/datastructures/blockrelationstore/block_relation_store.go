@@ -5,6 +5,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/lrucache"
+	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
 	"github.com/Hoosat-Oy/HTND/util/staging"
 	"google.golang.org/protobuf/proto"
 )
@@ -49,10 +50,11 @@ func (brs *blockRelationStore) BlockRelation(dbContext model.DBReader, stagingAr
 	}
 
 	blockRelationsBytes, err := dbContext.Get(brs.hashAsKey(blockHash))
-	// if database.IsNotFoundError(err) {
-	// 	log.Infof("BlockRelation failed to retrieve with %s\n", blockHash)
-	// 	return nil, err
-	// }
+	if database.IsNotFoundError(err) {
+		// No existing relations for this block yet: return an empty relations object.
+		empty := &model.BlockRelations{Parents: []*externalapi.DomainHash{}, Children: []*externalapi.DomainHash{}}
+		return empty, nil
+	}
 	if err != nil {
 		return nil, err
 	}
