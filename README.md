@@ -7,7 +7,7 @@ Hoosat Network Daemon is the reference full node implementation for Hoosat Netwo
 
 ## What is Hoosat Network?
 
-Hoosat Network is an advanced cryptocurrency built with an ASIC-resistant proof-of-work (PoW) algorithm. It offers instant confirmations and sub-second block times, designed for both security and performance. Hoosat Network is a fork of Kaspa and utilizes the [GhostDAG protocol](https://eprint.iacr.org/2018/104.pdf), a generalization of the Nakamoto consensus.
+Hoosat Network is an advanced cryptocurrency built with an ASIC-resistant proof-of-work (PoW) algorithm. It offers instant confirmations and sub-second block times, designed for both security and performance. Hoosat Network is a fork of Kaspa and utilizes the DAGKnight consensus (GHOSTDAG-compatible data model) as its ordering protocol.
 
 One of the most distinctive features of Hoosat Network is its unique PoW security. Hoosat Network is **the first and only cryptocurrency** that integrates advanced protection against nonce-guessing attacks of any level, including those that could potentially be launched using Grover's algorithm in quantum computing. This security is enabled by our patent pending technology, **"Securing Proof-of-Work Integrity,"** which sets Hoosat Network apart as a truly quantum-resistant cryptocurrency.
 

@@ -55,28 +55,12 @@ func (dk *dagknighthelper) DAGKNIGHT(stagingArea *model.StagingArea, blockCandid
 	maxWork := new(big.Int)
 	var myScore uint64
 	var spScore uint64
-	/* find the selectedParent using DAGKnight's rank-based selection */
+	/* find the selectedParent (prefer higher blue work, tie by hash) */
 	blockParents, err := dk.dagTopologyManager.Parents(stagingArea, blockCandidate)
 	if err != nil {
 		return err
 	}
-	// To make it more complete, use CalculateRank to choose selectedParent with min rank
 	var selectedParent *externalapi.DomainHash
-	minRank := math.MaxInt32
-	for _, parent := range blockParents {
-		rank, err := dk.CalculateRank(stagingArea, []*externalapi.DomainHash{parent})
-		if err != nil {
-			return err
-		}
-		if rank < minRank || (rank == minRank && ismoreHash(parent, selectedParent)) {
-			minRank = rank
-			selectedParent = parent
-		}
-	}
-	if selectedParent == nil {
-		selectedParent = blockParents[0]
-	}
-	// Fallback to old selection if needed
 	for _, parent := range blockParents {
 		blockData, err := dk.dataStore.Get(dk.dbAccess, stagingArea, parent, false)
 		if database.IsNotFoundError(err) {
@@ -88,12 +72,7 @@ func (dk *dagknighthelper) DAGKNIGHT(stagingArea *model.StagingArea, blockCandid
 		}
 		blockWork := blockData.BlueWork()
 		blockScore := blockData.BlueScore()
-		if blockWork.Cmp(maxWork) == 1 {
-			selectedParent = parent
-			maxWork = blockWork
-			spScore = blockScore
-		}
-		if blockWork.Cmp(maxWork) == 0 && ismoreHash(parent, selectedParent) {
+		if selectedParent == nil || blockWork.Cmp(maxWork) == 1 || (blockWork.Cmp(maxWork) == 0 && ismoreHash(parent, selectedParent)) {
 			selectedParent = parent
 			maxWork = blockWork
 			spScore = blockScore
@@ -123,10 +102,12 @@ func (dk *dagknighthelper) DAGKNIGHT(stagingArea *model.StagingArea, blockCandid
 		return err
 	}
 
-	// Replace naive dynamicK with DAGKnight rank
-	rank, err := dk.CalculateRank(stagingArea, mergeSetArr)
-	if err == nil {
-		dk.k = externalapi.KType(rank)
+	// Compute a local k based on DAGKnight rank; do not use params
+	kLocal := 18
+	if rank, err := dk.CalculateRank(stagingArea, mergeSetArr); err == nil {
+		if rank > 0 && rank < 1024 {
+			kLocal = rank
+		}
 	}
 
 	for _, mergeSetBlock := range mergeSetArr {
@@ -137,7 +118,7 @@ func (dk *dagknighthelper) DAGKNIGHT(stagingArea *model.StagingArea, blockCandid
 			}
 			continue
 		}
-		err := dk.divideBlueRed(stagingArea, selectedParent, mergeSetBlock, &mergeSetBlues, &mergeSetReds, &blueSet)
+		err := dk.divideBlueRed(stagingArea, selectedParent, mergeSetBlock, &mergeSetBlues, &mergeSetReds, &blueSet, kLocal)
 		if err != nil {
 			return err
 		}
@@ -245,7 +226,9 @@ func (dk *dagknighthelper) OrderDAG(stagingArea *model.StagingArea, tips []*exte
 
 // CalculateRank implements Algorithm 3: Rank calculation procedure
 func (dk *dagknighthelper) CalculateRank(stagingArea *model.StagingArea, p []*externalapi.DomainHash) (int, error) {
-	for k := 0; ; k++ {
+	// Safety cap to avoid non-termination in adversarial graphs
+	const maxK = 64
+	for k := 0; k <= maxK; k++ {
 		reps, err := dk.Reps(stagingArea, p)
 		if err != nil {
 			return 0, err
@@ -265,6 +248,8 @@ func (dk *dagknighthelper) CalculateRank(stagingArea *model.StagingArea, p []*ex
 			}
 		}
 	}
+	// Fallback if no k <= maxK satisfies the voting condition
+	return maxK, nil
 }
 
 // TieBreaking implements Algorithm 4: Rank tie-breaking procedure
@@ -335,20 +320,19 @@ func (dk *dagknighthelper) KColouring(stagingArea *model.StagingArea, c *externa
 		var bluesB, chainB []*externalapi.DomainHash
 		if agrees {
 			bluesB, chainB, err = dk.KColouring(stagingArea, b, k, freeSearch)
-		} else {
-			// If not agreeing, optionally allow freeSearch, or if k exceeds local rank of c
-			rankC, rerr := dk.CalculateRank(stagingArea, []*externalapi.DomainHash{c})
-			if rerr != nil {
-				return nil, nil, rerr
+			if err != nil {
+				return nil, nil, err
 			}
-			if freeSearch || k > rankC {
-				bluesB, chainB, err = dk.KColouring(stagingArea, b, k, true)
+			p = append(p, b)
+			bluesMap[b.String()] = bluesB
+			chainMap[b.String()] = chainB
+			continue
+		}
+		if freeSearch {
+			bluesB, chainB, err = dk.KColouring(stagingArea, b, k, true)
+			if err != nil {
+				return nil, nil, err
 			}
-		}
-		if err != nil {
-			return nil, nil, err
-		}
-		if bluesB != nil { // If included
 			p = append(p, b)
 			bluesMap[b.String()] = bluesB
 			chainMap[b.String()] = chainB
@@ -660,10 +644,11 @@ func (dk *dagknighthelper) Past(stagingArea *model.StagingArea, b *externalapi.D
 }
 
 func (dk *dagknighthelper) Future(stagingArea *model.StagingArea, b *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	// BFS forward using Children
+	// BFS forward using Children, excluding the start node b itself
 	visited := make(map[string]bool)
 	queue := []*externalapi.DomainHash{b}
 	future := make([]*externalapi.DomainHash, 0)
+	start := b
 	for len(queue) > 0 {
 		current := queue[0]
 		queue = queue[1:]
@@ -671,8 +656,10 @@ func (dk *dagknighthelper) Future(stagingArea *model.StagingArea, b *externalapi
 			continue
 		}
 		visited[current.String()] = true
-		future = append(future, current)
-		children, err := dk.dagTopologyManager.Children(stagingArea, current) // Assume exists
+		if !current.Equal(start) {
+			future = append(future, current)
+		}
+		children, err := dk.dagTopologyManager.Children(stagingArea, current)
 		if err != nil {
 			return nil, err
 		}
@@ -847,9 +834,7 @@ func ismoreHash(parent *externalapi.DomainHash, selectedParent *externalapi.Doma
 
 func (dk *dagknighthelper) divideBlueRed(stagingArea *model.StagingArea,
 	selectedParent *externalapi.DomainHash, desiredBlock *externalapi.DomainHash,
-	blues *[]*externalapi.DomainHash, reds *[]*externalapi.DomainHash, blueSet *[]*externalapi.DomainHash) error {
-
-	var k = int(dk.k)
+	blues *[]*externalapi.DomainHash, reds *[]*externalapi.DomainHash, blueSet *[]*externalapi.DomainHash, k int) error {
 	counter := 0
 
 	var suspectsBlues = make([]*externalapi.DomainHash, 0)
@@ -876,7 +861,7 @@ func (dk *dagknighthelper) divideBlueRed(stagingArea *model.StagingArea,
 	}
 
 	for _, blue := range suspectsBlues {
-		isDestroyed, err := dk.checkIfDestroy(stagingArea, blue, blueSet)
+		isDestroyed, err := dk.checkIfDestroy(stagingArea, blue, blueSet, k)
 		if err != nil {
 			return err
 		}
@@ -926,9 +911,7 @@ func contains(item *externalapi.DomainHash, items []*externalapi.DomainHash) boo
 }
 
 func (dk *dagknighthelper) checkIfDestroy(stagingArea *model.StagingArea, blockBlue *externalapi.DomainHash,
-	blueSet *[]*externalapi.DomainHash) (bool, error) {
-
-	var k = int(dk.k)
+	blueSet *[]*externalapi.DomainHash, k int) (bool, error) {
 	counter := 0
 	for _, blue := range *blueSet {
 		isAnticone, err := dk.isAnticone(stagingArea, blue, blockBlue)
@@ -1068,21 +1051,14 @@ func (dk *dagknighthelper) ChooseSelectedParent(stagingArea *model.StagingArea, 
 	if len(blockHashes) == 0 {
 		return nil, nil
 	}
-	// Prefer minimal mutual rank; tie-break by Less semantics.
 	var best *externalapi.DomainHash
-	minRank := math.MaxInt32
 	var bestData *externalapi.BlockGHOSTDAGData
 	for _, h := range blockHashes {
-		r, err := dk.CalculateRank(stagingArea, []*externalapi.DomainHash{h})
-		if err != nil {
-			return nil, err
-		}
 		data, err := dk.BlockData(stagingArea, h)
 		if err != nil {
 			return nil, err
 		}
-		if r < minRank || (r == minRank && (bestData == nil || dk.Less(best, bestData, h, data))) {
-			minRank = r
+		if best == nil || dk.Less(best, bestData, h, data) {
 			best = h
 			bestData = data
 		}
