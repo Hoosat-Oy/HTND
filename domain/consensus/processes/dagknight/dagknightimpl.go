@@ -16,7 +16,7 @@ import (
 )
 
 type dagknighthelper struct {
-	k                  externalapi.KType
+	k                  []externalapi.KType
 	dataStore          model.GHOSTDAGDataStore
 	dbAccess           model.DBReader
 	dagTopologyManager model.DAGTopologyManager
@@ -38,7 +38,7 @@ func New(
 		dagTopologyManager: dagTopologyManager,
 		dataStore:          ghostdagDataStore,
 		headerStore:        headerStore,
-		k:                  k[constants.GetBlockVersion()-1],
+		k:                  k,
 		genesis:            genesisHash,
 	}
 }
@@ -102,11 +102,19 @@ func (dk *dagknighthelper) DAGKNIGHT(stagingArea *model.StagingArea, blockCandid
 		return err
 	}
 
-	// Compute a local k based on DAGKnight rank; do not use params
+	// Compute a local k based on DAGKnight rank; do not use params directly
 	kLocal := 18
 	if rank, err := dk.CalculateRank(stagingArea, mergeSetArr); err == nil {
 		if rank > 0 && rank < 1024 {
 			kLocal = rank
+		}
+	}
+
+	// Update the shared consensus K slice for current block version
+	if dk.k != nil {
+		idx := int(constants.GetBlockVersion()) - 1
+		if idx >= 0 && idx < len(dk.k) {
+			dk.k[idx] = externalapi.KType(kLocal)
 		}
 	}
 
