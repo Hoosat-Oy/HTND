@@ -752,11 +752,26 @@ func (dk *dagknighthelper) partitionTips(stagingArea *model.StagingArea, p []*ex
 	byChild := make(map[string][]*externalapi.DomainHash)
 	// Use empty key for tips equal to g
 	for _, tip := range p {
+		// If tip equals g, don't query ChildInSelectedParentChainOf (it requires strict ancestor).
+		if g != nil && tip.Equal(g) {
+			byChild[tip.String()] = append(byChild[tip.String()], tip)
+			continue
+		}
+		// Ensure g is in the selected-parent chain of tip before calling for the child.
+		inChain, err := dk.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, g, tip)
+		if err != nil {
+			return nil, err
+		}
+		if !inChain {
+			// If not in chain (should be rare since g is LCCA), group by the tip itself.
+			byChild[tip.String()] = append(byChild[tip.String()], tip)
+			continue
+		}
 		child, err := dk.dagTopologyManager.ChildInSelectedParentChainOf(stagingArea, g, tip)
 		if err != nil {
 			return nil, err
 		}
-		key := ""
+		key := tip.String()
 		if child != nil {
 			key = child.String()
 		}
