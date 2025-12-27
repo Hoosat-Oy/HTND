@@ -1,6 +1,7 @@
 package blockbuilder
 
 import (
+	"encoding/binary"
 	"math/big"
 	"sort"
 
@@ -192,7 +193,21 @@ func (bb *blockBuilder) validateTransaction(
 func (bb *blockBuilder) newBlockCoinbaseTransaction(stagingArea *model.StagingArea,
 	coinbaseData *externalapi.DomainCoinbaseData) (expectedTransaction *externalapi.DomainTransaction, hasRedReward bool, err error) {
 
-	return bb.coinbaseManager.ExpectedCoinbaseTransaction(stagingArea, model.VirtualBlockHash, coinbaseData)
+	coinbaseTx, hasRedReward, err := bb.coinbaseManager.ExpectedCoinbaseTransaction(stagingArea, model.VirtualBlockHash, coinbaseData)
+	if err != nil {
+		return nil, false, err
+	}
+	// Ensure the payload's embedded blue score matches the header blue score we set for the new block.
+	// Otherwise ValidateBodyInIsolation fails with ErrUnexpectedCoinbaseBlueScore.
+	blueScore, err := bb.newBlockBlueScore(stagingArea)
+	if err != nil {
+		return nil, false, err
+	}
+	if coinbaseTx != nil && len(coinbaseTx.Payload) >= 8 {
+		binary.LittleEndian.PutUint64(coinbaseTx.Payload[:8], blueScore)
+	}
+
+	return coinbaseTx, hasRedReward, nil
 }
 
 func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions []*externalapi.DomainTransaction,
@@ -355,8 +370,47 @@ func (bb *blockBuilder) newBlockDAAScore(stagingArea *model.StagingArea) (uint64
 }
 
 func (bb *blockBuilder) newBlockBlueWork(stagingArea *model.StagingArea) (*big.Int, error) {
-	virtualGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	// NOTE: The header BlueWork is validated with a permissive rule: it must not be *ahead* of
+	// the node's computed BlueWork for that block (see ErrUnexpectedBlueWork).
+	// With DAGKNIGHT selecting a chain-parent that isn't necessarily the heaviest-blue-work tip,
+	// copying the virtual's BlueWork into the header can make locally-mined blocks invalid.
+	// To stay safe (and avoid mining getting stuck), set a conservative BlueWork: min(parent BlueWork).
+	relations, err := bb.blockRelationStore.BlockRelation(bb.databaseContext, stagingArea, model.VirtualBlockHash)
+	if database.IsNotFoundError(err) {
+		log.Infof("newBlockBlueWork failed to retrieve relations for %s\n", model.VirtualBlockHash)
+		return nil, err
+	}
+	if err != nil {
+		return nil, err
+	}
 
+	var minWork *big.Int
+	for _, parent := range relations.Parents {
+		if parent == nil {
+			continue
+		}
+		gd, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, parent, false)
+		if database.IsNotFoundError(err) {
+			log.Infof("newBlockBlueWork failed to retrieve with %s\n", parent)
+			return nil, err
+		}
+		if err != nil {
+			return nil, err
+		}
+		w := gd.BlueWork()
+		if w == nil {
+			continue
+		}
+		if minWork == nil || w.Cmp(minWork) < 0 {
+			minWork = new(big.Int).Set(w)
+		}
+	}
+	if minWork != nil {
+		return minWork, nil
+	}
+
+	// Fallback to the virtual's blue work (should only happen near genesis).
+	virtualGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, model.VirtualBlockHash, false)
 	if database.IsNotFoundError(err) {
 		log.Infof("newBlockBlueWork failed to retrieve with %s\n", model.VirtualBlockHash)
 		return nil, err
@@ -368,6 +422,39 @@ func (bb *blockBuilder) newBlockBlueWork(stagingArea *model.StagingArea) (*big.I
 }
 
 func (bb *blockBuilder) newBlockBlueScore(stagingArea *model.StagingArea) (uint64, error) {
+	// Same rationale as newBlockBlueWork: never claim a BlueScore ahead of what consensus computes.
+	relations, err := bb.blockRelationStore.BlockRelation(bb.databaseContext, stagingArea, model.VirtualBlockHash)
+	if database.IsNotFoundError(err) {
+		log.Infof("newBlockBlueScore failed to retrieve relations for %s\n", model.VirtualBlockHash)
+		return 0, err
+	}
+	if err != nil {
+		return 0, err
+	}
+
+	var minScore *uint64
+	for _, parent := range relations.Parents {
+		if parent == nil {
+			continue
+		}
+		gd, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, parent, false)
+		if database.IsNotFoundError(err) {
+			log.Infof("newBlockBlueScore failed to retrieve with %s\n", parent)
+			return 0, err
+		}
+		if err != nil {
+			return 0, err
+		}
+		s := gd.BlueScore()
+		if minScore == nil || s < *minScore {
+			t := s
+			minScore = &t
+		}
+	}
+	if minScore != nil {
+		return *minScore, nil
+	}
+
 	virtualGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, model.VirtualBlockHash, false)
 	if database.IsNotFoundError(err) {
 		log.Infof("newBlockBlueScore failed to retrieve with %s\n", model.VirtualBlockHash)
