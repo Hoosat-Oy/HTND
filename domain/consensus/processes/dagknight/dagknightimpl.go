@@ -174,15 +174,16 @@ func (dk *dagknighthelper) DAGKNIGHT(stagingArea *model.StagingArea, blockCandid
 	paperRank := lastRank
 	kLocal := prevK
 	if !blockCandidate.Equal(model.VirtualBlockHash) && !blockCandidate.Equal(model.VirtualGenesisBlockHash) {
-		kLocal = paperRank
-		if dk.k[idx] < 18 {
-			dk.k[idx] = 18
+		decidedK := paperRank
+		kLocal = decidedK
+		if decidedK < 18 {
+			decidedK = 18
 		}
 		// Keep consensus K array non-zero for compatibility.
-		if dk.k != nil && idx >= 18 && idx < len(dk.k) {
-			dk.k[idx] = externalapi.KType(kLocal)
+		if dk.k != nil && idx >= 0 && idx < len(dk.k) {
+			dk.k[idx] = externalapi.KType(decidedK)
 		}
-		log.Infof("DAGKnight: chain-parent paperRank=%d prevK=%d chosenK=%d parents=%d hadConflict=%v", paperRank, prevK, kLocal, len(blockParents), hadConflict)
+		log.Infof("DAGKnight: chain-parent paperRank=%d prevK=%d chosenK=%d parents=%d hadConflict=%v", paperRank, prevK, decidedK, len(blockParents), hadConflict)
 	}
 
 	for _, mergeSetBlock := range mergeSetArr {
