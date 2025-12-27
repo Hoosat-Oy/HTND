@@ -158,7 +158,7 @@ func (dk *dagknighthelper) DAGKNIGHT(stagingArea *model.StagingArea, blockCandid
 	// Compute local k from the paper rank (Definition 5 / Algorithm 2).
 	idx := int(constants.GetBlockVersion()) - 1
 	prevK := 18
-	if dk.k != nil && idx >= 0 && idx < len(dk.k) && dk.k[idx] > 0 {
+	if dk.k != nil && idx > 0 && idx < len(dk.k) && dk.k[idx] > 0 {
 		prevK = int(dk.k[idx])
 	}
 
@@ -175,8 +175,11 @@ func (dk *dagknighthelper) DAGKNIGHT(stagingArea *model.StagingArea, blockCandid
 	kLocal := prevK
 	if !blockCandidate.Equal(model.VirtualBlockHash) && !blockCandidate.Equal(model.VirtualGenesisBlockHash) {
 		kLocal = paperRank
+		if dk.k[idx] < 1 {
+			dk.k[idx] = 1
+		}
 		// Keep consensus K array non-zero for compatibility.
-		if dk.k != nil && idx >= 0 && idx < len(dk.k) {
+		if dk.k != nil && idx > 0 && idx < len(dk.k) {
 			dk.k[idx] = externalapi.KType(kLocal)
 		}
 		log.Infof("DAGKnight: chain-parent paperRank=%d prevK=%d chosenK=%d parents=%d hadConflict=%v", paperRank, prevK, kLocal, len(blockParents), hadConflict)
