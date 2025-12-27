@@ -26,6 +26,8 @@ type Domain interface {
 	CommitStagingConsensus() error
 	DeleteStagingConsensus() error
 	ConsensusEventsChannel() chan externalapi.ConsensusEvent
+	// CurrentKForVersion returns the current consensus K for the given block version index
+	CurrentKForVersion(versionIdx int) externalapi.KType
 }
 
 type domain struct {
@@ -54,6 +56,17 @@ func (d *domain) StagingConsensus() externalapi.Consensus {
 
 func (d *domain) MiningManager() miningmanager.MiningManager {
 	return d.miningManager
+}
+
+func (d *domain) CurrentKForVersion(versionIdx int) externalapi.KType {
+	if d.consensusConfig == nil {
+		return 0
+	}
+	kSlice := d.consensusConfig.Params.K
+	if versionIdx < 0 || versionIdx >= len(kSlice) {
+		return 0
+	}
+	return kSlice[versionIdx]
 }
 
 func (d *domain) InitStagingConsensusWithoutGenesis() error {

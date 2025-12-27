@@ -56,7 +56,7 @@ func HandleSubmitBlock(context *rpccontext.Context, _ *router.Router, request ap
 		return handleBlockAddError(domainBlock, err), nil
 	}
 
-	logBlockAcceptance(domainBlock, len(submitBlockRequest.Block.Transactions))
+	logBlockAcceptance(context, domainBlock, len(submitBlockRequest.Block.Transactions))
 	return appmessage.NewSubmitBlockResponseMessage(), nil
 }
 
@@ -169,10 +169,18 @@ func newErrorResponse(err error, reason appmessage.RejectReason) *appmessage.Sub
 }
 
 // logBlockAcceptance logs successful block acceptance
-func logBlockAcceptance(block *externalapi.DomainBlock, txCount int) {
+func logBlockAcceptance(context *rpccontext.Context, block *externalapi.DomainBlock, txCount int) {
 	log.Infof("Accepted block %s via submit with %d tx",
 		consensushashing.BlockHash(block), txCount)
 	log.Infof("Accepted PoW hash %s", block.PoWHash)
+	// Log current K for the active block version from dynamic consensus params
+	versionIdx := int(constants.GetBlockVersion()) - 1
+	k := context.Domain.CurrentKForVersion(versionIdx)
+	if k == 0 && versionIdx >= 0 && versionIdx < len(context.Config.ActiveNetParams.K) {
+		// Fallback to static net params if dynamic is unavailable
+		k = context.Config.ActiveNetParams.K[versionIdx]
+	}
+	log.Infof("Current K (v%d) = %d", constants.GetBlockVersion(), k)
 }
 
 // stripHexPrefix removes "0x" prefix from hex string

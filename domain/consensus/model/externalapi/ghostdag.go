@@ -5,7 +5,8 @@ import (
 )
 
 // KType defines the size of GHOSTDAG consensus algorithm K parameter.
-type KType byte
+// Widened to uint16 to allow K > 255 without overflow.
+type KType uint32
 
 // BlockGHOSTDAGData represents GHOSTDAG data for some block
 type BlockGHOSTDAGData struct {

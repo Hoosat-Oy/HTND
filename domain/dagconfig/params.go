@@ -45,7 +45,8 @@ var (
 )
 
 // KType defines the size of GHOSTDAG consensus algorithm K parameter.
-type KType uint8
+// Widened to uint16 to mirror externalapi.KType capacity.
+type KType uint32
 
 // Params defines a Hoosat network by its parameters. These parameters may be
 // used by Hoosat applications to differentiate networks as well as addresses
@@ -339,7 +340,7 @@ var TestnetParams = Params{
 	FinalityDuration:                []time.Duration{defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, defaultFinalityDuration, 10800 * time.Second, 10800 * time.Second},
 	DifficultyAdjustmentWindowSize:  []int{defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, 2640, 2640},
 	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
-	POWScores:                       []uint64{17500000, 21821800, 29335426, 43334184},
+	POWScores:                       []uint64{5, 15, 25, 30},
 	PruningMultiplier:               []uint64{0, 0, 0, 0, 1, 1},
 	MaxBlockMass:                    []uint64{defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, 1_000_000, 1_000_000},
 
