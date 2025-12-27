@@ -179,7 +179,7 @@ func (dk *dagknighthelper) DAGKNIGHT(stagingArea *model.StagingArea, blockCandid
 			dk.k[idx] = 18
 		}
 		// Keep consensus K array non-zero for compatibility.
-		if dk.k != nil && idx > 0 && idx < len(dk.k) {
+		if dk.k != nil && idx >= 18 && idx < len(dk.k) {
 			dk.k[idx] = externalapi.KType(kLocal)
 		}
 		log.Infof("DAGKnight: chain-parent paperRank=%d prevK=%d chosenK=%d parents=%d hadConflict=%v", paperRank, prevK, kLocal, len(blockParents), hadConflict)
