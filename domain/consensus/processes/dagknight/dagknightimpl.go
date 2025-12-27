@@ -170,13 +170,13 @@ func (dk *dagknighthelper) DAGKNIGHT(stagingArea *model.StagingArea, blockCandid
 	// Additionally, this file still uses the legacy GHOSTDAG blue/red split which
 	// assumes a positive K. Therefore we keep both:
 	// - paperRank: the KNIGHT-derived rank (can be 0)
-	// - kLocal: the effective K used by the legacy colouring (always >= 1)
+	// - kLocal: the effective K used by the legacy colouring (always >= 18)
 	paperRank := lastRank
 	kLocal := prevK
 	if !blockCandidate.Equal(model.VirtualBlockHash) && !blockCandidate.Equal(model.VirtualGenesisBlockHash) {
 		kLocal = paperRank
-		if dk.k[idx] < 1 {
-			dk.k[idx] = 1
+		if dk.k[idx] < 18 {
+			dk.k[idx] = 18
 		}
 		// Keep consensus K array non-zero for compatibility.
 		if dk.k != nil && idx > 0 && idx < len(dk.k) {
