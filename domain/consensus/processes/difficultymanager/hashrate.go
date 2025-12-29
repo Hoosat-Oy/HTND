@@ -38,7 +38,10 @@ func (dm *difficultyManager) estimateNetworkHashesPerSecond(stagingArea *model.S
 
 	minWindowTimestamp, maxWindowTimestamp, _ := blockWindow.minMaxTimestamps()
 	if minWindowTimestamp == maxWindowTimestamp {
-		return 0, errors.Errorf("min window timestamp is equal to the max window timestamp")
+		// If all timestamps in the window are identical we can't derive a meaningful rate.
+		// This can happen around startup / low-activity networks / synthetic test chains.
+		// Returning 0 (unknown) keeps callers like Prometheus stats collection healthy.
+		return 0, nil
 	}
 
 	firstHash := windowHashes[0]
