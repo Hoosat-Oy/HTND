@@ -175,10 +175,13 @@ func (dk *dagknighthelper) DAGKNIGHT(stagingArea *model.StagingArea, blockCandid
 	}
 
 	idx := int(constants.GetBlockVersion()) - 1
-	dk.k[idx] = externalapi.KType(lastRank)
-
+	if lastRank == 0 {
+		dk.k[idx] = externalapi.KType(lastRank + 1)
+	} else {
+		dk.k[idx] = externalapi.KType(lastRank)
+	}
 	if !blockCandidate.Equal(model.VirtualBlockHash) && !blockCandidate.Equal(model.VirtualGenesisBlockHash) {
-		log.Infof("DAGKnight: chain-parent paperRank=%d parents=%d hadConflict=%v", lastRank, len(blockParents), hadConflict)
+		log.Debugf("paperRank=%d parents=%d hadConflict=%v k=%v", lastRank, len(blockParents), hadConflict, int(dk.k[idx]))
 	}
 
 	for _, mergeSetBlock := range mergeSetArr {
@@ -191,7 +194,7 @@ func (dk *dagknighthelper) DAGKNIGHT(stagingArea *model.StagingArea, blockCandid
 			}
 			continue
 		}
-		err := dk.divideBlueRed(stagingArea, mergeSetBlock, &mergeSetBlues, &mergeSetReds, &blueSet, mergeSetBluesSet, mergeSetRedsSet, blueSetSet, lastRank)
+		err := dk.divideBlueRed(stagingArea, mergeSetBlock, &mergeSetBlues, &mergeSetReds, &blueSet, mergeSetBluesSet, mergeSetRedsSet, blueSetSet, int(dk.k[idx]))
 		if err != nil {
 			return err
 		}
