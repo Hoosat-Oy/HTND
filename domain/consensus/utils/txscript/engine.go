@@ -67,7 +67,7 @@ func (vm *Engine) isBranchExecuting() bool {
 // tested in this case.
 func (vm *Engine) executeOpcode(pop *parsedOpcode) error {
 	// Disabled opcodes are fail on program counter.
-	if pop.isDisabled() {
+	if pop.isDisabled() && !vm.isAllowedDisabledOpcode(pop.opcode.value) {
 		str := fmt.Sprintf("attempt to execute disabled opcode %s",
 			pop.opcode.name)
 		return scriptError(ErrDisabledOpcode, str)
@@ -112,6 +112,28 @@ func (vm *Engine) executeOpcode(pop *parsedOpcode) error {
 	}
 
 	return pop.opcode.opfunc(pop, vm)
+}
+
+// isAllowedDisabledOpcode returns whether a historically disabled opcode is
+// allowed under the active script version.
+//
+// Note: Disabled opcodes must fail as the program counter passes them (even in
+// non-executed branches) for legacy script versions.
+func (vm *Engine) isAllowedDisabledOpcode(opcode byte) bool {
+	// Legacy (v0) scripts keep the historical behavior.
+	if vm.scriptVersion == 0 {
+		return false
+	}
+
+	// Script version 1 enables a minimal set of splice opcodes which are useful
+	// for L2 constructions, while keeping other historical disabled opcodes
+	// disabled.
+	switch opcode {
+	case OpCat, OpSubStr, OpLeft, OpRight:
+		return true
+	default:
+		return false
+	}
 }
 
 // disasm is a helper function to produce the output for DisasmPC and

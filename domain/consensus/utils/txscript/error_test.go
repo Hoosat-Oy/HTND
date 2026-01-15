@@ -55,6 +55,7 @@ func TestErrorCodeStringer(t *testing.T) {
 		{ErrNegativeLockTime, "ErrNegativeLockTime"},
 		{ErrUnsatisfiedLockTime, "ErrUnsatisfiedLockTime"},
 		{ErrMinimalIf, "ErrMinimalIf"},
+		{ErrCheckTemplateVerify, "ErrCheckTemplateVerify"},
 		{0xffff, "Unknown ErrorCode (65535)"},
 	}
 

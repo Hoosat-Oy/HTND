@@ -9,14 +9,20 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
+	"io"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/hashes"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/serialization"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/subnetworks"
 
 	"golang.org/x/crypto/blake2b"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/go-secp256k1"
+
+	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 )
 
 // An opcode defines the information related to a txscript opcode. opfunc, if
@@ -212,7 +218,7 @@ const (
 	OpCheckMultiSigVerify = 0xaf // 175
 	OpCheckLockTimeVerify = 0xb0 // 176
 	OpCheckSequenceVerify = 0xb1 // 177
-	OpUnknown178          = 0xb2 // 178
+	OpCheckTemplateVerify = 0xb2 // 178
 	OpUnknown179          = 0xb3 // 179
 	OpUnknown180          = 0xb4 // 180
 	OpUnknown181          = 0xb5 // 181
@@ -415,6 +421,7 @@ var opcodeArray = [256]opcode{
 	OpReturn:              {OpReturn, "OP_RETURN", 1, opcodeReturn},
 	OpCheckLockTimeVerify: {OpCheckLockTimeVerify, "OP_CHECKLOCKTIMEVERIFY", 1, opcodeCheckLockTimeVerify},
 	OpCheckSequenceVerify: {OpCheckSequenceVerify, "OP_CHECKSEQUENCEVERIFY", 1, opcodeCheckSequenceVerify},
+	OpCheckTemplateVerify: {OpCheckTemplateVerify, "OP_CHECKTEMPLATEVERIFY", 1, opcodeCheckTemplateVerify},
 
 	// Stack opcodes.
 	OpToAltStack:   {OpToAltStack, "OP_TOALTSTACK", 1, opcodeToAltStack},
@@ -438,10 +445,10 @@ var opcodeArray = [256]opcode{
 	OpTuck:         {OpTuck, "OP_TUCK", 1, opcodeTuck},
 
 	// Splice opcodes.
-	OpCat:    {OpCat, "OP_CAT", 1, opcodeDisabled},
-	OpSubStr: {OpSubStr, "OP_SUBSTR", 1, opcodeDisabled},
-	OpLeft:   {OpLeft, "OP_LEFT", 1, opcodeDisabled},
-	OpRight:  {OpRight, "OP_RIGHT", 1, opcodeDisabled},
+	OpCat:    {OpCat, "OP_CAT", 1, opcodeCat},
+	OpSubStr: {OpSubStr, "OP_SUBSTR", 1, opcodeSubStr},
+	OpLeft:   {OpLeft, "OP_LEFT", 1, opcodeLeft},
+	OpRight:  {OpRight, "OP_RIGHT", 1, opcodeRight},
 	OpSize:   {OpSize, "OP_SIZE", 1, opcodeSize},
 
 	// Bitwise logic opcodes.
@@ -496,7 +503,7 @@ var opcodeArray = [256]opcode{
 	// Undefined opcodes.
 	OpUnknown166: {OpUnknown166, "OP_UNKNOWN166", 1, opcodeInvalid},
 	OpUnknown167: {OpUnknown167, "OP_UNKNOWN167", 1, opcodeInvalid},
-	OpUnknown178: {OpUnknown188, "OP_UNKNOWN178", 1, opcodeInvalid},
+	// 0xb2 is used by OP_CHECKTEMPLATEVERIFY
 	OpUnknown179: {OpUnknown189, "OP_UNKNOWN179", 1, opcodeInvalid},
 	OpUnknown180: {OpUnknown190, "OP_UNKNOWN180", 1, opcodeInvalid},
 	OpUnknown181: {OpUnknown191, "OP_UNKNOWN181", 1, opcodeInvalid},
@@ -1382,6 +1389,186 @@ func opcodeSwap(op *parsedOpcode, vm *Engine) error {
 // Stack transformation: [... x1 x2] -> [... x2 x1 x2]
 func opcodeTuck(op *parsedOpcode, vm *Engine) error {
 	return vm.dstack.Tuck()
+}
+
+// opcodeCat concatenates the top two stack items.
+//
+// Stack transformation: [... x1 x2] -> [... x1|x2]
+func opcodeCat(op *parsedOpcode, vm *Engine) error {
+	b, err := vm.dstack.PopByteArray()
+	if err != nil {
+		return err
+	}
+	a, err := vm.dstack.PopByteArray()
+	if err != nil {
+		return err
+	}
+
+	if len(a)+len(b) > MaxScriptElementSize {
+		str := fmt.Sprintf("resulting element size %d exceeds max allowed %d",
+			len(a)+len(b), MaxScriptElementSize)
+		return scriptError(ErrElementTooBig, str)
+	}
+
+	out := make([]byte, 0, len(a)+len(b))
+	out = append(out, a...)
+	out = append(out, b...)
+	vm.dstack.PushByteArray(out)
+	return nil
+}
+
+// opcodeSubStr extracts a substring.
+//
+// Stack transformation: [... x begin size] -> [... x[begin:begin+size]]
+func opcodeSubStr(op *parsedOpcode, vm *Engine) error {
+	size, err := vm.dstack.PopInt()
+	if err != nil {
+		return err
+	}
+	begin, err := vm.dstack.PopInt()
+	if err != nil {
+		return err
+	}
+	data, err := vm.dstack.PopByteArray()
+	if err != nil {
+		return err
+	}
+
+	if begin < 0 || size < 0 {
+		return scriptError(ErrInvalidStackOperation, "negative begin/size")
+	}
+	beginInt := int(begin)
+	sizeInt := int(size)
+	if beginInt > len(data) || beginInt+sizeInt > len(data) {
+		str := fmt.Sprintf("substring out of range (begin=%d size=%d len=%d)",
+			beginInt, sizeInt, len(data))
+		return scriptError(ErrInvalidStackOperation, str)
+	}
+
+	vm.dstack.PushByteArray(data[beginInt : beginInt+sizeInt])
+	return nil
+}
+
+// opcodeLeft keeps the leftmost size bytes.
+//
+// Stack transformation: [... x size] -> [... x[0:size]]
+func opcodeLeft(op *parsedOpcode, vm *Engine) error {
+	size, err := vm.dstack.PopInt()
+	if err != nil {
+		return err
+	}
+	data, err := vm.dstack.PopByteArray()
+	if err != nil {
+		return err
+	}
+
+	if size < 0 {
+		return scriptError(ErrInvalidStackOperation, "negative size")
+	}
+	sizeInt := int(size)
+	if sizeInt > len(data) {
+		sizeInt = len(data)
+	}
+	vm.dstack.PushByteArray(data[:sizeInt])
+	return nil
+}
+
+// opcodeRight keeps the rightmost size bytes.
+//
+// Stack transformation: [... x size] -> [... x[len(x)-size:]]
+func opcodeRight(op *parsedOpcode, vm *Engine) error {
+	size, err := vm.dstack.PopInt()
+	if err != nil {
+		return err
+	}
+	data, err := vm.dstack.PopByteArray()
+	if err != nil {
+		return err
+	}
+
+	if size < 0 {
+		return scriptError(ErrInvalidStackOperation, "negative size")
+	}
+	sizeInt := int(size)
+	if sizeInt > len(data) {
+		sizeInt = len(data)
+	}
+	vm.dstack.PushByteArray(data[len(data)-sizeInt:])
+	return nil
+}
+
+func infallibleWriteElement(w io.Writer, element interface{}) {
+	err := serialization.WriteElement(w, element)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func calculateTemplateHash(tx *externalapi.DomainTransaction, inputIndex int) *externalapi.DomainHash {
+	hashWriter := hashes.NewTransactionSigningHashWriter()
+
+	// Domain separation to avoid collisions with other hash constructions.
+	infallibleWriteElement(hashWriter, []byte("OP_CHECKTEMPLATEVERIFY"))
+
+	infallibleWriteElement(hashWriter, tx.Version)
+	infallibleWriteElement(hashWriter, uint32(inputIndex))
+
+	infallibleWriteElement(hashWriter, uint64(len(tx.Inputs)))
+	for _, txIn := range tx.Inputs {
+		infallibleWriteElement(hashWriter, txIn.PreviousOutpoint.TransactionID)
+		infallibleWriteElement(hashWriter, txIn.PreviousOutpoint.Index)
+		infallibleWriteElement(hashWriter, txIn.Sequence)
+		infallibleWriteElement(hashWriter, txIn.SigOpCount)
+	}
+
+	infallibleWriteElement(hashWriter, uint64(len(tx.Outputs)))
+	for _, txOut := range tx.Outputs {
+		infallibleWriteElement(hashWriter, txOut.Value)
+		infallibleWriteElement(hashWriter, txOut.ScriptPublicKey.Version)
+		infallibleWriteElement(hashWriter, txOut.ScriptPublicKey.Script)
+	}
+
+	infallibleWriteElement(hashWriter, tx.LockTime)
+	infallibleWriteElement(hashWriter, tx.SubnetworkID)
+	infallibleWriteElement(hashWriter, tx.Gas)
+
+	// Hash the payload similarly to signature-hash logic.
+	payloadHash := externalapi.NewZeroHash()
+	if !tx.SubnetworkID.Equal(&subnetworks.SubnetworkIDNative) {
+		payloadHashWriter := hashes.NewTransactionSigningHashWriter()
+		infallibleWriteElement(payloadHashWriter, tx.Payload)
+		payloadHash = payloadHashWriter.Finalize()
+	}
+	infallibleWriteElement(hashWriter, payloadHash)
+
+	return hashWriter.Finalize()
+}
+
+// opcodeCheckTemplateVerify verifies that the current spending transaction matches
+// a 32-byte template hash provided on the stack.
+//
+// Stack transformation: [... templateHash] -> [...]
+func opcodeCheckTemplateVerify(op *parsedOpcode, vm *Engine) error {
+	// Only enabled in script version 2+.
+	if vm.scriptVersion < 2 {
+		return scriptError(ErrReservedOpcode, "OP_CHECKTEMPLATEVERIFY requires script version 2")
+	}
+
+	templateHashBytes, err := vm.dstack.PopByteArray()
+	if err != nil {
+		return err
+	}
+	if len(templateHashBytes) != externalapi.DomainHashSize {
+		str := fmt.Sprintf("template hash must be %d bytes, got %d", externalapi.DomainHashSize, len(templateHashBytes))
+		return scriptError(ErrCheckTemplateVerify, str)
+	}
+
+	expected := calculateTemplateHash(&vm.tx, vm.txIdx)
+	if !bytes.Equal(templateHashBytes, expected.ByteSlice()) {
+		return scriptError(ErrCheckTemplateVerify, "transaction does not match template")
+	}
+
+	return nil
 }
 
 // opcodeSize pushes the size of the top item of the data stack onto the data

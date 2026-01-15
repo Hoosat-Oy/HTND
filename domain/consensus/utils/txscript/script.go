@@ -179,8 +179,7 @@ func unparseScript(pops []parsedOpcode) ([]byte, error) {
 // appended. In addition, the reason the script failed to parse is returned
 // if the caller wants more information about the failure.
 func DisasmString(version uint16, buf []byte) (string, error) {
-	// currently, there is only one version exists so it equals to the max version.
-	if version == constants.MaxScriptPublicKeyVersion {
+	if version <= constants.MaxScriptPublicKeyVersion {
 		var disbuf bytes.Buffer
 		opcodes, err := ParseScript(buf)
 		for _, pop := range opcodes {

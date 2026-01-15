@@ -43,7 +43,7 @@ const (
 	MaxTransactionVersion uint16 = 0
 
 	// MaxScriptPublicKeyVersion is the current latest supported public key script version.
-	MaxScriptPublicKeyVersion uint16 = 0
+	MaxScriptPublicKeyVersion uint16 = 2
 
 	// SompiPerHoosat is the number of sompi in one hoosat (1 HTN).
 	SompiPerHoosat = 100_000_000

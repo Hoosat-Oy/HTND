@@ -214,6 +214,9 @@ const (
 	// is not either an empty vector or [0x01].
 	ErrMinimalIf
 
+	// ErrCheckTemplateVerify is returned when OP_CHECKTEMPLATEVERIFY fails.
+	ErrCheckTemplateVerify
+
 	// numErrorCodes is the maximum error code number used in tests. This
 	// entry MUST be the last entry in the enum.
 	numErrorCodes
@@ -260,6 +263,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrNegativeLockTime:      "ErrNegativeLockTime",
 	ErrUnsatisfiedLockTime:   "ErrUnsatisfiedLockTime",
 	ErrMinimalIf:             "ErrMinimalIf",
+	ErrCheckTemplateVerify:   "ErrCheckTemplateVerify",
 }
 
 // String returns the ErrorCode as a human-readable name.

@@ -8,9 +8,222 @@ import (
 	"testing"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/subnetworks"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 )
+
+func TestSpliceOpcodesEnabledInV1(t *testing.T) {
+	t.Parallel()
+
+	inputs := []*externalapi.DomainTransactionInput{{
+		PreviousOutpoint: externalapi.DomainOutpoint{
+			TransactionID: *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{}),
+			Index:         0,
+		},
+		SignatureScript: nil,
+		Sequence:        constants.MaxTxInSequenceNum,
+	}}
+	outputs := []*externalapi.DomainTransactionOutput{{
+		Value:           0,
+		ScriptPublicKey: nil,
+	}}
+	tx := &externalapi.DomainTransaction{
+		Version: 1,
+		Inputs:  inputs,
+		Outputs: outputs,
+	}
+
+	tests := []struct {
+		name        string
+		version     uint16
+		script      string
+		expectError bool
+		errCode     ErrorCode
+	}{
+		{
+			name:        "v0 disabled opcode fails even when unexecuted",
+			version:     0,
+			script:      "0 IF CAT ENDIF 1",
+			expectError: true,
+			errCode:     ErrDisabledOpcode,
+		},
+		{
+			name:        "v1 allows opcode in unexecuted branch",
+			version:     1,
+			script:      "0 IF CAT ENDIF 1",
+			expectError: false,
+		},
+		{
+			name:        "v1 OP_CAT executes",
+			version:     1,
+			script:      "'ab' 'cd' CAT 'abcd' EQUAL",
+			expectError: false,
+		},
+		{
+			name:        "v1 OP_LEFT executes",
+			version:     1,
+			script:      "'abcd' 2 LEFT 'ab' EQUAL",
+			expectError: false,
+		},
+		{
+			name:        "v1 OP_RIGHT executes",
+			version:     1,
+			script:      "'abcd' 2 RIGHT 'cd' EQUAL",
+			expectError: false,
+		},
+		{
+			name:        "v1 OP_SUBSTR executes",
+			version:     1,
+			script:      "'abcdef' 2 3 SUBSTR 'cde' EQUAL",
+			expectError: false,
+		},
+		{
+			name:        "v0 splice opcode remains disabled",
+			version:     0,
+			script:      "'ab' 'cd' CAT 'abcd' EQUAL",
+			expectError: true,
+			errCode:     ErrDisabledOpcode,
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			scriptPubKey := &externalapi.ScriptPublicKey{Script: mustParseShortForm(test.script, test.version), Version: test.version}
+			vm, err := NewEngine(scriptPubKey, tx, 0, 0, nil, nil, &consensushashing.SighashReusedValues{})
+			if err != nil {
+				t.Fatalf("NewEngine: %v", err)
+			}
+			err = vm.Execute()
+			if test.expectError {
+				if err == nil {
+					t.Fatalf("expected error %v but got nil", test.errCode)
+				}
+				if !IsErrorCode(err, test.errCode) {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+	}
+}
+
+func TestCheckTemplateVerify(t *testing.T) {
+	t.Parallel()
+
+	makeTx := func() *externalapi.DomainTransaction {
+		inputs := []*externalapi.DomainTransactionInput{{
+			PreviousOutpoint: externalapi.DomainOutpoint{
+				TransactionID: *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}),
+				Index:         7,
+			},
+			SignatureScript: nil,
+			Sequence:        123,
+			SigOpCount:      0,
+		}}
+		outputs := []*externalapi.DomainTransactionOutput{{
+			Value: 42,
+			ScriptPublicKey: &externalapi.ScriptPublicKey{
+				Version: 0,
+				Script:  mustParseShortForm("1", 0),
+			},
+		}}
+		return &externalapi.DomainTransaction{
+			Version:      1,
+			Inputs:       inputs,
+			Outputs:      outputs,
+			LockTime:     0,
+			SubnetworkID: subnetworks.SubnetworkIDNative,
+			Gas:          0,
+			Payload:      nil,
+		}
+	}
+
+	t.Run("v2 matches template", func(t *testing.T) {
+		tx := makeTx()
+		templateHash := calculateTemplateHash(tx, 0)
+
+		script, err := NewScriptBuilder().
+			AddData(templateHash.ByteSlice()).
+			AddOp(OpCheckTemplateVerify).
+			AddOp(OpTrue).
+			Script()
+		if err != nil {
+			t.Fatalf("script builder: %v", err)
+		}
+		scriptPubKey := &externalapi.ScriptPublicKey{Script: script, Version: 2}
+
+		vm, err := NewEngine(scriptPubKey, tx, 0, 0, nil, nil, &consensushashing.SighashReusedValues{})
+		if err != nil {
+			t.Fatalf("NewEngine: %v", err)
+		}
+		if err := vm.Execute(); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("v2 template mismatch fails", func(t *testing.T) {
+		tx := makeTx()
+		templateHash := calculateTemplateHash(tx, 0)
+
+		// Mutate tx after producing hash to force mismatch.
+		tx.Outputs[0].Value = 43
+
+		script, err := NewScriptBuilder().
+			AddData(templateHash.ByteSlice()).
+			AddOp(OpCheckTemplateVerify).
+			AddOp(OpTrue).
+			Script()
+		if err != nil {
+			t.Fatalf("script builder: %v", err)
+		}
+		scriptPubKey := &externalapi.ScriptPublicKey{Script: script, Version: 2}
+
+		vm, err := NewEngine(scriptPubKey, tx, 0, 0, nil, nil, &consensushashing.SighashReusedValues{})
+		if err != nil {
+			t.Fatalf("NewEngine: %v", err)
+		}
+		err = vm.Execute()
+		if err == nil {
+			t.Fatalf("expected error")
+		}
+		if !IsErrorCode(err, ErrCheckTemplateVerify) {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("v1 rejects opcode", func(t *testing.T) {
+		tx := makeTx()
+		templateHash := calculateTemplateHash(tx, 0)
+
+		script, err := NewScriptBuilder().
+			AddData(templateHash.ByteSlice()).
+			AddOp(OpCheckTemplateVerify).
+			AddOp(OpTrue).
+			Script()
+		if err != nil {
+			t.Fatalf("script builder: %v", err)
+		}
+		scriptPubKey := &externalapi.ScriptPublicKey{Script: script, Version: 1}
+
+		vm, err := NewEngine(scriptPubKey, tx, 0, 0, nil, nil, &consensushashing.SighashReusedValues{})
+		if err != nil {
+			t.Fatalf("NewEngine: %v", err)
+		}
+		err = vm.Execute()
+		if err == nil {
+			t.Fatalf("expected error")
+		}
+		if !IsErrorCode(err, ErrReservedOpcode) {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+}
 
 // TestBadPC sets the pc to a deliberately bad result then confirms that Step()
 // and Disasm fail correctly.
