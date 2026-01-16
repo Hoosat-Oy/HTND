@@ -17,6 +17,8 @@ type transactionValidator struct {
 	ghostdagDataStore                       model.GHOSTDAGDataStore
 	daaBlocksStore                          model.DAABlocksStore
 	enableNonNativeSubnetworks              bool
+	maxGasPerSubnetworkPerBlock             uint64
+	minFeePerGas                            uint64
 	maxCoinbasePayloadLength                uint64
 	MergeSetSizeLimit                       uint64
 	coinbasePayloadScriptPublicKeyMaxLength uint8
@@ -28,6 +30,8 @@ type transactionValidator struct {
 // New instantiates a new TransactionValidator
 func New(blockCoinbaseMaturity uint64,
 	enableNonNativeSubnetworks bool,
+	maxGasPerSubnetworkPerBlock uint64,
+	minFeePerGas uint64,
 	maxCoinbasePayloadLength uint64,
 	MergeSetSizeLimit uint64,
 	coinbasePayloadScriptPublicKeyMaxLength uint8,
@@ -40,6 +44,8 @@ func New(blockCoinbaseMaturity uint64,
 	return &transactionValidator{
 		blockCoinbaseMaturity:                   blockCoinbaseMaturity,
 		enableNonNativeSubnetworks:              enableNonNativeSubnetworks,
+		maxGasPerSubnetworkPerBlock:             maxGasPerSubnetworkPerBlock,
+		minFeePerGas:                            minFeePerGas,
 		maxCoinbasePayloadLength:                maxCoinbasePayloadLength,
 		MergeSetSizeLimit:                       MergeSetSizeLimit,
 		coinbasePayloadScriptPublicKeyMaxLength: coinbasePayloadScriptPublicKeyMaxLength,

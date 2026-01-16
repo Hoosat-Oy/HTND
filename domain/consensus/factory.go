@@ -218,6 +218,8 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.GenesisHash)
 	transactionValidator := transactionvalidator.New(config.BlockCoinbaseMaturity,
 		config.EnableNonNativeSubnetworks,
+		config.MaxGasPerSubnetworkPerBlock,
+		config.MinFeePerGas,
 		config.MaxCoinbasePayloadLength,
 		config.MergeSetSizeLimit,
 		config.CoinbasePayloadScriptPublicKeyMaxLength,
@@ -350,6 +352,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.SkipProofOfWork,
 		genesisHash,
 		config.EnableNonNativeSubnetworks,
+		config.MaxGasPerSubnetworkPerBlock,
 		config.MaxBlockMass,
 		config.MergeSetSizeLimit,
 		config.MaxBlockParents,

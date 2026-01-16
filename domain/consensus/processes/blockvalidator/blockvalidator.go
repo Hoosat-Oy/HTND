@@ -18,6 +18,7 @@ type blockValidator struct {
 	skipPoW                     bool
 	genesisHash                 *externalapi.DomainHash
 	enableNonNativeSubnetworks  bool
+	maxGasPerSubnetworkPerBlock uint64
 	powMaxBits                  uint32
 	maxBlockMass                []uint64
 	mergeSetSizeLimit           uint64
@@ -59,6 +60,7 @@ func New(powMax *big.Int,
 	skipPoW bool,
 	genesisHash *externalapi.DomainHash,
 	enableNonNativeSubnetworks bool,
+	maxGasPerSubnetworkPerBlock uint64,
 	maxBlockMass []uint64,
 	mergeSetSizeLimit uint64,
 	maxBlockParents []externalapi.KType,
@@ -96,16 +98,17 @@ func New(powMax *big.Int,
 ) model.BlockValidator {
 
 	return &blockValidator{
-		powMax:                     powMax,
-		skipPoW:                    skipPoW,
-		genesisHash:                genesisHash,
-		enableNonNativeSubnetworks: enableNonNativeSubnetworks,
-		powMaxBits:                 difficulty.BigToCompact(powMax),
-		maxBlockMass:               maxBlockMass,
-		mergeSetSizeLimit:          mergeSetSizeLimit,
-		maxBlockParents:            maxBlockParents,
-		POWScores:                  POWScores,
-		maxBlockLevel:              maxBlockLevel,
+		powMax:                      powMax,
+		skipPoW:                     skipPoW,
+		genesisHash:                 genesisHash,
+		enableNonNativeSubnetworks:  enableNonNativeSubnetworks,
+		maxGasPerSubnetworkPerBlock: maxGasPerSubnetworkPerBlock,
+		powMaxBits:                  difficulty.BigToCompact(powMax),
+		maxBlockMass:                maxBlockMass,
+		mergeSetSizeLimit:           mergeSetSizeLimit,
+		maxBlockParents:             maxBlockParents,
+		POWScores:                   POWScores,
+		maxBlockLevel:               maxBlockLevel,
 
 		timestampDeviationTolerance: timestampDeviationTolerance,
 		targetTimePerBlock:          targetTimePerBlock,

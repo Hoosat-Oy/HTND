@@ -215,7 +215,23 @@ func (v *blockValidator) checkBlockHasNoChainedTransactions(block *externalapi.D
 }
 
 func (v *blockValidator) validateGasLimit(block *externalapi.DomainBlock) error {
-	// TODO: implement this
+	if v.maxGasPerSubnetworkPerBlock == 0 {
+		return nil
+	}
+
+	gasUsage := make(map[externalapi.DomainSubnetworkID]uint64)
+	for _, tx := range block.Transactions {
+		if subnetworks.IsBuiltInOrNative(tx.SubnetworkID) {
+			continue
+		}
+		current := gasUsage[tx.SubnetworkID]
+		newUsage := current + tx.Gas
+		if newUsage < current || newUsage > v.maxGasPerSubnetworkPerBlock {
+			return errors.Wrapf(ruleerrors.ErrInvalidGas, "block gas usage %d exceeds limit %d for subnetwork %s", newUsage, v.maxGasPerSubnetworkPerBlock, tx.SubnetworkID.String())
+		}
+		gasUsage[tx.SubnetworkID] = newUsage
+	}
+
 	return nil
 }
 

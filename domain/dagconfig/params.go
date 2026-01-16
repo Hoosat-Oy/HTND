@@ -146,6 +146,14 @@ type Params struct {
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks bool
 
+	// MaxGasPerSubnetworkPerBlock caps total gas usage per (non-built-in) subnetwork in a block.
+	// A value of 0 disables gas limit enforcement.
+	MaxGasPerSubnetworkPerBlock uint64
+
+	// MinFeePerGas is the minimum required fee per gas unit for non-built-in subnetworks.
+	// A value of 0 disables fee-per-gas enforcement.
+	MinFeePerGas uint64
+
 	// DisableDifficultyAdjustment determine whether to use difficulty
 	DisableDifficultyAdjustment bool
 

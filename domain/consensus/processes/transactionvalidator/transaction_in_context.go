@@ -8,6 +8,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/ruleerrors"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/constants"
+	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/subnetworks"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/transactionhelper"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/txscript"
 	"github.com/pkg/errors"
@@ -78,6 +79,9 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateFee(
 		return err
 	}
 	tx.Fee = totalSompiIn - totalSompiOut
+	if err := v.checkMinFeePerGas(tx); err != nil {
+		return err
+	}
 
 	// 2. The remaining checks can run in parallel.
 	type result struct {
@@ -115,6 +119,33 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateFee(
 		}
 	}
 	return firstErr
+}
+
+func (v *transactionValidator) checkMinFeePerGas(tx *externalapi.DomainTransaction) error {
+	if subnetworks.IsBuiltInOrNative(tx.SubnetworkID) {
+		return nil
+	}
+	if v.minFeePerGas == 0 || tx.Gas == 0 {
+		return nil
+	}
+
+	// Require: fee >= gas * minFeePerGas, with overflow-safe multiplication.
+	requiredFee, overflow := multiplyUint64(tx.Gas, v.minFeePerGas)
+	if overflow || tx.Fee < requiredFee {
+		return errors.Wrapf(ruleerrors.ErrInsufficientGasFee, "transaction fee %d is below required gas fee %d (gas=%d, minFeePerGas=%d)",
+			tx.Fee, requiredFee, tx.Gas, v.minFeePerGas)
+	}
+	return nil
+}
+
+func multiplyUint64(a, b uint64) (uint64, bool) {
+	if a == 0 || b == 0 {
+		return 0, false
+	}
+	if a > math.MaxUint64/b {
+		return 0, true
+	}
+	return a * b, false
 }
 
 func (v *transactionValidator) checkTransactionCoinbaseMaturity(stagingArea *model.StagingArea,

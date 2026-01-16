@@ -40,6 +40,10 @@ func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.Do
 	if err != nil {
 		return err
 	}
+	err = v.checkGasLimitInNonBuiltInSubnetworkTransaction(tx)
+	if err != nil {
+		return err
+	}
 	err = v.checkSubnetworkRegistryTransaction(tx)
 	if err != nil {
 		return err
@@ -166,6 +170,19 @@ func (v *transactionValidator) checkGasInBuiltInOrNativeTransactions(tx *externa
 	if subnetworks.IsBuiltInOrNative(tx.SubnetworkID) && tx.Gas > 0 {
 		return errors.Wrapf(ruleerrors.ErrInvalidGas, "transaction in the native or "+
 			"registry subnetworks has gas > 0 ")
+	}
+	return nil
+}
+
+func (v *transactionValidator) checkGasLimitInNonBuiltInSubnetworkTransaction(tx *externalapi.DomainTransaction) error {
+	if subnetworks.IsBuiltInOrNative(tx.SubnetworkID) {
+		return nil
+	}
+	if v.maxGasPerSubnetworkPerBlock == 0 {
+		return nil
+	}
+	if tx.Gas > v.maxGasPerSubnetworkPerBlock {
+		return errors.Wrapf(ruleerrors.ErrInvalidGas, "transaction gas %d exceeds subnetwork gas limit %d", tx.Gas, v.maxGasPerSubnetworkPerBlock)
 	}
 	return nil
 }

@@ -38,16 +38,29 @@ type blockTemplateBuilder struct {
 	mempool            miningmanagerapi.Mempool
 	policy             policy
 
+	enableNonNativeSubnetworks  bool
+	maxGasPerSubnetworkPerBlock uint64
+	minFeePerGas                uint64
+
 	coinbasePayloadScriptPublicKeyMaxLength uint8
 }
 
 // New creates a new blockTemplateBuilder
 func New(consensusReference consensusreference.ConsensusReference, mempool miningmanagerapi.Mempool,
-	blockMaxMass []uint64, coinbasePayloadScriptPublicKeyMaxLength uint8) miningmanagerapi.BlockTemplateBuilder {
+	blockMaxMass []uint64,
+	coinbasePayloadScriptPublicKeyMaxLength uint8,
+	enableNonNativeSubnetworks bool,
+	maxGasPerSubnetworkPerBlock uint64,
+	minFeePerGas uint64,
+) miningmanagerapi.BlockTemplateBuilder {
 	return &blockTemplateBuilder{
 		consensusReference: consensusReference,
 		mempool:            mempool,
 		policy:             policy{BlockMaxMass: blockMaxMass},
+
+		enableNonNativeSubnetworks:  enableNonNativeSubnetworks,
+		maxGasPerSubnetworkPerBlock: maxGasPerSubnetworkPerBlock,
+		minFeePerGas:                minFeePerGas,
 
 		coinbasePayloadScriptPublicKeyMaxLength: coinbasePayloadScriptPublicKeyMaxLength,
 	}
@@ -123,13 +136,21 @@ func (btb *blockTemplateBuilder) BuildBlockTemplate(
 	mempoolTransactions := btb.mempool.BlockCandidateTransactions()
 	candidateTxs := make([]*candidateTx, 0, len(mempoolTransactions))
 	for i := 0; i < len(mempoolTransactions); i++ {
+		tx := mempoolTransactions[i]
 		gasLimit := uint64(0)
-		if !subnetworks.IsBuiltInOrNative(mempoolTransactions[i].SubnetworkID) {
-			panic("We currently don't support non native subnetworks")
+		if !subnetworks.IsBuiltInOrNative(tx.SubnetworkID) {
+			if !btb.enableNonNativeSubnetworks {
+				continue
+			}
+			gasLimit = btb.maxGasPerSubnetworkPerBlock
+		}
+		txValue := btb.calcTxValue(tx)
+		if txValue <= 0 {
+			continue
 		}
 		candidateTxs = append(candidateTxs, &candidateTx{
-			DomainTransaction: mempoolTransactions[i],
-			txValue:           btb.calcTxValue(mempoolTransactions[i]),
+			DomainTransaction: tx,
+			txValue:           txValue,
 			gasLimit:          gasLimit,
 		})
 	}
@@ -207,13 +228,47 @@ func (btb *blockTemplateBuilder) ModifyBlockTemplate(newCoinbaseData *consensuse
 // included in the block.
 func (btb *blockTemplateBuilder) calcTxValue(tx *consensusexternalapi.DomainTransaction) float64 {
 	massLimit := btb.policy.BlockMaxMass[constants.GetBlockVersion()-1]
+	if massLimit == 0 {
+		return 0
+	}
 
 	mass := tx.Mass
 	fee := tx.Fee
+	if mass == 0 || fee == 0 {
+		return 0
+	}
 	if subnetworks.IsBuiltInOrNative(tx.SubnetworkID) {
 		return float64(fee) / (float64(mass) / float64(massLimit))
 	}
-	// TODO: Replace with real gas once implemented
-	gasLimit := uint64(math.MaxUint64)
-	return float64(fee) / (float64(mass)/float64(massLimit) + float64(tx.Gas)/float64(gasLimit))
+	if tx.Gas > 0 {
+		if btb.minFeePerGas > 0 {
+			requiredFee, overflow := multiplyUint64(tx.Gas, btb.minFeePerGas)
+			if overflow || fee < requiredFee {
+				return 0
+			}
+		}
+		if btb.maxGasPerSubnetworkPerBlock == 0 {
+			return 0
+		}
+	}
+
+	gasLimit := btb.maxGasPerSubnetworkPerBlock
+	denom := float64(mass) / float64(massLimit)
+	if tx.Gas > 0 && gasLimit > 0 {
+		denom += float64(tx.Gas) / float64(gasLimit)
+	}
+	if denom == 0 {
+		return 0
+	}
+	return float64(fee) / denom
+}
+
+func multiplyUint64(a, b uint64) (uint64, bool) {
+	if a == 0 || b == 0 {
+		return 0, false
+	}
+	if a > math.MaxUint64/b {
+		return 0, true
+	}
+	return a * b, false
 }

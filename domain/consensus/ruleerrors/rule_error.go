@@ -171,6 +171,9 @@ var (
 	// by subnetwork
 	ErrInvalidGas = newRuleError("ErrInvalidGas")
 
+	// ErrInsufficientGasFee indicates a transaction does not pay enough fee for its requested gas.
+	ErrInsufficientGasFee = newRuleError("ErrInsufficientGasFee")
+
 	// ErrInvalidPayload transaction includes a payload in a data subnetwork that doesn't allow
 	// a Payload
 	ErrInvalidPayload = newRuleError("ErrInvalidPayload")
