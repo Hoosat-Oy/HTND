@@ -1533,8 +1533,9 @@ func calculateTemplateHash(tx *externalapi.DomainTransaction, inputIndex int) *e
 	infallibleWriteElement(hashWriter, tx.Gas)
 
 	// Hash the payload similarly to signature-hash logic.
+	// Preserve historical behavior for native transactions with empty payload.
 	payloadHash := externalapi.NewZeroHash()
-	if !tx.SubnetworkID.Equal(&subnetworks.SubnetworkIDNative) {
+	if !tx.SubnetworkID.Equal(&subnetworks.SubnetworkIDNative) || len(tx.Payload) > 0 {
 		payloadHashWriter := hashes.NewTransactionSigningHashWriter()
 		infallibleWriteElement(payloadHashWriter, tx.Payload)
 		payloadHash = payloadHashWriter.Finalize()

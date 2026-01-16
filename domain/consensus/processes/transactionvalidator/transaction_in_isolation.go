@@ -54,7 +54,7 @@ func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.Do
 		return err
 	}
 
-	err = v.checkNativeTransactionPayload(tx)
+	err = v.checkNativeTransactionPayload(tx, povDAAScore)
 	if err != nil {
 		return err
 	}
@@ -199,11 +199,8 @@ func (v *transactionValidator) checkSubnetworkRegistryTransaction(tx *externalap
 	return nil
 }
 
-func (v *transactionValidator) checkNativeTransactionPayload(tx *externalapi.DomainTransaction) error {
-	if tx.SubnetworkID == subnetworks.SubnetworkIDNative && len(tx.Payload) > 0 {
-		return errors.Wrapf(ruleerrors.ErrInvalidPayload, "transaction in the native subnetwork "+
-			"includes a payload")
-	}
+func (v *transactionValidator) checkNativeTransactionPayload(tx *externalapi.DomainTransaction, _ uint64) error {
+	// Native/default subnetwork transactions are allowed to carry a payload.
 	return nil
 }
 
@@ -393,8 +390,16 @@ func isEncodedBinaryString(s string, DAAScore uint64) error {
 }
 
 // hasHighEntropy checks if string has high entropy (indicating encoded data)
-func hasHighEntropy(s string, DAAScore uint64) bool {
-	if len(s) < 16 {
+
+func hasHighEntropy(s string, _ uint64) bool {
+	// Entropy heuristics are only meaningful for reasonably large strings.
+	if len(s) < 128 {
+		return false
+	}
+
+	// Only treat entropy as suspicious when the string already looks like an encoded blob.
+	// This avoids flagging long natural-language text.
+	if !isLikelyBase64(s) && !isLikelyHexString(s) {
 		return false
 	}
 
@@ -414,13 +419,8 @@ func hasHighEntropy(s string, DAAScore uint64) bool {
 		}
 	}
 
-	// High entropy threshold (close to random) - adjusted for more realistic detection
-	// TODO: update current DAA Score when doing release.
-	if DAAScore >= 110_996_218+12_960_000 {
-		return entropy > 4.5
-	} else {
-		return entropy > 2
-	}
+	// High entropy threshold (close to random).
+	return entropy > 4.5
 }
 
 // isLikelyBase64 fast check for base64 patterns
@@ -520,7 +520,7 @@ func (v *transactionValidator) checkTransactionSubnetwork(tx *externalapi.Domain
 	// If we are a partial node, only transactions on built in subnetworks
 	// or our own subnetwork may have a payload
 	isLocalNodeFull := localNodeSubnetworkID == nil
-	shouldTxBeFull := subnetworks.IsBuiltIn(tx.SubnetworkID) || tx.SubnetworkID.Equal(localNodeSubnetworkID)
+	shouldTxBeFull := subnetworks.IsBuiltInOrNative(tx.SubnetworkID) || tx.SubnetworkID.Equal(localNodeSubnetworkID)
 	if !isLocalNodeFull && !shouldTxBeFull && len(tx.Payload) > 0 {
 		return errors.Wrapf(ruleerrors.ErrInvalidPayload,
 			"transaction that was expected to be partial has a payload "+

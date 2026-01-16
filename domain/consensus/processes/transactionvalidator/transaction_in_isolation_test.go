@@ -111,7 +111,7 @@ func TestValidateTransactionInIsolationAndPopulateMass(t *testing.T) {
 				func(tx *externalapi.DomainTransaction) {
 					tx.Payload = []byte{1}
 				},
-				ruleerrors.ErrInvalidPayload, 0},
+				nil, 0},
 		}
 
 		for _, test := range tests {

@@ -263,7 +263,9 @@ func getOutputsHash(tx *externalapi.DomainTransaction, inputIndex int, hashType 
 }
 
 func getPayloadHash(tx *externalapi.DomainTransaction, reusedValues *SighashReusedValues) *externalapi.DomainHash {
-	if tx.SubnetworkID.Equal(&subnetworks.SubnetworkIDNative) {
+	// Preserve historical behavior for native transactions with empty payload.
+	// This keeps signature hashes identical for existing native transactions.
+	if tx.SubnetworkID.Equal(&subnetworks.SubnetworkIDNative) && len(tx.Payload) == 0 {
 		return externalapi.NewZeroHash()
 	}
 

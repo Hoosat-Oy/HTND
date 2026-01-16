@@ -83,42 +83,53 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateFee(
 		return err
 	}
 
+	// Make error priority deterministic: coinbase maturity should be checked
+	// before more expensive/secondary checks like script validation.
+	if err := v.checkTransactionCoinbaseMaturity(stagingArea, povBlockHash, tx, povDAAScore); err != nil {
+		return err
+	}
+
 	// 2. The remaining checks can run in parallel.
 	type result struct {
-		idx int   // original order (optional, for debugging)
-		err error // nil on success
+		kind string
+		err  error
 	}
+	errCh := make(chan result, 3)
 
-	// channels
-	errCh := make(chan result, 4)
+	go func() {
+		errCh <- result{kind: "sequenceLock", err: v.checkTransactionSequenceLock(stagingArea, povBlockHash, tx, povDAAScore)}
+	}()
+	go func() { errCh <- result{kind: "sigOps", err: v.validateTransactionSigOpCounts(tx)} }()
+	go func() { errCh <- result{kind: "scripts", err: v.validateTransactionScripts(tx)} }()
 
-	// launch goroutines
-	go func() {
-		err := v.checkTransactionCoinbaseMaturity(stagingArea, povBlockHash, tx, povDAAScore)
-		errCh <- result{idx: 0, err: err}
-	}()
-	go func() {
-		err := v.checkTransactionSequenceLock(stagingArea, povBlockHash, tx, povDAAScore)
-		errCh <- result{idx: 1, err: err}
-	}()
-	go func() {
-		err := v.validateTransactionSigOpCounts(tx)
-		errCh <- result{idx: 2, err: err}
-	}()
-	go func() {
-		err := v.validateTransactionScripts(tx)
-		errCh <- result{idx: 3, err: err}
-	}()
-
-	// collect results – return the *first* error
-	var firstErr error
-	for i := 0; i < 4; i++ {
+	var seqLockErr, sigOpErr, scriptsErr error
+	for i := 0; i < 3; i++ {
 		res := <-errCh
-		if res.err != nil && firstErr == nil {
-			firstErr = res.err // keep the first one
+		if res.err == nil {
+			continue
+		}
+		switch res.kind {
+		case "sequenceLock":
+			seqLockErr = res.err
+		case "sigOps":
+			sigOpErr = res.err
+		case "scripts":
+			scriptsErr = res.err
+		default:
+			// fallback: keep the first error in scriptsErr
+			if scriptsErr == nil {
+				scriptsErr = res.err
+			}
 		}
 	}
-	return firstErr
+
+	if seqLockErr != nil {
+		return seqLockErr
+	}
+	if sigOpErr != nil {
+		return sigOpErr
+	}
+	return scriptsErr
 }
 
 func (v *transactionValidator) checkMinFeePerGas(tx *externalapi.DomainTransaction) error {

@@ -329,7 +329,7 @@ func TestCheckTemplateVerify_SubnetworkPayloadAffectsHash(t *testing.T) {
 	}
 }
 
-func TestCheckTemplateVerify_NativePayloadIgnored(t *testing.T) {
+func TestCheckTemplateVerify_NativePayloadAffectsHashWhenPresent(t *testing.T) {
 	t.Parallel()
 
 	tx := &externalapi.DomainTransaction{
@@ -353,28 +353,13 @@ func TestCheckTemplateVerify_NativePayloadIgnored(t *testing.T) {
 		Payload:      []byte("ignored"),
 	}
 
-	// For native, payload is hashed as zero-hash.
+	// For native, non-empty payload is committed to the template hash.
 	templateHash := calculateTemplateHash(tx, 0)
 
-	// Changing payload should not change hash for native.
+	// Changing payload should change the hash and therefore fail CTV.
 	tx.Payload = []byte("also ignored")
 
-	script, err := NewScriptBuilder().
-		AddData(templateHash.ByteSlice()).
-		AddOp(OpCheckTemplateVerify).
-		AddOp(OpTrue).
-		Script()
-	if err != nil {
-		t.Fatalf("script builder: %v", err)
-	}
-
-	vm, err := NewEngine(&externalapi.ScriptPublicKey{Script: script, Version: 2}, tx, 0, 0, nil, nil, &consensushashing.SighashReusedValues{})
-	if err != nil {
-		t.Fatalf("NewEngine: %v", err)
-	}
-	if err := vm.Execute(); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	mustFailCTV(t, tx, 0, templateHash.ByteSlice())
 }
 
 func TestCheckTemplateVerify_ConsumesStackElement(t *testing.T) {
