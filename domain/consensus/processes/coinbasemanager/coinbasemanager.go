@@ -229,6 +229,9 @@ func (c *coinbaseManager) coinbaseOutputForRewardFromRedBlocksV2(stagingArea *mo
 	acceptanceDataMap := acceptanceDataFromArrayToMap(acceptanceData)
 	totalReward := uint64(0)
 	for _, red := range ghostdagData.MergeSetReds() {
+		if acceptanceDataMap[*red] == nil {
+			continue
+		}
 		reward, err := c.calcMergedBlockReward(stagingArea, red, acceptanceDataMap[*red], daaAddedBlocksSet)
 		if err != nil {
 			return nil, nil, false, err
@@ -270,6 +273,9 @@ func (c *coinbaseManager) coinbaseOutputForRewardFromRedBlocksV1(stagingArea *mo
 	acceptanceDataMap := acceptanceDataFromArrayToMap(acceptanceData)
 	totalReward := uint64(0)
 	for _, red := range ghostdagData.MergeSetReds() {
+		if acceptanceDataMap[*red] == nil {
+			continue
+		}
 		reward, err := c.calcMergedBlockReward(stagingArea, red, acceptanceDataMap[*red], daaAddedBlocksSet)
 		if err != nil {
 			return nil, false, err
