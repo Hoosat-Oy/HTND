@@ -1,12 +1,16 @@
 package integration
 
 import (
+	"encoding/hex"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/kaspanet/go-secp256k1"
+
 	"github.com/Hoosat-Oy/HTND/domain/dagconfig"
 	"github.com/Hoosat-Oy/HTND/infrastructure/config"
+	"github.com/Hoosat-Oy/HTND/util"
 )
 
 const (
@@ -22,17 +26,45 @@ const (
 	rpcAddress4 = "127.0.0.1:21348"
 	rpcAddress5 = "127.0.0.1:21349"
 
-	miningAddress1           = "hoosatsim:qznzhj4n5dd796qrqzueryfglvnesxpl5fywr9c5057ndvgx7y0j7x92q58rs"
-	miningAddress1PrivateKey = "hoosatsim:qznzhj4n5dd796qrqzueryfglvnesxpl5fywr9c5057ndvgx7y0j7x92q58rs"
-
-	miningAddress2           = "hoosatsim:qznzhj4n5dd796qrqzueryfglvnesxpl5fywr9c5057ndvgx7y0j7x92q58rs"
-	miningAddress2PrivateKey = "hoosatsim:qznzhj4n5dd796qrqzueryfglvnesxpl5fywr9c5057ndvgx7y0j7x92q58rs"
-
-	miningAddress3           = "hoosatsim:qznzhj4n5dd796qrqzueryfglvnesxpl5fywr9c5057ndvgx7y0j7x92q58rs"
-	miningAddress3PrivateKey = "955da5fe765a921d22ccba5102a31f3b893b79607e48195c3d63a795486473ba"
-
 	defaultTimeout = 30 * time.Second
 )
+
+// NOTE: Integration tests need mining address private keys that are real schnorr
+// private keys (32-byte hex), because some tests sign spends from coinbase UTXOs.
+// Keep these deterministic.
+var (
+	miningAddress1PrivateKey = "0000000000000000000000000000000000000000000000000000000000000001"
+	miningAddress2PrivateKey = "0000000000000000000000000000000000000000000000000000000000000002"
+	miningAddress3PrivateKey = "0000000000000000000000000000000000000000000000000000000000000003"
+
+	miningAddress1 = mustSchnorrAddressFromPrivateKeyHex(miningAddress1PrivateKey)
+	miningAddress2 = mustSchnorrAddressFromPrivateKeyHex(miningAddress2PrivateKey)
+	miningAddress3 = mustSchnorrAddressFromPrivateKeyHex(miningAddress3PrivateKey)
+)
+
+func mustSchnorrAddressFromPrivateKeyHex(privateKeyHex string) string {
+	privateKeyBytes, err := hex.DecodeString(privateKeyHex)
+	if err != nil {
+		panic(err)
+	}
+	keyPair, err := secp256k1.DeserializeSchnorrPrivateKeyFromSlice(privateKeyBytes)
+	if err != nil {
+		panic(err)
+	}
+	publicKey, err := keyPair.SchnorrPublicKey()
+	if err != nil {
+		panic(err)
+	}
+	publicKeySerialized, err := publicKey.Serialize()
+	if err != nil {
+		panic(err)
+	}
+	addr, err := util.NewAddressPublicKey(publicKeySerialized[:], util.Bech32PrefixHoosatSim)
+	if err != nil {
+		panic(err)
+	}
+	return addr.EncodeAddress()
+}
 
 func setConfig(t *testing.T, harness *appHarness, protocolVersion uint32) {
 	harness.config = commonConfig()
@@ -48,12 +80,16 @@ func setConfig(t *testing.T, harness *appHarness, protocolVersion uint32) {
 	if harness.overrideDAGParams != nil {
 		harness.config.ActiveNetParams = harness.overrideDAGParams
 	}
+
+	// Integration tests shouldn't burn CPU on PoW solving.
+	harness.config.ActiveNetParams.SkipProofOfWork = true
 }
 
 func commonConfig() *config.Config {
 	commonConfig := config.DefaultConfig()
 
 	*commonConfig.ActiveNetParams = dagconfig.SimnetParams // Copy so that we can make changes safely
+	commonConfig.ActiveNetParams.SkipProofOfWork = true
 	commonConfig.ActiveNetParams.BlockCoinbaseMaturity = 10
 	commonConfig.TargetOutboundPeers = 0
 	commonConfig.DisableDNSSeed = true

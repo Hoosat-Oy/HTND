@@ -15,7 +15,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/testutils"
 	"github.com/Hoosat-Oy/HTND/domain/miningmanager/mempool"
-	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/pebble"
+	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/ldb"
 )
 
 func TestCreateStagingConsensus(t *testing.T) {
@@ -26,7 +26,7 @@ func TestCreateStagingConsensus(t *testing.T) {
 		}
 		defer os.RemoveAll(dataDir)
 
-		db, err := pebble.NewPebbleDB(dataDir, 8)
+		db, err := ldb.NewLevelDB(dataDir, 8)
 		if err != nil {
 			t.Fatalf("NewLevelDB: %+v", err)
 		}
@@ -57,7 +57,7 @@ func TestCreateStagingConsensus(t *testing.T) {
 					},
 				},
 			}
-			err = domainInstance.StagingConsensus().ValidateAndInsertBlockWithTrustedData(genesisWithTrustedData, false)
+			err = domainInstance.StagingConsensus().ValidateAndInsertBlockWithTrustedData(genesisWithTrustedData, true)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertBlockWithTrustedData: %+v", err)
 			}

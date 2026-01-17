@@ -12,6 +12,13 @@ import (
 // HandleGetBlockByTransactionID handles the respectively named RPC command
 func HandleGetBlockByTransactionID(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	getBlockByTransactionIDRequest := request.(*appmessage.GetBlockByTransactionIDRequestMessage)
+	if context.Config.SafeRPC {
+		log.Warn("GetBlockByTransactionID RPC command called while node in safe RPC mode -- ignoring.")
+		response := appmessage.NewGetBlockByTransactionIDResponseMessage()
+		response.Error =
+			appmessage.RPCErrorf("GetBlockByTransactionID RPC command called while node in safe RPC mode")
+		return response, nil
+	}
 
 	// Parse the transaction ID
 	transactionID, err := transactionid.FromString(getBlockByTransactionIDRequest.TransactionID)

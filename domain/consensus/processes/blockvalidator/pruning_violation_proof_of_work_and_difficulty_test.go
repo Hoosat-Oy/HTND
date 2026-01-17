@@ -291,7 +291,8 @@ func TestCheckPruningPointViolation(t *testing.T) {
 	})
 }
 
-// TestValidateDifficulty verifies that in case of a block with an unexpected difficulty,
+// TestValidateDifficulty verifies that in case of a block whose header bits are
+// sufficiently ahead of the expected difficulty (beyond the validator tolerance),
 // an appropriate error message (ErrUnexpectedDifficulty) will be returned on the
 // function ValidatePruningPointViolationAndProofOfWorkAndDifficulty. The required difficulty is
 // "calculated" by the mocDifficultyManager, where mocDifficultyManager is special implementation
@@ -331,7 +332,15 @@ func TestValidateDifficulty(t *testing.T) {
 		stagingArea := model.NewStagingArea()
 		tc.BlockStore().Stage(stagingArea, blockHash, block)
 		tc.BlockHeaderStore().Stage(stagingArea, blockHash, block.Header)
-		wrongTestDifficulty := mocDifficulty.testDifficulty + uint32(5)
+		// The validator allows a tolerance when comparing header bits vs expected bits.
+		// To force ErrUnexpectedDifficulty, make the expected bits sufficiently lower
+		// than the header bits so that: headerBits > expectedBits + tolerance.
+		const bitsTolerance = uint32(10000)
+		const beyondToleranceDelta = uint32(5)
+		if mocDifficulty.testDifficulty <= bitsTolerance+beyondToleranceDelta {
+			t.Fatalf("Genesis bits (%d) too small for this test", mocDifficulty.testDifficulty)
+		}
+		wrongTestDifficulty := mocDifficulty.testDifficulty - (bitsTolerance + beyondToleranceDelta)
 		mocDifficulty.testDifficulty = wrongTestDifficulty
 		err = tc.BlockValidator().ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea, block, blockHash, false, false, true)
 		if err == nil || !errors.Is(err, ruleerrors.ErrUnexpectedDifficulty) {

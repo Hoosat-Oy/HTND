@@ -15,11 +15,11 @@ RUN go mod download
 COPY . .
 
 # Build the binary with CGO disabled for static linking to ensure Alpine compatibility
-RUN go build -o HTND .
-RUN go build -o htnwallet ./cmd/htnwallet
-RUN go build -o htnminer ./cmd/htnminer
-RUN go build -o htnctl ./cmd/htnctl
-RUN go build -o genkeypair ./cmd/genkeypair
+RUN go build -tags "deadlock pebblegozstd" -o HTND .
+RUN go build -tags "deadlock pebblegozstd" -o htnwallet ./cmd/htnwallet
+RUN go build -tags "deadlock pebblegozstd" -o htnminer ./cmd/htnminer
+RUN go build -tags "deadlock pebblegozstd" -o htnctl ./cmd/htnctl
+RUN go build -tags "deadlock pebblegozstd" -o genkeypair ./cmd/genkeypair
 
 # --- multistage docker build: stage #2: runtime image
 FROM ubuntu:24.04

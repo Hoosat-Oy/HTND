@@ -32,5 +32,5 @@ func (fss *finalityStagingShard) Commit(dbTx model.DBTransaction) error {
 }
 
 func (fss *finalityStagingShard) isStaged() bool {
-	return len(fss.toAdd) == 0
+	return len(fss.toAdd) != 0
 }

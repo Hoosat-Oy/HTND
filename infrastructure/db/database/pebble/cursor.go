@@ -111,6 +111,12 @@ func (c *PebbleDBCursor) Key() (*database.Key, error) {
 	if c.isClosed {
 		return nil, errors.New("cannot get the key of a closed cursor")
 	}
+	if !c.iterator.Valid() {
+		if iterErr := c.iterator.Error(); iterErr != nil {
+			return nil, errors.Wrap(iterErr, "iterator error")
+		}
+		return nil, errors.Wrapf(database.ErrNotFound, "cannot get the key of an exhausted cursor")
+	}
 	fullKeyPath := c.iterator.Key()
 	if fullKeyPath == nil {
 		return nil, errors.Wrapf(database.ErrNotFound, "cannot get the key of an exhausted cursor")
@@ -126,6 +132,12 @@ func (c *PebbleDBCursor) Key() (*database.Key, error) {
 func (c *PebbleDBCursor) Value() ([]byte, error) {
 	if c.isClosed {
 		return nil, errors.New("cannot get the value of a closed cursor")
+	}
+	if !c.iterator.Valid() {
+		if iterErr := c.iterator.Error(); iterErr != nil {
+			return nil, errors.Wrap(iterErr, "iterator error")
+		}
+		return nil, errors.Wrapf(database.ErrNotFound, "cannot get the value of an exhausted cursor")
 	}
 	value := c.iterator.Value()
 	if value == nil {

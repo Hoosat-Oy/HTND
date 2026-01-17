@@ -112,9 +112,9 @@ func TestCheckParentBlockBodiesExist(t *testing.T) {
 
 		// Add blocks until the pruning point changes
 		tipHash := consensusConfig.GenesisHash
-		anticonePruningBlock, err := tc.BuildUTXOInvalidBlock([]*externalapi.DomainHash{tipHash})
+		anticonePruningBlock, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{tipHash}, nil, nil)
 		if err != nil {
-			t.Fatalf("BuildUTXOInvalidBlock: %+v", err)
+			t.Fatalf("BuildBlockWithParents: %+v", err)
 		}
 
 		// Add only the header of anticonePruningBlock

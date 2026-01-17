@@ -70,9 +70,18 @@ func (csm *consensusStateManager) calculatePastUTXOAndAcceptanceDataWithSelected
 		return nil, nil, nil, errors.Errorf("blockGHOSTDAGData is nil for block %s", blockHash)
 	}
 
+	// IMPORTANT: For correct UTXO commitment, the DAA score used to build UTXOEntries must match
+	// the score implied by the block header. During pruning-point import/trusted flows, the DAA store
+	// might not yet be fully staged for all blocks, so prefer the header's DAAScore when available.
 	daaScore, err := csm.daaBlocksStore.DAAScore(csm.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return nil, nil, nil, err
+	}
+	if !blockHash.Equal(model.VirtualBlockHash) {
+		header, headerErr := csm.blockHeaderStore.BlockHeader(csm.databaseContext, stagingArea, blockHash)
+		if headerErr == nil {
+			daaScore = header.DAAScore()
+		}
 	}
 
 	log.Debugf("Applying blue blocks to the selected parent past UTXO of block %s", blockHash)

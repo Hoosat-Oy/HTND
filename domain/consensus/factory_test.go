@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Hoosat-Oy/HTND/domain/prefixmanager/prefix"
-	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/pebble"
+	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/ldb"
 
 	"github.com/Hoosat-Oy/HTND/domain/dagconfig"
 )
@@ -20,7 +20,7 @@ func TestNewConsensus(t *testing.T) {
 		return
 	}
 
-	db, err := pebble.NewPebbleDB(tmpDir, 8)
+	db, err := ldb.NewLevelDB(tmpDir, 8)
 	if err != nil {
 		t.Fatalf("error in NewLevelDB: %s", err)
 	}

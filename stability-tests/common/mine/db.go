@@ -5,7 +5,7 @@ import (
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
-	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/pebble"
+	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/ldb"
 )
 
 const leveldbCacheSizeMiB = 256
@@ -16,7 +16,7 @@ var lastMinedBlockKey = database.MakeBucket(nil).Key([]byte("last-sent-block"))
 type miningDB struct {
 	idToBlockHash map[string]*externalapi.DomainHash
 	hashToBlockID map[externalapi.DomainHash]string
-	db            *pebble.PebbleDB
+	db            *ldb.LevelDB
 }
 
 func (mdb *miningDB) hashByID(id string) *externalapi.DomainHash {
@@ -38,7 +38,7 @@ func newMiningDB(dataDir string) (*miningDB, error) {
 	hashToBlockID := make(map[externalapi.DomainHash]string)
 
 	dbPath := filepath.Join(dataDir, "minedb")
-	db, err := pebble.NewPebbleDB(dbPath, leveldbCacheSizeMiB)
+	db, err := ldb.NewLevelDB(dbPath, leveldbCacheSizeMiB)
 	if err != nil {
 		return nil, err
 	}

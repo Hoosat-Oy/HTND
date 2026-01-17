@@ -1,29 +1,9 @@
 package random
 
 import (
-	"crypto/rand"
 	"fmt"
-	"github.com/pkg/errors"
-	"io"
 	"testing"
 )
-
-// fakeRandReader implements the io.Reader interface and is used to force
-// errors in the RandomUint64 function.
-type fakeRandReader struct {
-	n   int
-	err error
-}
-
-// Read returns the fake reader error and the lesser of the fake reader value
-// and the length of p.
-func (r *fakeRandReader) Read(p []byte) (int, error) {
-	n := r.n
-	if n > len(p) {
-		n = len(p)
-	}
-	return n, r.err
-}
 
 // TestRandomUint64 exercises the randomness of the random number generator on
 // the system by ensuring the probability of the generated numbers. If the RNG
@@ -61,16 +41,11 @@ func TestRandomUint64(t *testing.T) {
 // TestRandomUint64Errors uses a fake reader to force error paths to be executed
 // and checks the results accordingly.
 func TestRandomUint64Errors(t *testing.T) {
-	// Test short reads.
-	reader := rand.Reader
-	rand.Reader = &fakeRandReader{n: 2, err: io.EOF}
-	nonce, err := Uint64()
-	if !errors.Is(err, io.ErrUnexpectedEOF) {
-		t.Errorf("Error not expected value of %v [%v]",
-			io.ErrUnexpectedEOF, err)
-	}
-	if nonce != 0 {
-		t.Errorf("Nonce is not 0 [%v]", nonce)
-	}
-	rand.Reader = reader
+	// On modern Go (notably on Windows), crypto/rand.Read failures can terminate
+	// the process via an unrecoverable runtime throw (see https://go.dev/issue/66821),
+	// so we can't safely induce the error path in a unit test.
+	//
+	// Uint64 still returns (uint64, error) for API compatibility, but the error
+	// path isn't reliably testable without changing the production implementation.
+	t.Skip("cannot safely force crypto/rand.Read failure in a unit test")
 }

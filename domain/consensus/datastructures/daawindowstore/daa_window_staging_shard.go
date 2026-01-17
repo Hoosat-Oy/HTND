@@ -55,5 +55,5 @@ func serializePair(pair *externalapi.BlockGHOSTDAGDataHashPair) ([]byte, error) 
 }
 
 func (daawss *daaWindowStagingShard) isStaged() bool {
-	return len(daawss.toAdd) == 0
+	return len(daawss.toAdd) != 0
 }
