@@ -32,5 +32,5 @@ func (mdrss *mergeDepthRootStagingShard) Commit(dbTx model.DBTransaction) error 
 }
 
 func (mdrss *mergeDepthRootStagingShard) isStaged() bool {
-	return len(mdrss.toAdd) == 0
+	return len(mdrss.toAdd) != 0
 }
