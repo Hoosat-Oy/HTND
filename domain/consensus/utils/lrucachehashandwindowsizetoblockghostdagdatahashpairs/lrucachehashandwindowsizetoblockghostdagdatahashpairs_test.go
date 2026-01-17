@@ -151,3 +151,46 @@ func TestLRUCache_EvictsExactlyOneWhenOverCapacity(t *testing.T) {
 		t.Fatalf("expected exactly 2 keys to remain, got %d", present)
 	}
 }
+
+func TestLRUCache_RandomEvictionVariesAcrossTrials(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping probabilistic eviction test in -short")
+	}
+
+	const trials = 200
+	type key struct {
+		h byte
+		w int
+	}
+	evicted := make(map[key]int)
+
+	for i := 0; i < trials; i++ {
+		cache := New(2, false)
+		h1 := newTestHash(t, 1)
+		h2 := newTestHash(t, 2)
+		h3 := newTestHash(t, 3)
+
+		cache.Add(h1, 1, []*externalapi.BlockGHOSTDAGDataHashPair{newPair(t, 10, 1)})
+		cache.Add(h2, 1, []*externalapi.BlockGHOSTDAGDataHashPair{newPair(t, 11, 2)})
+		cache.Add(h3, 2, []*externalapi.BlockGHOSTDAGDataHashPair{newPair(t, 12, 3)})
+
+		missingCount := 0
+		var missing key
+		checks := []key{{1, 1}, {2, 1}, {3, 2}}
+		for _, k := range checks {
+			h := newTestHash(t, k.h)
+			if !cache.Has(h, k.w) {
+				missing = k
+				missingCount++
+			}
+		}
+		if missingCount != 1 {
+			t.Fatalf("expected exactly 1 evicted entry, got %d", missingCount)
+		}
+		evicted[missing]++
+	}
+
+	if len(evicted) < 2 {
+		t.Fatalf("expected eviction to vary across trials, got evicted set: %v", evicted)
+	}
+}
