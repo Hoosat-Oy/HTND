@@ -284,7 +284,7 @@ func TestTransactionAcceptance(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error getting redBlock: %+v", err)
 		}
-		_, found, err := testConsensus.GetBlock(blockHashG)
+		blockG, found, err := testConsensus.GetBlock(blockHashG)
 		if err != nil {
 			t.Fatalf("Error getting blockG: %+v", err)
 		}
@@ -293,7 +293,10 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("block G is missing")
 		}
 
-		updatedDAAScoreVirtualBlock := consensusConfig.GenesisBlock.Header.DAAScore() + 26
+		// The acceptance data is calculated from the POV of the validating block.
+		// For UTXO entries created while applying the merge set, the consensus state manager
+		// uses the validating block header's DAA score (see CalculatePastUTXOAndAcceptanceData).
+		expectedAddedUTXOEntryDAAScore := blockG.Header.DAAScore()
 		//We expect the second transaction in the "blue block" (blueChildOfRedBlock) to be accepted because the merge set is ordered topologically
 		//and the red block is ordered topologically before the "blue block" so the input is known in the UTXOSet.
 		expectedAcceptanceData := externalapi.AcceptanceData{
@@ -336,15 +339,15 @@ func TestTransactionAcceptance(t *testing.T) {
 						IsAccepted:                  false,
 						TransactionInputUTXOEntries: []externalapi.UTXOEntry{},
 					},
-					{ // The DAAScore was calculated by the virtual block pov. The DAAScore has changed since more blocks were added to the DAG.
-						// So we will change the DAAScore in the UTXOEntryInput to the updated virtual DAAScore.
+					{ // The spent output was added to the accumulated UTXO diff while applying the merge set.
+						// Its UTXOEntry DAAScore matches the validating block header's DAA score.
 						Transaction: blueChildOfRedBlock.Transactions[1],
 						Fee:         fees,
 						IsAccepted:  true,
 						TransactionInputUTXOEntries: []externalapi.UTXOEntry{
 							utxo.NewUTXOEntry(transactionFromBlueChildOfRedBlockInput0UTXOEntry.Amount(),
 								transactionFromBlueChildOfRedBlockInput0UTXOEntry.ScriptPublicKey(),
-								transactionFromBlueChildOfRedBlockInput0UTXOEntry.IsCoinbase(), uint64(updatedDAAScoreVirtualBlock))},
+								transactionFromBlueChildOfRedBlockInput0UTXOEntry.IsCoinbase(), expectedAddedUTXOEntryDAAScore)},
 					},
 				},
 			},
