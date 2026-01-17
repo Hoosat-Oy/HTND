@@ -18,7 +18,7 @@ import (
 )
 
 func TestIBD(t *testing.T) {
-	t.Skip("Skipping IBD test (currently unstable/flaky)")
+	t.Skip("Skipping IBD test (Takes way too long to execute in CI)")
 	const numBlocks = 100
 
 	syncer, syncee, _, teardown := standardSetup(t)
@@ -74,8 +74,7 @@ func TestIBD(t *testing.T) {
 // TestIBDWithPruning checks the IBD from a node with
 // already pruned blocks.
 func TestIBDWithPruning(t *testing.T) {
-	t.Skip("Skipping pruning integration test (currently unstable/flaky)")
-
+	t.Skip("Skipping IBD test (Takes way too long to execute in CI)")
 	testSync := func(syncer, syncee *appHarness) {
 		utxoSetOverriden := make(chan struct{})
 		err := syncee.rpcClient.RegisterPruningPointUTXOSetNotifications(func() {
@@ -317,10 +316,12 @@ func TestBoundedMergeDepth(t *testing.T) {
 	}
 
 	t.Run("mergeDepth", func(t *testing.T) {
-		test(harnesses[0], harnesses[1], overrideDAGParams.MergeDepth[constants.GetBlockVersion()-1], false)
+		mergeDepth := overrideDAGParams.MergeDepth[len(overrideDAGParams.MergeDepth)-1]
+		test(harnesses[0], harnesses[1], mergeDepth, false)
 	})
 
 	t.Run("mergeDepth-1", func(t *testing.T) {
-		test(harnesses[2], harnesses[3], overrideDAGParams.MergeDepth[constants.GetBlockVersion()-1]-1, true)
+		mergeDepth := overrideDAGParams.MergeDepth[len(overrideDAGParams.MergeDepth)-1]
+		test(harnesses[2], harnesses[3], mergeDepth-1, true)
 	})
 }

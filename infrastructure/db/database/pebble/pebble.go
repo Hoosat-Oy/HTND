@@ -20,7 +20,7 @@ type PebbleDB struct {
 
 // NewPebbleDB opens a Pebble instance defined by the given path.
 func NewPebbleDB(path string, cacheSizeMiB int) (*PebbleDB, error) {
-	options := Options()
+	options := Options(cacheSizeMiB)
 
 	db, err := pebble.Open(path, options)
 	if err != nil {

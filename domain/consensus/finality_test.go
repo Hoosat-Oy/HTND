@@ -189,11 +189,13 @@ func TestBoundedMergeDepth(t *testing.T) {
 		consensusConfig.MergeDepth = []uint64{7}
 		consensusConfig.FinalityDuration = []time.Duration{20 * consensusConfig.TargetTimePerBlock[constants.GetBlockVersion()-1]}
 
+		mergeDepth := consensusConfig.MergeDepth[len(consensusConfig.MergeDepth)-1]
+
 		if uint64(consensusConfig.K[constants.GetBlockVersion()-1]) >= consensusConfig.FinalityDepth() {
 			t.Fatal("K must be smaller than finality duration for this test to run")
 		}
 
-		if uint64(consensusConfig.K[constants.GetBlockVersion()-1]) >= consensusConfig.MergeDepth[constants.GetBlockVersion()-1] {
+		if uint64(consensusConfig.K[constants.GetBlockVersion()-1]) >= mergeDepth {
 			t.Fatal("K must be smaller than merge depth for this test to run")
 		}
 
@@ -490,7 +492,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		// Bounded merge depth enforcement is gated by a high DAA score in the implementation.
 		// The test consensus created here starts near genesis, so the rule is not enforced.
 		// We still exercise the block-building and insertion paths, but we don't expect violations.
-		test(consensusConfig.MergeDepth[constants.GetBlockVersion()-1], consensusConfig.GenesisHash, false, false)
+		test(mergeDepth, consensusConfig.GenesisHash, false, false)
 	})
 }
 

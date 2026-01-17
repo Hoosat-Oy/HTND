@@ -202,6 +202,37 @@ func (p *Params) NormalizeRPCServerAddress(addr string) (string, error) {
 	return network.NormalizeAddress(addr, p.RPCPort)
 }
 
+func currentBlockVersionIndexForSlice(length int) int {
+	if length <= 0 {
+		panic("dagconfig: attempted to index empty per-version parameter slice")
+	}
+
+	index := int(constants.GetBlockVersion()) - 1
+	if index < 0 {
+		index = 0
+	}
+	if index >= length {
+		index = length - 1
+	}
+	return index
+}
+
+func (p *Params) targetTimePerBlockForCurrentVersion() time.Duration {
+	return p.TargetTimePerBlock[currentBlockVersionIndexForSlice(len(p.TargetTimePerBlock))]
+}
+
+func (p *Params) finalityDurationForCurrentVersion() time.Duration {
+	return p.FinalityDuration[currentBlockVersionIndexForSlice(len(p.FinalityDuration))]
+}
+
+func (p *Params) ghostdagKForCurrentVersion() externalapi.KType {
+	return p.K[currentBlockVersionIndexForSlice(len(p.K))]
+}
+
+func (p *Params) pruningMultiplierForCurrentVersion() uint64 {
+	return p.PruningMultiplier[currentBlockVersionIndexForSlice(len(p.PruningMultiplier))]
+}
+
 /*
 	Block version index must be -1 because blockVersions start at 1 and index from 0.
 	blockVersion = index
@@ -213,20 +244,21 @@ func (p *Params) NormalizeRPCServerAddress(addr string) (string, error) {
 */
 // FinalityDepth returns the finality duration represented in blocks
 func (p *Params) FinalityDepth() uint64 {
+	finalityDuration := p.finalityDurationForCurrentVersion()
+	targetTimePerBlock := p.targetTimePerBlockForCurrentVersion()
 	if constants.GetBlockVersion() < 5 {
-		return uint64(p.FinalityDuration[int(constants.GetBlockVersion())-1] / p.TargetTimePerBlock[int(constants.GetBlockVersion())-1])
-	} else {
-		return uint64(p.FinalityDuration[int(constants.GetBlockVersion())-1].Seconds() / p.TargetTimePerBlock[int(constants.GetBlockVersion())-1].Seconds())
+		return uint64(finalityDuration / targetTimePerBlock)
 	}
+	return uint64(finalityDuration.Seconds() / targetTimePerBlock.Seconds())
 }
 
 // PruningDepth returns the pruning duration represented in blocks
 func (p *Params) PruningDepth() uint64 {
+	k := uint64(p.ghostdagKForCurrentVersion())
 	if constants.GetBlockVersion() < 5 {
-		return 2*p.FinalityDepth() + 4*p.MergeSetSizeLimit*uint64(p.K[int(constants.GetBlockVersion())-1]) + 2*uint64(p.K[int(constants.GetBlockVersion())-1]) + 2
-	} else {
-		return 2*p.FinalityDepth()*p.PruningMultiplier[int(constants.GetBlockVersion())-1] + 4*p.MergeSetSizeLimit*uint64(p.K[int(constants.GetBlockVersion())-1]) + 2*uint64(p.K[int(constants.GetBlockVersion())-1]) + 2
+		return 2*p.FinalityDepth() + 4*p.MergeSetSizeLimit*k + 2*k + 2
 	}
+	return 2*p.FinalityDepth()*p.pruningMultiplierForCurrentVersion() + 4*p.MergeSetSizeLimit*k + 2*k + 2
 }
 
 // MainnetParams defines the network parameters for the main Hoosat network.

@@ -10,21 +10,24 @@ import (
 )
 
 // Options returns a pebble.Options struct optimized for HTND's block rate and data patterns.
-// Tuned for v2.1.0: Full Experimental struct literal to match expanded fields.
+//
+// IMPORTANT: Keep defaults memory-safe. Pebble can reserve significant memory via the block
+// cache and memtables; on Windows this may hit the system commit limit and crash with
+// `VirtualAlloc ... errno=1455`.
 //
 // Environment variables for tuning (all optional):
 //
 //	HTND_BLOOM_FILTER_LEVEL - Bloom filter bits per key (default: 14 for ~0.1% false positive)
-//	HTND_PEBBLE_CACHE_MB - Cache size in MB (default: 8192 MB)
-//	HTND_MEMTABLE_SIZE_MB - MemTable size in MB (default: 128 MB)
-//	HTND_MEMTABLE_THRESHOLD - Number of memtables before stalling writes (default: 32)
+//	HTND_PEBBLE_CACHE_MB - Cache size in MB (default: caller-provided cacheSizeMiB)
+//	HTND_MEMTABLE_SIZE_MB - MemTable size in MB (default: 32 MB)
+//	HTND_MEMTABLE_THRESHOLD - Number of memtables before stalling writes (default: 8)
 //	HTND_L0_COMPACTION_THRESHOLD - L0 compaction trigger (default: 8)
 //	HTND_L0_STOP_WRITES_THRESHOLD - L0 write stall threshold (default: 48)
 //
 // Legacy environment variables (for backward compatibility):
 //
 //	BLOOM_FILTER_LEVEL, PEBBLE_CACHE_MB
-func Options() *pebble.Options {
+func Options(cacheSizeMiB int) *pebble.Options {
 	// Note: Each increase in bloom filter level roughly halves the false positive rate:
 	// - Level 10: ~1% false positive rate (10 bits per key)
 	// - Level 12: ~0.4% false positive rate (12 bits per key)
@@ -46,17 +49,17 @@ func Options() *pebble.Options {
 	}
 	bloomFilter := bloom.FilterPolicy(bloomFilterLevel)
 
-	// Define MemTable size and thresholds. Larger memtables and higher thresholds
-	// reduce flush frequency and write stalls at the cost of more peak RAM usage.
-	// These are conservative for modern machines and can be adjusted via env vars.
-	memTableSize := int64(128 * 1024 * 1024) // 128 MiB (less frequent flushes)
+	// Define MemTable size and thresholds. These must be kept conservative by default:
+	// the effective peak RAM is roughly Cache + (MemTableSize * MemTableStopWritesThreshold)
+	// (plus some overhead). The previous defaults could reach multiple GiB.
+	memTableSize := int64(32 * 1024 * 1024) // 32 MiB
 	if v := os.Getenv("HTND_MEMTABLE_SIZE_MB"); v != "" {
 		if mb, err := strconv.Atoi(v); err == nil && mb > 0 {
 			memTableSize = int64(mb) * 1024 * 1024
 		}
 	}
 
-	memTableStopWritesThreshold := 32 // allow more memtables before stalling
+	memTableStopWritesThreshold := 8
 	if v := os.Getenv("HTND_MEMTABLE_THRESHOLD"); v != "" {
 		if threshold, err := strconv.Atoi(v); err == nil && threshold > 0 {
 			memTableStopWritesThreshold = threshold
@@ -65,8 +68,12 @@ func Options() *pebble.Options {
 
 	baseFileSize := memTableSize * int64(memTableStopWritesThreshold)
 
-	// Use HTND_PEBBLE_CACHE_MB or PEBBLE_CACHE_MB if set.
-	cacheBytes := int64(1 * 1024 * 1024 * 1024) // 1 GiB default
+	// Cache size: env vars override; otherwise use the caller-provided cacheSizeMiB.
+	// If cacheSizeMiB is 0/negative, default to 256 MiB.
+	cacheBytes := int64(256 * 1024 * 1024)
+	if cacheSizeMiB > 0 {
+		cacheBytes = int64(cacheSizeMiB) * 1024 * 1024
+	}
 	if v := os.Getenv("HTND_PEBBLE_CACHE_MB"); v != "" {
 		if mb, err := strconv.Atoi(v); err == nil && mb > 0 {
 			cacheBytes = int64(mb) * 1024 * 1024

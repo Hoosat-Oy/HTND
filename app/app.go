@@ -23,8 +23,9 @@ import (
 )
 
 const (
-	leveldbCacheSizeMiB = 256
-	defaultDataDirname  = "datadir2"
+	leveldbCacheSizeMiB  = 256
+	pebbledbCacheSizeGib = 1
+	defaultDataDirname   = "datadir2"
 )
 
 var desiredLimits = &limits.DesiredLimits{
@@ -189,14 +190,14 @@ func openDB(cfg *config.Config) (database.Database, error) {
 		return db, nil
 	} else if strings.EqualFold(cfg.DbType, "pebble") {
 		log.Infof("Loading %s database from '%s'", cfg.DbType, dbPath)
-		db, err := pebble.NewPebbleDB(dbPath, leveldbCacheSizeMiB)
+		db, err := pebble.NewPebbleDB(dbPath, pebbledbCacheSizeGib)
 		if err != nil {
 			return nil, err
 		}
 		return db, nil
 	} else {
-		log.Infof("Loading LevelDB database  from '%s'", dbPath)
-		db, err := ldb.NewLevelDB(dbPath, leveldbCacheSizeMiB)
+		log.Infof("Loading %s database from '%s'", cfg.DbType, dbPath)
+		db, err := pebble.NewPebbleDB(dbPath, pebbledbCacheSizeGib)
 		if err != nil {
 			return nil, err
 		}
