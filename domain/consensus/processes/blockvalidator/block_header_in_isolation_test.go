@@ -86,42 +86,32 @@ func CheckBlockVersion(t *testing.T, tc testapi.TestConsensus, consensusConfig *
 }
 
 func CheckBlockTimestampInIsolation(t *testing.T, tc testapi.TestConsensus, cfg *consensus.Config) {
-	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		factory := consensus.NewFactory()
+	block, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{cfg.GenesisHash}, nil, nil)
+	if err != nil {
+		t.Fatalf("BuildBlockWithParents: %+v", err)
+	}
 
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckBlockTimestampInIsolation")
-		if err != nil {
-			t.Fatalf("Error setting up consensus: %+v", err)
-		}
-		defer teardown(false)
+	// Give 10 seconds slack to take care of the test duration
+	timestamp := mstime.Now().UnixMilliseconds() +
+		int64(cfg.TimestampDeviationTolerance)*cfg.TargetTimePerBlock[constants.GetBlockVersion()-1].Milliseconds() + 10_000
 
-		block, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
-		if err != nil {
-			t.Fatalf("BuildBlockWithParents: %+v", err)
-		}
+	block.Header = blockheader.NewImmutableBlockHeader(
+		block.Header.Version(),
+		block.Header.Parents(),
+		block.Header.HashMerkleRoot(),
+		block.Header.AcceptedIDMerkleRoot(),
+		block.Header.UTXOCommitment(),
+		timestamp,
+		block.Header.Bits(),
+		block.Header.Nonce(),
+		block.Header.DAAScore(),
+		block.Header.BlueScore(),
+		block.Header.BlueWork(),
+		block.Header.PruningPoint(),
+	)
 
-		// Give 10 seconds slack to take care of the test duration
-		timestamp := mstime.Now().UnixMilliseconds() +
-			int64(consensusConfig.TimestampDeviationTolerance)*consensusConfig.TargetTimePerBlock[constants.GetBlockVersion()-1].Milliseconds() + 10_000
-
-		block.Header = blockheader.NewImmutableBlockHeader(
-			block.Header.Version(),
-			block.Header.Parents(),
-			block.Header.HashMerkleRoot(),
-			block.Header.AcceptedIDMerkleRoot(),
-			block.Header.UTXOCommitment(),
-			timestamp,
-			block.Header.Bits(),
-			block.Header.Nonce(),
-			block.Header.DAAScore(),
-			block.Header.BlueScore(),
-			block.Header.BlueWork(),
-			block.Header.PruningPoint(),
-		)
-
-		err = tc.ValidateAndInsertBlock(block, true, true)
-		if !errors.Is(err, ruleerrors.ErrTimeTooMuchInTheFuture) {
-			t.Fatalf("Unexpected error: %+v", err)
-		}
-	})
+	err = tc.ValidateAndInsertBlock(block, true, true)
+	if !errors.Is(err, ruleerrors.ErrTimeTooMuchInTheFuture) {
+		t.Fatalf("Unexpected error: %+v", err)
+	}
 }

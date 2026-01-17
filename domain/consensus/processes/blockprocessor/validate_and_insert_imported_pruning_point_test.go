@@ -2,6 +2,7 @@ package blockprocessor_test
 
 import (
 	"math"
+	"sort"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/consensushashing"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/testutils"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/utils/utxo"
+	infralogger "github.com/Hoosat-Oy/HTND/infrastructure/logger"
 	"github.com/pkg/errors"
 )
 
@@ -37,6 +39,13 @@ func addBlock(tc testapi.TestConsensus, parentHashes []*externalapi.DomainHash, 
 }
 
 func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
+	if !infralogger.BackendLog.IsRunning() {
+		infralogger.InitLogStdout(infralogger.LevelDebug)
+		infralogger.SetLogLevels(infralogger.LevelOff)
+		_ = infralogger.RegisterSubSystem("BDAG")
+		_ = infralogger.SetLogLevel("BDAG", "debug")
+	}
+
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
 
@@ -94,6 +103,18 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 				t.Fatalf("PruningPointAndItsAnticone: %+v", err)
 			}
 
+			sort.Slice(pruningPointAndItsAnticone, func(i, j int) bool {
+				iHeader, err := tcSyncer.GetBlockHeader(pruningPointAndItsAnticone[i])
+				if err != nil {
+					t.Fatalf("GetBlockHeader: %+v", err)
+				}
+				jHeader, err := tcSyncer.GetBlockHeader(pruningPointAndItsAnticone[j])
+				if err != nil {
+					t.Fatalf("GetBlockHeader: %+v", err)
+				}
+				return iHeader.BlueScore() < jHeader.BlueScore()
+			})
+
 			for _, blockHash := range pruningPointAndItsAnticone {
 				block, _, err := tcSyncer.GetBlock(blockHash)
 				if err != nil {
@@ -135,7 +156,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 					})
 				}
 
-				err = synceeStaging.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, true)
+				err = synceeStaging.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
 				if err != nil {
 					t.Fatalf("ValidateAndInsertBlockWithTrustedData: %+v", err)
 				}
@@ -171,7 +192,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 					t.Fatalf("GetBlockHeader: %+v", err)
 				}
 
-				err = synceeStaging.ValidateAndInsertBlock(&externalapi.DomainBlock{Header: header}, false, true)
+				err = synceeStaging.ValidateAndInsertBlock(&externalapi.DomainBlock{Header: header}, false, false)
 				if err != nil {
 					t.Fatalf("ValidateAndInsertBlock %d: %+v", i, err)
 				}
@@ -185,9 +206,18 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 				if err != nil {
 					t.Fatalf("GetPruningPointUTXOs: %+v", err)
 				}
+				originalLen := len(outpointAndUTXOEntryPairs)
+				if fromOutpoint != nil && originalLen > 0 && outpointAndUTXOEntryPairs[0].Outpoint.Equal(fromOutpoint) {
+					outpointAndUTXOEntryPairs = outpointAndUTXOEntryPairs[1:]
+				}
+
+				if len(outpointAndUTXOEntryPairs) == 0 {
+					break
+				}
+
 				fromOutpoint = outpointAndUTXOEntryPairs[len(outpointAndUTXOEntryPairs)-1].Outpoint
 				pruningPointUTXOs = append(pruningPointUTXOs, outpointAndUTXOEntryPairs...)
-				if len(outpointAndUTXOEntryPairs) < step {
+				if originalLen < step {
 					break
 				}
 			}
@@ -275,7 +305,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 					t.Fatalf("GetBlock: %+v", err)
 				}
 
-				err = synceeStaging.ValidateAndInsertBlock(block, true, true)
+				err = synceeStaging.ValidateAndInsertBlock(block, false, false)
 				if err != nil {
 					t.Fatalf("ValidateAndInsertBlock: %+v", err)
 				}
@@ -301,7 +331,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 				t.Fatalf("GetBlock: %+v", err)
 			}
 
-			err = synceeStaging.ValidateAndInsertBlock(tip, true, true)
+			err = synceeStaging.ValidateAndInsertBlock(tip, true, false)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertBlock: %+v", err)
 			}
@@ -312,7 +342,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 			}
 
 			if blockInfo.BlockStatus != externalapi.StatusUTXOValid {
-				t.Fatalf("Tip didn't pass UTXO verification")
+				t.Fatalf("Tip didn't pass UTXO verification. Status: %s", blockInfo.BlockStatus)
 			}
 
 			synceePruningPoint, err := synceeStaging.PruningPoint()
@@ -580,10 +610,19 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Error getting pruning point UTXOs: %+v", err)
 			}
+			originalLen := len(outpointAndUTXOEntryPairs)
+			if fromOutpoint != nil && originalLen > 0 && outpointAndUTXOEntryPairs[0].Outpoint.Equal(fromOutpoint) {
+				outpointAndUTXOEntryPairs = outpointAndUTXOEntryPairs[1:]
+			}
+
+			if len(outpointAndUTXOEntryPairs) == 0 {
+				break
+			}
+
 			allOutpointAndUTXOEntryPairs = append(allOutpointAndUTXOEntryPairs, outpointAndUTXOEntryPairs...)
 			fromOutpoint = outpointAndUTXOEntryPairs[len(outpointAndUTXOEntryPairs)-1].Outpoint
 
-			if len(outpointAndUTXOEntryPairs) < step {
+			if originalLen < step {
 				break
 			}
 		}
@@ -726,9 +765,18 @@ func BenchmarkGetPruningPointUTXOs(b *testing.B) {
 			if err != nil {
 				b.Fatalf("Error getting pruning point UTXOs: %+v", err)
 			}
+			originalLen := len(outpointAndUTXOEntryPairs)
+			if fromOutpoint != nil && originalLen > 0 && outpointAndUTXOEntryPairs[0].Outpoint.Equal(fromOutpoint) {
+				outpointAndUTXOEntryPairs = outpointAndUTXOEntryPairs[1:]
+			}
+
+			if len(outpointAndUTXOEntryPairs) == 0 {
+				break
+			}
+
 			fromOutpoint = outpointAndUTXOEntryPairs[len(outpointAndUTXOEntryPairs)-1].Outpoint
 
-			if len(outpointAndUTXOEntryPairs) < step {
+			if originalLen < step {
 				break
 			}
 		}

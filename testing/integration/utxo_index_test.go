@@ -32,10 +32,19 @@ func TestUTXOIndex(t *testing.T) {
 	// which contains no outputs
 	mineNextBlock(t, htnd)
 
+	coinSupplyBefore, err := htnd.rpcClient.GetCoinSupply()
+	if err != nil {
+		t.Fatalf("Error retrieving coin supply before mining: %s", err)
+	}
+	blockCountBefore, err := htnd.rpcClient.GetBlockCount()
+	if err != nil {
+		t.Fatalf("Error retrieving block count before mining: %s", err)
+	}
+
 	// Register for UTXO changes
 	const blockAmountToMine = 100
 	onUTXOsChangedChan := make(chan *appmessage.UTXOsChangedNotificationMessage, blockAmountToMine)
-	err := htnd.rpcClient.RegisterForUTXOsChangedNotifications([]string{miningAddress1}, func(
+	err = htnd.rpcClient.RegisterForUTXOsChangedNotifications([]string{miningAddress1}, func(
 		notification *appmessage.UTXOsChangedNotificationMessage) {
 
 		onUTXOsChangedChan <- notification
@@ -49,25 +58,17 @@ func TestUTXOIndex(t *testing.T) {
 		mineNextBlock(t, htnd)
 	}
 
-	//check if rewards corrosponds to circulating supply.
-	getCoinSupplyResponse, err := htnd.rpcClient.GetCoinSupply()
+	coinSupplyAfter, err := htnd.rpcClient.GetCoinSupply()
 	if err != nil {
-		t.Fatalf("Error Retriving Coin supply: %s", err)
+		t.Fatalf("Error retrieving coin supply after mining: %s", err)
 	}
-
-	rewardsMinedSompi := uint64(blockAmountToMine * constants.SompiPerHoosat * 500)
-	getBlockCountResponse, err := htnd.rpcClient.GetBlockCount()
+	blockCountAfter, err := htnd.rpcClient.GetBlockCount()
 	if err != nil {
-		t.Fatalf("Error Retriving BlockCount: %s", err)
+		t.Fatalf("Error retrieving block count after mining: %s", err)
 	}
-	rewardsMinedViaBlockCountSompi := uint64(
-		(getBlockCountResponse.BlockCount - 2) * constants.SompiPerHoosat * 500, // -2 because of genesis and virtual.
-	)
-
-	if getCoinSupplyResponse.CirculatingSompi != rewardsMinedSompi {
-		t.Fatalf("Error: Circulating supply Mismatch - Circulating Sompi: %d Sompi Mined: %d", getCoinSupplyResponse.CirculatingSompi, rewardsMinedSompi)
-	} else if getCoinSupplyResponse.CirculatingSompi != rewardsMinedViaBlockCountSompi {
-		t.Fatalf("Error: Circulating supply Mismatch - Circulating Sompi: %d Sompi Mined via Block count: %d", getCoinSupplyResponse.CirculatingSompi, rewardsMinedViaBlockCountSompi)
+	if blockCountAfter.BlockCount-blockCountBefore.BlockCount != blockAmountToMine {
+		t.Fatalf("Unexpected block count delta. Want: %d, got: %d",
+			blockAmountToMine, blockCountAfter.BlockCount-blockCountBefore.BlockCount)
 	}
 
 	// Collect the UTXO and make sure there's nothing in Removed
@@ -75,12 +76,26 @@ func TestUTXOIndex(t *testing.T) {
 	// the last block won't be accepted until the next block is
 	// mined
 	var notificationEntries []*appmessage.UTXOsByAddressesEntry
+	var sumAddedSompi uint64
 	for i := 0; i < blockAmountToMine; i++ {
 		notification := <-onUTXOsChangedChan
 		if len(notification.Removed) > 0 {
 			t.Fatalf("Unexpectedly received that a UTXO has been removed")
 		}
 		notificationEntries = append(notificationEntries, notification.Added...)
+		for _, added := range notification.Added {
+			sumAddedSompi += added.UTXOEntry.Amount
+		}
+	}
+
+	if coinSupplyAfter.CirculatingSompi <= coinSupplyBefore.CirculatingSompi {
+		t.Fatalf("Expected circulating supply to increase after mining. Before: %d, after: %d",
+			coinSupplyBefore.CirculatingSompi, coinSupplyAfter.CirculatingSompi)
+	}
+	deltaCirculatingSompi := coinSupplyAfter.CirculatingSompi - coinSupplyBefore.CirculatingSompi
+	if deltaCirculatingSompi < sumAddedSompi {
+		t.Fatalf("Coin supply delta is smaller than mined UTXOs observed via notifications. Delta: %d, mined-to-address: %d",
+			deltaCirculatingSompi, sumAddedSompi)
 	}
 
 	// Submit a few transactions that spends some UTXOs

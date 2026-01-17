@@ -110,8 +110,11 @@ func (db *PebbleDB) Get(key *database.Key) ([]byte, error) {
 	// if strings.Contains(string(key.Bytes()), "utxo-index") {
 	// 	log.Infof("Pebble Get, key: %x, data: %x", key.Bytes(), data)
 	// }
-	defer closer.Close()
-	return data, nil
+	valueCopy := append([]byte(nil), data...)
+	if closeErr := closer.Close(); closeErr != nil {
+		return nil, errors.WithStack(closeErr)
+	}
+	return valueCopy, nil
 }
 
 // Has returns true if the database contains the given key.

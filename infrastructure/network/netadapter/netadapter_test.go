@@ -99,8 +99,8 @@ func TestNetAdapter(t *testing.T) {
 	}
 
 	// Ensure adapter has two connections
-	if count := adapterA.P2PConnectionCount(); count != 1 {
-		t.Fatalf("TestNetAdapter: expected 2 connections, got - %d", count)
+	if count := adapterA.P2PConnectionCount(); count != 2 {
+		t.Fatalf("TestNetAdapter: expected 2 connections, got %d", count)
 	}
 
 	// Ensure all connected peers have received broadcasted message

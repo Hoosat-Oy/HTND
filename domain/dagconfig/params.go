@@ -551,12 +551,14 @@ var SimnetParams = Params{
 	PreDeflationaryPhaseBaseSubsidy: defaultPreDeflationaryPhaseBaseSubsidy,
 	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
 	TargetTimePerBlock:              []time.Duration{defaultTargetTimePerBlock, defaultTargetTimePerBlock, defaultTargetTimePerBlock, defaultTargetTimePerBlock, 200 * time.Millisecond, 200 * time.Millisecond},
-	FinalityDuration:                []time.Duration{defaultFinalityDuration},
-	DifficultyAdjustmentWindowSize:  []int{defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, 264},
-	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
-	POWScores:                       []uint64{5},
-	PruningMultiplier:               []uint64{0, 0, 0, 0, 48},
-	MaxBlockMass:                    []uint64{defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass},
+	// Must have at least as many entries as the maximum block version reachable on this network.
+	// Simnet transitions to block version 2 after DAA score >= 5 (see POWScores below).
+	FinalityDuration:               []time.Duration{defaultFinalityDuration, defaultFinalityDuration},
+	DifficultyAdjustmentWindowSize: []int{defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, defaultDifficultyAdjustmentWindowSize, 264},
+	TimestampDeviationTolerance:    defaultTimestampDeviationTolerance,
+	POWScores:                      []uint64{5},
+	PruningMultiplier:              []uint64{0, 0, 0, 0, 48},
+	MaxBlockMass:                   []uint64{defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass, defaultMaxBlockMass},
 
 	// Consensus rule change deployments.
 	//

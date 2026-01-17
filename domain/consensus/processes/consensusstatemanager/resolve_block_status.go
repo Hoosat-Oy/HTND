@@ -234,6 +234,12 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 		return 0, nil, err
 	}
 
+	if csm.genesisHash.Equal(blockHash) {
+		log.Tracef("Staging the utxoDiff of genesis")
+		csm.stageDiff(stagingArea, blockHash, pastUTXOSet, nil)
+		return externalapi.StatusUTXOValid, nil, nil
+	}
+
 	log.Tracef("Staging the calculated acceptance data of block %s", blockHash)
 	csm.acceptanceDataStore.Stage(stagingArea, blockHash, acceptanceData)
 
@@ -255,12 +261,6 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 
 	log.Tracef("Staging the multiset of block %s", blockHash)
 	csm.multisetStore.Stage(stagingArea, blockHash, multiset)
-
-	if csm.genesisHash.Equal(blockHash) {
-		log.Tracef("Staging the utxoDiff of genesis")
-		csm.stageDiff(stagingArea, blockHash, pastUTXOSet, nil)
-		return externalapi.StatusUTXOValid, nil, nil
-	}
 
 	oldSelectedTip, err := csm.virtualSelectedParent(stagingArea)
 	if err != nil {

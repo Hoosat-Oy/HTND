@@ -240,9 +240,9 @@ func testCursorSeek(t *testing.T, db database.Database, testName string) {
 			"wrong value. Want: %s, got: %s", testName, fifthEntryValue, fifthCursorValue)
 	}
 
-	// Seek to a value that doesn't exist and make sure that
-	// the returned error is ErrNotFound
-	err = cursor.Seek(database.MakeBucket(nil).Key([]byte("doesn't exist")))
+	// Seek past the end and make sure that the returned error is ErrNotFound.
+	// Seek() returns ErrNotFound only if there is no key/value pair with key >= the requested key.
+	err = cursor.Seek(database.MakeBucket(nil).Key([]byte("key:")))
 	if !database.IsNotFoundError(err) {
 		t.Fatalf("%s: Seek returned "+
 			"wrong error: %s", testName, err)

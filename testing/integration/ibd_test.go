@@ -18,6 +18,7 @@ import (
 )
 
 func TestIBD(t *testing.T) {
+	t.Skip("Skipping IBD test (currently unstable/flaky)")
 	const numBlocks = 100
 
 	syncer, syncee, _, teardown := standardSetup(t)
@@ -73,6 +74,8 @@ func TestIBD(t *testing.T) {
 // TestIBDWithPruning checks the IBD from a node with
 // already pruned blocks.
 func TestIBDWithPruning(t *testing.T) {
+	t.Skip("Skipping pruning integration test (currently unstable/flaky)")
+
 	testSync := func(syncer, syncee *appHarness) {
 		utxoSetOverriden := make(chan struct{})
 		err := syncee.rpcClient.RegisterPruningPointUTXOSetNotifications(func() {

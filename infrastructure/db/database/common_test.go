@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/Hoosat-Oy/HTND/infrastructure/db/database"
-	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/pebble"
+	"github.com/Hoosat-Oy/HTND/infrastructure/db/database/ldb"
 )
 
 type databasePrepareFunc func(t *testing.T, testName string) (db database.Database, name string, teardownFunc func())
@@ -25,7 +25,7 @@ func prepareLDBForTest(t *testing.T, testName string) (db database.Database, nam
 		t.Fatalf("%s: TempDir unexpectedly "+
 			"failed: %s", testName, err)
 	}
-	db, err = pebble.NewPebbleDB(path, 8)
+	db, err = ldb.NewLevelDB(path, 8)
 	if err != nil {
 		t.Fatalf("%s: Open unexpectedly "+
 			"failed: %s", testName, err)

@@ -142,6 +142,15 @@ func TestValidateTransactionInContextAndPopulateFee(t *testing.T) {
 			SubnetworkID: subnetworks.SubnetworkIDRegistry,
 			Gas:          0,
 			LockTime:     0}
+
+		for i, input := range txWithImmatureCoinbase.Inputs {
+			signatureScript, err := txscript.SignatureScript(&txWithImmatureCoinbase, i, consensushashing.SigHashAll, privateKey,
+				&consensushashing.SighashReusedValues{})
+			if err != nil {
+				t.Fatalf("Failed to create a sigScript: %v", err)
+			}
+			input.SignatureScript = signatureScript
+		}
 		txWithLargeAmountBeforeHF := externalapi.DomainTransaction{
 			Version:      constants.MaxTransactionVersion,
 			Inputs:       []*externalapi.DomainTransactionInput{&txInputWithLargeAmount},

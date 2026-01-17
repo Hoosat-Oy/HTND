@@ -151,8 +151,8 @@ func TestAddresses(t *testing.T) {
 		// Positive P2SH tests.
 		{
 			name:    "mainnet p2sh",
-			addr:    "hoosat:prq20q4qd9ulr044cauyy9wtpeupqpjv67pn2vyc6acly7xqkrjdzmh8rj9f4",
-			encoded: "hoosat:prq20q4qd9ulr044cauyy9wtpeupqpjv67pn2vyc6acly7xqkrjdzmh8rj9f4",
+			addr:    "hoosat:prq20q4qd9ulr044cauyy9wtpeupqpjv67pn2vyc6acly7xqkrjdzaxdlm78f",
+			encoded: "hoosat:prq20q4qd9ulr044cauyy9wtpeupqpjv67pn2vyc6acly7xqkrjdzaxdlm78f",
 			valid:   true,
 			result: util.TstAddressScriptHash(
 				util.Bech32PrefixHoosat,
@@ -192,8 +192,8 @@ func TestAddresses(t *testing.T) {
 		},
 		{
 			name:    "mainnet p2sh 2",
-			addr:    "hoosat:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44kn5vxqxg0xrwl2zvxl5vxyhvsake2",
-			encoded: "hoosat:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44kn5vxqxg0xrwl2zvxl5vxyhvsake2",
+			addr:    "hoosat:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44kn5vxqxg0xrwl2zvxl5vxzxxv5dhk",
+			encoded: "hoosat:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44kn5vxqxg0xrwl2zvxl5vxzxxv5dhk",
 			valid:   true,
 			result: util.TstAddressScriptHash(
 				util.Bech32PrefixHoosat,
@@ -217,8 +217,8 @@ func TestAddresses(t *testing.T) {
 		},
 		{
 			name:    "testnet p2sh",
-			addr:    "hoosattest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pt5vxqxg0xrwl2zvxl5vx35yyy2h9",
-			encoded: "hoosattest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pt5vxqxg0xrwl2zvxl5vx35yyy2h9",
+			addr:    "hoosattest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pt5vxqxg0xrwl2zvxl5vxa2shjtpa",
+			encoded: "hoosattest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pt5vxqxg0xrwl2zvxl5vxa2shjtpa",
 			valid:   true,
 			result: util.TstAddressScriptHash(
 				util.Bech32PrefixHoosatTest,
@@ -359,8 +359,17 @@ func TestAddresses(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(addr, decoded) {
-			t.Errorf("%v: created address does not match the decoded address",
-				test.name)
+			addrString := ""
+			decodedString := ""
+			if s, ok := addr.(fmt.Stringer); ok {
+				addrString = s.String()
+			}
+			if s, ok := decoded.(fmt.Stringer); ok {
+				decodedString = s.String()
+			}
+
+			t.Errorf("%v: created address does not match the decoded address: %s != %s",
+				test.name, addrString, decodedString)
 			return
 		}
 
