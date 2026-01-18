@@ -141,7 +141,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	if err != nil {
 		return nil, false, err
 	}
-	blockHeaderStore, err := blockheaderstore.New(dbManager, prefixBucket, 1000, preallocateCaches)
+	blockHeaderStore, err := blockheaderstore.New(dbManager, prefixBucket, 10_000, preallocateCaches)
 	if err != nil {
 		return nil, false, err
 	}
