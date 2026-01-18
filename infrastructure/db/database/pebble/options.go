@@ -52,7 +52,7 @@ func Options(cacheSizeMiB int) *pebble.Options {
 	// Define MemTable size and thresholds. These must be kept conservative by default:
 	// the effective peak RAM is roughly Cache + (MemTableSize * MemTableStopWritesThreshold)
 	// (plus some overhead). The previous defaults could reach multiple GiB.
-	memTableSize := int64(32 * 1024 * 1024) // 32 MiB
+	memTableSize := int64(128 * 1024 * 1024) // 128 MiB
 	if v := os.Getenv("HTND_MEMTABLE_SIZE_MB"); v != "" {
 		if mb, err := strconv.Atoi(v); err == nil && mb > 0 {
 			memTableSize = int64(mb) * 1024 * 1024
@@ -69,8 +69,8 @@ func Options(cacheSizeMiB int) *pebble.Options {
 	baseFileSize := memTableSize * int64(memTableStopWritesThreshold)
 
 	// Cache size: env vars override; otherwise use the caller-provided cacheSizeMiB.
-	// If cacheSizeMiB is 0/negative, default to 256 MiB.
-	cacheBytes := int64(256 * 1024 * 1024)
+	// If cacheSizeMiB is 0/negative, default to 1024 MiB.
+	cacheBytes := int64(1024 * 1024 * 1024)
 	if cacheSizeMiB > 0 {
 		cacheBytes = int64(cacheSizeMiB) * 1024 * 1024
 	}
