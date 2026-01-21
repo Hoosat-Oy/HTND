@@ -156,7 +156,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	finalityStore := finalitystore.New(prefixBucket, 1000, preallocateCaches)
 	headersSelectedChainStore := headersselectedchainstore.New(prefixBucket, pruningWindowSizeForCaches, preallocateCaches)
 	daaBlocksStore := daablocksstore.New(prefixBucket, pruningWindowSizeForCaches, int(config.FinalityDepth()), preallocateCaches)
-	windowHeapSliceStore := blockwindowheapslicestore.New(1000, preallocateCaches)
+	windowHeapSliceStore := blockwindowheapslicestore.New(10_000, preallocateCaches)
 
 	newReachabilityDataStore := reachabilitydatastore.New(prefixBucket, pruningWindowSizePlusFinalityDepthForCache*2, preallocateCaches)
 	blockRelationStores, reachabilityDataStores, ghostdagDataStores := dagStores(config, prefixBucket, pruningWindowSizePlusFinalityDepthForCache, pruningWindowSizeForCaches, preallocateCaches)
