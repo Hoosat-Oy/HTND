@@ -3,6 +3,8 @@ package pebble
 import (
 	"os"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/cockroachdb/pebble/v2"
 	"github.com/cockroachdb/pebble/v2/bloom"
@@ -23,6 +25,8 @@ import (
 //	HTND_MEMTABLE_THRESHOLD - Number of memtables before stalling writes (default: 8)
 //	HTND_L0_COMPACTION_THRESHOLD - L0 compaction trigger (default: 8)
 //	HTND_L0_STOP_WRITES_THRESHOLD - L0 write stall threshold (default: 48)
+//	HTND_PEBBLE_LOG_EVENTS - Enable Pebble internal event logging (default: false)
+//	HTND_PEBBLE_LOG_EVENTS_MIN_MS - Only log compactions/flushes >= this duration (default: 250)
 //
 // Legacy environment variables (for backward compatibility):
 //
@@ -59,7 +63,7 @@ func Options(cacheSizeMiB int) *pebble.Options {
 		}
 	}
 
-	memTableStopWritesThreshold := 8
+	memTableStopWritesThreshold := 32
 	if v := os.Getenv("HTND_MEMTABLE_THRESHOLD"); v != "" {
 		if threshold, err := strconv.Atoi(v); err == nil && threshold > 0 {
 			memTableStopWritesThreshold = threshold
@@ -190,6 +194,55 @@ func Options(cacheSizeMiB int) *pebble.Options {
 		},
 	}
 
+	if envBool("HTND_PEBBLE_LOG_EVENTS") {
+		minDuration := 250 * time.Millisecond
+		if v := os.Getenv("HTND_PEBBLE_LOG_EVENTS_MIN_MS"); v != "" {
+			if ms, err := strconv.Atoi(v); err == nil && ms > 0 {
+				minDuration = time.Duration(ms) * time.Millisecond
+			}
+		}
+
+		opts.Logger = pebbleLoggerAdapter{}
+		opts.EventListener = &pebble.EventListener{
+			BackgroundError: func(err error) {
+				log.Errorf("[pebble] background error: %v", err)
+			},
+			WriteStallBegin: func(info pebble.WriteStallBeginInfo) {
+				log.Warnf("[pebble] write stall begin: %s", info.Reason)
+			},
+			WriteStallEnd: func() {
+				log.Warnf("[pebble] write stall end")
+			},
+			CompactionEnd: func(info pebble.CompactionInfo) {
+				if info.Err != nil {
+					log.Errorf("[pebble] compaction failed job=%d reason=%s total=%s err=%v", info.JobID, info.Reason, info.TotalDuration, info.Err)
+					return
+				}
+				if info.TotalDuration >= minDuration {
+					log.Infof("[pebble] compaction job=%d reason=%s total=%s", info.JobID, info.Reason, info.TotalDuration)
+				}
+			},
+			FlushEnd: func(info pebble.FlushInfo) {
+				if info.Err != nil {
+					log.Errorf("[pebble] flush failed job=%d reason=%s total=%s err=%v", info.JobID, info.Reason, info.TotalDuration, info.Err)
+					return
+				}
+				if info.TotalDuration >= minDuration {
+					log.Infof("[pebble] flush job=%d reason=%s input=%d inputBytes=%d ingest=%t total=%s",
+						info.JobID, info.Reason, info.Input, info.InputBytes, info.Ingest, info.TotalDuration)
+				}
+			},
+			DiskSlow: func(info pebble.DiskSlowInfo) {
+				log.Warnf("[pebble] disk slow op=%s path=%s writeBytes=%d duration=%s", info.OpType, info.Path, info.WriteSize, info.Duration)
+			},
+		}
+	}
+
 	opts.EnsureDefaults() // v2: Applies remaining defaults (e.g., IndexBlockSize)
 	return opts
+}
+
+func envBool(key string) bool {
+	v := strings.TrimSpace(strings.ToLower(os.Getenv(key)))
+	return v == "1" || v == "true" || v == "yes" || v == "y" || v == "on"
 }
