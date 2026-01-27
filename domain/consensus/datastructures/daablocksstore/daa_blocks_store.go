@@ -1,7 +1,6 @@
 package daablocksstore
 
 import (
-	"github.com/Hoosat-Oy/HTND/domain/consensus/database"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/database/binaryserialization"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model"
 	"github.com/Hoosat-Oy/HTND/domain/consensus/model/externalapi"
@@ -42,6 +41,7 @@ func (daas *daaBlocksStore) StageBlockDAAAddedBlocks(stagingArea *model.StagingA
 	stagingShard := daas.stagingShard(stagingArea)
 
 	stagingShard.daaAddedBlocksToAdd[*blockHash] = externalapi.CloneHashes(addedBlocks)
+	daas.daaAddedBlocksLRUCache.Add(blockHash, externalapi.CloneHashes(addedBlocks))
 }
 
 func (daas *daaBlocksStore) IsStaged(stagingArea *model.StagingArea) bool {
@@ -50,20 +50,16 @@ func (daas *daaBlocksStore) IsStaged(stagingArea *model.StagingArea) bool {
 
 func (daas *daaBlocksStore) DAAScore(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint64, error) {
 	stagingShard := daas.stagingShard(stagingArea)
-
 	if daaScore, ok := stagingShard.daaScoreToAdd[*blockHash]; ok {
 		return daaScore, nil
 	}
+
 	daaScore, ok := daas.daaScoreLRUCache.Get(blockHash)
 	if ok && daaScore != nil {
 		return daaScore.(uint64), nil
 	}
 
 	daaScoreBytes, err := dbContext.Get(daas.daaScoreHashAsKey(blockHash))
-	if database.IsNotFoundError(err) {
-		log.Infof("DAAScore failed to retrieve with %s\n", blockHash)
-		return 0, err
-	}
 	if err != nil {
 		return 0, err
 	}
@@ -78,30 +74,26 @@ func (daas *daaBlocksStore) DAAScore(dbContext model.DBReader, stagingArea *mode
 
 func (daas *daaBlocksStore) DAAAddedBlocks(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	stagingShard := daas.stagingShard(stagingArea)
-
-	if addedBlocks, ok := stagingShard.daaAddedBlocksToAdd[*blockHash]; ok {
+	addedBlocks, ok := stagingShard.daaAddedBlocksToAdd[*blockHash]
+	if ok && addedBlocks != nil {
 		return externalapi.CloneHashes(addedBlocks), nil
 	}
-
-	if addedBlocks, ok := daas.daaAddedBlocksLRUCache.Get(blockHash); ok {
-		return externalapi.CloneHashes(addedBlocks.([]*externalapi.DomainHash)), nil
+	addedBlocksCached, ok := daas.daaAddedBlocksLRUCache.Get(blockHash)
+	if ok && addedBlocksCached != nil {
+		return externalapi.CloneHashes(addedBlocksCached.([]*externalapi.DomainHash)), nil
 	}
 
 	addedBlocksBytes, err := dbContext.Get(daas.daaAddedBlocksHashAsKey(blockHash))
-	if database.IsNotFoundError(err) {
-		log.Infof("DAAAddedBlocks failed to retrieve with %s\n", blockHash)
-		return nil, err
-	}
 	if err != nil {
 		return nil, err
 	}
 
-	addedBlocks, err := binaryserialization.DeserializeHashes(addedBlocksBytes)
+	addedBlocksDeserialized, err := binaryserialization.DeserializeHashes(addedBlocksBytes)
 	if err != nil {
 		return nil, err
 	}
-	daas.daaAddedBlocksLRUCache.Add(blockHash, addedBlocks)
-	return externalapi.CloneHashes(addedBlocks), nil
+	daas.daaAddedBlocksLRUCache.Add(blockHash, addedBlocksDeserialized)
+	return externalapi.CloneHashes(addedBlocksDeserialized), nil
 }
 
 func (daas *daaBlocksStore) daaScoreHashAsKey(hash *externalapi.DomainHash) model.DBKey {

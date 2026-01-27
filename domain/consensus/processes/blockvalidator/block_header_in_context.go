@@ -28,10 +28,6 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 	}
 
 	ghostdagData, err := v.ghostdagDataStores[0].Get(v.databaseContext, stagingArea, blockHash, false)
-	if database.IsNotFoundError(err) {
-		log.Infof("checkMergeSizeLimit failed to retrieve with %s\n", blockHash)
-		return err
-	}
 	if err != nil {
 		return err
 	}

@@ -69,10 +69,6 @@ func (ps *pruningStore) PruningPointCandidate(dbContext model.DBReader, stagingA
 	}
 
 	candidateBytes, err := dbContext.Get(ps.candidatePruningPointHashKey)
-	if database.IsNotFoundError(err) {
-		log.Infof("PruningPointCandidate failed to retrieve with %s\n", ps.candidatePruningPointHashKey)
-		return nil, err
-	}
 	if err != nil {
 		return nil, err
 	}

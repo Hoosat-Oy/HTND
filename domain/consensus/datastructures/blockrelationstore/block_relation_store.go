@@ -39,20 +39,17 @@ func (brs *blockRelationStore) IsStaged(stagingArea *model.StagingArea) bool {
 
 func (brs *blockRelationStore) BlockRelation(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*model.BlockRelations, error) {
 	stagingShard := brs.stagingShard(stagingArea)
-
-	if blockRelations, ok := stagingShard.toAdd[*blockHash]; ok {
+	blockRelations, ok := stagingShard.toAdd[*blockHash]
+	if ok && blockRelations != nil {
 		return blockRelations.Clone(), nil
 	}
-	blockRelations, ok := brs.cache.Get(blockHash)
-	if ok || blockRelations != nil {
-		return blockRelations.(*model.BlockRelations).Clone(), nil
+
+	blockRelationsCached, ok := brs.cache.Get(blockHash)
+	if ok && blockRelationsCached != nil {
+		return blockRelationsCached.(*model.BlockRelations).Clone(), nil
 	}
 
 	blockRelationsBytes, err := dbContext.Get(brs.hashAsKey(blockHash))
-	// if database.IsNotFoundError(err) {
-	// 	log.Infof("BlockRelation failed to retrieve with %s\n", blockHash)
-	// 	return nil, err
-	// }
 	if err != nil {
 		return nil, err
 	}

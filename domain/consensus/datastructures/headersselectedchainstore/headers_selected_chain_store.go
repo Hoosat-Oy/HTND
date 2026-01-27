@@ -92,27 +92,23 @@ func (hscs *headersSelectedChainStore) GetIndexByHash(dbContext model.DBReader, 
 	if _, ok := stagingShard.removedByHash[*blockHash]; ok {
 		return 0, errors.Wrapf(database.ErrNotFound, "couldn't find block %s", blockHash)
 	}
-
-	if index, ok := hscs.cacheByHash.Get(blockHash); ok {
-		return index.(uint64), nil
+	indexCached, ok := hscs.cacheByHash.Get(blockHash)
+	if ok && indexCached != nil {
+		return indexCached.(uint64), nil
 	}
 
 	indexBytes, err := dbContext.Get(hscs.hashAsKey(blockHash))
-	if database.IsNotFoundError(err) {
-		log.Infof("GetIndexByHash failed to retrieve with %s\n", blockHash)
-		return 0, err
-	}
 	if err != nil {
 		return 0, err
 	}
 
-	index, err := hscs.deserializeIndex(indexBytes)
+	indexDeserialized, err := hscs.deserializeIndex(indexBytes)
 	if err != nil {
 		return 0, err
 	}
 
-	hscs.cacheByHash.Add(blockHash, index)
-	return index, nil
+	hscs.cacheByHash.Add(blockHash, indexDeserialized)
+	return indexDeserialized, nil
 }
 
 func (hscs *headersSelectedChainStore) GetHashByIndex(dbContext model.DBReader, stagingArea *model.StagingArea, index uint64) (*externalapi.DomainHash, error) {

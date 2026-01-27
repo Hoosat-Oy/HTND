@@ -40,13 +40,13 @@ func (ads *acceptanceDataStore) IsStaged(stagingArea *model.StagingArea) bool {
 // Get gets the acceptanceData associated with the given blockHash
 func (ads *acceptanceDataStore) Get(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (externalapi.AcceptanceData, error) {
 	stagingShard := ads.stagingShard(stagingArea)
-
-	if acceptanceData, ok := stagingShard.toAdd[*blockHash]; ok {
+	acceptanceData, ok := stagingShard.toAdd[*blockHash]
+	if ok && acceptanceData != nil {
 		return acceptanceData.Clone(), nil
 	}
-	acceptanceData, ok := ads.cache.Get(blockHash)
-	if ok && acceptanceData != nil {
-		return acceptanceData.(externalapi.AcceptanceData).Clone(), nil
+	acceptanceDataCached, ok := ads.cache.Get(blockHash)
+	if ok && acceptanceDataCached != nil {
+		return acceptanceDataCached.(externalapi.AcceptanceData).Clone(), nil
 	}
 
 	acceptanceDataBytes, err := dbContext.Get(ads.hashAsKey(blockHash))

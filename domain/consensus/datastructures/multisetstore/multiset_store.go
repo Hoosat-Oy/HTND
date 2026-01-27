@@ -41,13 +41,13 @@ func (ms *multisetStore) IsStaged(stagingArea *model.StagingArea) bool {
 // Get gets the multiset associated with the given blockHash
 func (ms *multisetStore) Get(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (model.Multiset, error) {
 	stagingShard := ms.stagingShard(stagingArea)
-
-	if multiset, ok := stagingShard.toAdd[*blockHash]; ok {
+	multiset, ok := stagingShard.toAdd[*blockHash]
+	if ok && multiset != nil {
 		return multiset.Clone(), nil
 	}
-	multiset, ok := ms.cache.Get(blockHash)
-	if ok && multiset != nil {
-		return multiset.(model.Multiset).Clone(), nil
+	multisetCached, ok := ms.cache.Get(blockHash)
+	if ok && multisetCached != nil {
+		return multisetCached.(model.Multiset).Clone(), nil
 	}
 
 	multisetBytes, err := dbContext.Get(ms.hashAsKey(blockHash))

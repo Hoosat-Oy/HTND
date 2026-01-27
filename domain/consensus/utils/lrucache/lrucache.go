@@ -55,8 +55,8 @@ func (c *LRUCache) Get(key *externalapi.DomainHash) (interface{}, bool) {
 func (c *LRUCache) Has(key *externalapi.DomainHash) bool {
 	// c.lock.RLock()
 	// defer c.lock.RUnlock()
-	_, ok := c.cache[*key]
-	return ok
+	DomainHash, ok := c.cache[*key]
+	return ok && DomainHash != nil
 }
 
 // Remove removes the entry for the the given key. Does nothing if

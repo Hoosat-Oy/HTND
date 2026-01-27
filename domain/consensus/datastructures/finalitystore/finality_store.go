@@ -32,20 +32,17 @@ func (fs *finalityStore) StageFinalityPoint(stagingArea *model.StagingArea, bloc
 
 func (fs *finalityStore) FinalityPoint(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	stagingShard := fs.stagingShard(stagingArea)
-
-	if finalityPointHash, ok := stagingShard.toAdd[*blockHash]; ok {
+	finalityPointHash, ok := stagingShard.toAdd[*blockHash]
+	if ok && finalityPointHash != nil {
 		return finalityPointHash, nil
 	}
-	finalityPointHash, ok := fs.cache.Get(blockHash)
-	if ok && finalityPointHash != nil {
-		return finalityPointHash.(*externalapi.DomainHash), nil
+
+	finalityPointHashCached, ok := fs.cache.Get(blockHash)
+	if ok && finalityPointHashCached != nil {
+		return finalityPointHashCached.(*externalapi.DomainHash), nil
 	}
 
 	finalityPointHashBytes, err := dbContext.Get(fs.hashAsKey(blockHash))
-	// if database.IsNotFoundError(err) {
-	// 	log.Infof("FinalityPoint failed to retrieve with %s\n", blockHash)
-	// 	return nil, err
-	// }
 	if err != nil {
 		return nil, err
 	}

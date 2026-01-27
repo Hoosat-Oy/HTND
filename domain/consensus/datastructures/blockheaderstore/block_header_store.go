@@ -84,20 +84,17 @@ func (bhs *blockHeaderStore) BlockHeader(dbContext model.DBReader, stagingArea *
 
 func (bhs *blockHeaderStore) blockHeader(dbContext model.DBReader, stagingShard *blockHeaderStagingShard,
 	blockHash *externalapi.DomainHash) (externalapi.BlockHeader, error) {
-
-	if header, ok := stagingShard.toAdd[*blockHash]; ok {
+	header, ok := stagingShard.toAdd[*blockHash]
+	if ok && header != nil {
 		return header, nil
 	}
-	header, ok := bhs.cache.Get(blockHash)
-	if ok && header != nil {
-		return header.(externalapi.BlockHeader), nil
+
+	headerCached, ok := bhs.cache.Get(blockHash)
+	if ok && headerCached != nil {
+		return headerCached.(externalapi.BlockHeader), nil
 	}
 
 	headerBytes, err := dbContext.Get(bhs.hashAsKey(blockHash))
-	if database.IsNotFoundError(err) {
-		log.Debugf("blockHeader failed to retrieve with %s\n", blockHash)
-		return nil, err
-	}
 	if err != nil {
 		return nil, err
 	}

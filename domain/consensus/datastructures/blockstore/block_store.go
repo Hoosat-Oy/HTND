@@ -81,19 +81,18 @@ func (bs *blockStore) Block(dbContext model.DBReader, stagingArea *model.Staging
 }
 
 func (bs *blockStore) block(dbContext model.DBReader, stagingShard *blockStagingShard, blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
-	if block, ok := stagingShard.toAdd[*blockHash]; ok {
+
+	block, ok := stagingShard.toAdd[*blockHash]
+	if ok && block != nil {
 		return block.Clone(), nil
 	}
-	block, ok := bs.cache.Get(blockHash)
-	if ok && block != nil {
-		return block.(*externalapi.DomainBlock).Clone(), nil
+
+	blockCached, ok := bs.cache.Get(blockHash)
+	if ok && blockCached != nil {
+		return blockCached.(*externalapi.DomainBlock).Clone(), nil
 	}
 
 	blockBytes, err := dbContext.Get(bs.hashAsKey(blockHash))
-	if database.IsNotFoundError(err) {
-		log.Debugf("Block failed to retrieve with %s\n", blockHash)
-		return nil, err
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -109,8 +108,8 @@ func (bs *blockStore) block(dbContext model.DBReader, stagingShard *blockStaging
 // HasBlock returns whether a block with a given hash exists in the store.
 func (bs *blockStore) HasBlock(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
 	stagingShard := bs.stagingShard(stagingArea)
-
-	if _, ok := stagingShard.toAdd[*blockHash]; ok {
+	block, ok := stagingShard.toAdd[*blockHash]
+	if ok && block != nil {
 		return true, nil
 	}
 

@@ -32,13 +32,14 @@ func (mdrs *mergeDepthRootStore) StageMergeDepthRoot(stagingArea *model.StagingA
 
 func (mdrs *mergeDepthRootStore) MergeDepthRoot(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	stagingShard := mdrs.stagingShard(stagingArea)
-
-	if root, ok := stagingShard.toAdd[*blockHash]; ok {
+	root, ok := stagingShard.toAdd[*blockHash]
+	if ok && root != nil {
 		return root, nil
 	}
-	root, ok := mdrs.cache.Get(blockHash)
-	if ok && root != nil {
-		return root.(*externalapi.DomainHash), nil
+
+	rootCached, ok := mdrs.cache.Get(blockHash)
+	if ok && rootCached != nil {
+		return rootCached.(*externalapi.DomainHash), nil
 	}
 
 	rootBytes, err := dbContext.Get(mdrs.hashAsKey(blockHash))

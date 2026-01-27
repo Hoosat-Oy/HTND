@@ -120,7 +120,12 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	dbManager := consensusdatabase.New(db)
 	prefixBucket := consensusdatabase.MakeBucket(dbPrefix.Serialize())
 
-	pruningWindowSizeForCaches := int(config.PruningDepth())
+	pruningWindowSizeForCaches := int(config.PruningDepth()) / 10
+	finalityWindowSizeForCaches := int(config.FinalityDepth()) / 10
+	// This is used for caches that are used as part of deletePastBlocks that need to traverse until
+	// the previous pruning point.
+	pruningWindowSizePlusFinalityDepthForCache := int(pruningWindowSizeForCaches + finalityWindowSizeForCaches)
+	log.Infof("Largest cache sizes %d, %d, %d", finalityWindowSizeForCaches, pruningWindowSizeForCaches, pruningWindowSizePlusFinalityDepthForCache)
 
 	var preallocateCaches bool
 	if f.preallocateCaches != nil {
@@ -128,10 +133,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	} else {
 		preallocateCaches = defaultPreallocateCaches
 	}
-
-	// This is used for caches that are used as part of deletePastBlocks that need to traverse until
-	// the previous pruning point.
-	pruningWindowSizePlusFinalityDepthForCache := int(config.PruningDepth() + config.FinalityDepth())
 
 	// Data Structures
 	mergeDepthRootStore := mergedepthrootstore.New(prefixBucket, 1000, preallocateCaches)
@@ -155,8 +156,8 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	headersSelectedTipStore := headersselectedtipstore.New(prefixBucket)
 	finalityStore := finalitystore.New(prefixBucket, 1000, preallocateCaches)
 	headersSelectedChainStore := headersselectedchainstore.New(prefixBucket, pruningWindowSizeForCaches, preallocateCaches)
-	daaBlocksStore := daablocksstore.New(prefixBucket, pruningWindowSizeForCaches, int(config.FinalityDepth()), preallocateCaches)
-	windowHeapSliceStore := blockwindowheapslicestore.New(10_000, preallocateCaches)
+	daaBlocksStore := daablocksstore.New(prefixBucket, pruningWindowSizeForCaches, finalityWindowSizeForCaches, preallocateCaches)
+	windowHeapSliceStore := blockwindowheapslicestore.New(1000, preallocateCaches)
 
 	newReachabilityDataStore := reachabilitydatastore.New(prefixBucket, pruningWindowSizePlusFinalityDepthForCache*2, preallocateCaches)
 	blockRelationStores, reachabilityDataStores, ghostdagDataStores := dagStores(config, prefixBucket, pruningWindowSizePlusFinalityDepthForCache, pruningWindowSizeForCaches, preallocateCaches)

@@ -76,19 +76,17 @@ func (rds *reachabilityDataStore) IsStaged(stagingArea *model.StagingArea) bool 
 func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (model.ReachabilityData, error) {
 	stagingShard := rds.stagingShard(stagingArea)
 
-	if reachabilityData, ok := stagingShard.reachabilityData[*blockHash]; ok {
+	reachabilityData, ok := stagingShard.reachabilityData[*blockHash]
+	if ok && reachabilityData != nil {
 		return reachabilityData, nil
 	}
 
-	reachabilityData, ok := rds.reachabilityDataCache.Get(blockHash)
-	if ok && reachabilityData != nil {
-		return reachabilityData.(model.ReachabilityData), nil
+	reachabilityDataCached, ok := rds.reachabilityDataCache.Get(blockHash)
+	if ok && reachabilityDataCached != nil {
+		return reachabilityDataCached.(model.ReachabilityData), nil
 	}
 
 	reachabilityDataBytes, err := dbContext.Get(rds.reachabilityDataBlockHashAsKey(blockHash))
-	if database.IsNotFoundError(err) {
-		rds.reachabilityDataCache.Add(blockHash, nil)
-	}
 	if err != nil {
 		return nil, err
 	}
