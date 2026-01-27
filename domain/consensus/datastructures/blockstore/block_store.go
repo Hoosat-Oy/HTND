@@ -143,6 +143,7 @@ func (bs *blockStore) Blocks(dbContext model.DBReader, stagingArea *model.Stagin
 // Delete deletes the block associated with the given blockHash
 func (bs *blockStore) Delete(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) {
 	stagingShard := bs.stagingShard(stagingArea)
+	bs.cache.Remove(blockHash)
 
 	if _, ok := stagingShard.toAdd[*blockHash]; ok {
 		delete(stagingShard.toAdd, *blockHash)

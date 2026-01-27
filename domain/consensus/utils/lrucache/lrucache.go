@@ -75,3 +75,9 @@ func (c *LRUCache) evictRandom() {
 	}
 	delete(c.cache, keyToEvict)
 }
+
+func (c *LRUCache) Clear() {
+	for key := range c.cache {
+		delete(c.cache, key)
+	}
+}

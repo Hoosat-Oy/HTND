@@ -131,6 +131,8 @@ func (uds *utxoDiffStore) HasUTXODiffChild(dbContext model.DBReader, stagingArea
 // Delete deletes the utxoDiff associated with the given blockHash
 func (uds *utxoDiffStore) Delete(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) {
 	stagingShard := uds.stagingShard(stagingArea)
+	uds.utxoDiffCache.Remove(blockHash)
+	uds.utxoDiffChildCache.Remove(blockHash)
 
 	if uds.isBlockHashStaged(stagingShard, blockHash) {
 		delete(stagingShard.utxoDiffToAdd, *blockHash)

@@ -65,7 +65,7 @@ func (ads *acceptanceDataStore) Get(dbContext model.DBReader, stagingArea *model
 // Delete deletes the acceptanceData associated with the given blockHash
 func (ads *acceptanceDataStore) Delete(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) {
 	stagingShard := ads.stagingShard(stagingArea)
-
+	ads.cache.Remove(blockHash)
 	if _, ok := stagingShard.toAdd[*blockHash]; ok {
 		delete(stagingShard.toAdd, *blockHash)
 		return

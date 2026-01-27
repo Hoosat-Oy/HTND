@@ -106,6 +106,8 @@ func (daas *daaBlocksStore) daaAddedBlocksHashAsKey(hash *externalapi.DomainHash
 
 func (daas *daaBlocksStore) Delete(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) {
 	stagingShard := daas.stagingShard(stagingArea)
+	daas.daaScoreLRUCache.Remove(blockHash)
+	daas.daaAddedBlocksLRUCache.Remove(blockHash)
 
 	if _, ok := stagingShard.daaScoreToAdd[*blockHash]; ok {
 		delete(stagingShard.daaScoreToAdd, *blockHash)

@@ -78,6 +78,7 @@ func (brs *blockRelationStore) Has(dbContext model.DBReader, stagingArea *model.
 
 func (brs *blockRelationStore) UnstageAll(stagingArea *model.StagingArea) {
 	stagingShard := brs.stagingShard(stagingArea)
+	brs.cache.Clear()
 	stagingShard.toAdd = make(map[externalapi.DomainHash]*model.BlockRelations)
 }
 

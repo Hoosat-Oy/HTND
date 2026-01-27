@@ -66,6 +66,7 @@ func (ms *multisetStore) Get(dbContext model.DBReader, stagingArea *model.Stagin
 // Delete deletes the multiset associated with the given blockHash
 func (ms *multisetStore) Delete(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) {
 	stagingShard := ms.stagingShard(stagingArea)
+	ms.cache.Remove(blockHash)
 
 	if _, ok := stagingShard.toAdd[*blockHash]; ok {
 		delete(stagingShard.toAdd, *blockHash)

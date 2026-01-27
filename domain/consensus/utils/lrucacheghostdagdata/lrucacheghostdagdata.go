@@ -92,3 +92,10 @@ func (c *LRUCache) evictRandom() {
 	key := newKey(&keyToEvict.blockHash, keyToEvict.isTrustedData)
 	delete(c.cache, key)
 }
+func (c *LRUCache) Clear() {
+	var keyToEvict lruKey
+	for key := range c.cache {
+		keyToDelete := newKey(&key.blockHash, keyToEvict.isTrustedData)
+		delete(c.cache, keyToDelete)
+	}
+}
