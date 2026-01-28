@@ -60,7 +60,8 @@ func (flow *handleIBDFlow) start() error {
 		}
 		err := flow.runIBDIfNotRunning(block)
 		if err != nil {
-			return err
+			log.Infof("Continue IBD as previous failed.")
+			continue
 		}
 	}
 }
@@ -83,10 +84,10 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	}
 	flow.updateBlockVersionFromDAAScore(block.Header.DAAScore())
 	isFinishedSuccessfully := false
-	var err error
+	var err error = nil
 	defer func() {
 		flow.UnsetIBDRunning()
-		flow.logIBDFinished(isFinishedSuccessfully, err)
+		err = flow.logIBDFinished(isFinishedSuccessfully, err)
 	}()
 
 	relayBlockHash := consensushashing.BlockHash(block)
@@ -163,7 +164,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	log.Infof("Finished syncing blocks up to %s", relayBlockHash)
 	isFinishedSuccessfully = true
 
-	return nil
+	return err
 }
 
 func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.DomainHash, *externalapi.DomainHash, error) {
@@ -315,7 +316,7 @@ func (flow *handleIBDFlow) isGenesisVirtualSelectedParent() (bool, error) {
 	return virtualSelectedParent.Equal(flow.Config().NetParams().GenesisHash), nil
 }
 
-func (flow *handleIBDFlow) logIBDFinished(isFinishedSuccessfully bool, err error) {
+func (flow *handleIBDFlow) logIBDFinished(isFinishedSuccessfully bool, err error) error {
 	successString := "successfully"
 	if !isFinishedSuccessfully {
 		if err != nil {
@@ -323,8 +324,10 @@ func (flow *handleIBDFlow) logIBDFinished(isFinishedSuccessfully bool, err error
 		} else {
 			successString = "(interrupted)"
 		}
+		return err
 	}
 	log.Infof("IBD with peer %s finished %s", flow.peer, successString)
+	return nil
 }
 
 func (flow *handleIBDFlow) getSyncerChainBlockLocator(
@@ -523,10 +526,13 @@ func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlo
 	}
 	err = consensus.ValidateAndInsertBlock(block, false, true)
 	if err != nil {
-		log.Infof("Current Block version %d", constants.GetBlockVersion())
-		log.Infof("Current headers block version %d", block.Header.Version())
-		log.Errorf("Rejected block header %s from %s during IBD: %+v", blockHash, flow.peer, errors.WithStack(err))
-		return err
+		if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
+			return nil
+		} else {
+			log.Errorf("Rejected block header %s from %s during IBD: %+v", blockHash, flow.peer, err)
+
+		}
+
 	}
 
 	return nil
@@ -737,7 +743,7 @@ func (flow *handleIBDFlow) resolveVirtual(estimatedVirtualDAAScoreTarget uint64)
 	})
 	if err != nil {
 		if database.IsNotFoundError(err) {
-			log.Infof("Resolve virtual failed because could not find block UTXO diff or some other required data, that is most likely because you are trying to sync to a chain which has disqualified blocks. Find another peer to connect to.")
+			log.Errorf("Error: Not found: %s", err)
 			return err
 		}
 		return err

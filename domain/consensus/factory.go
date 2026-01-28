@@ -120,8 +120,8 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	dbManager := consensusdatabase.New(db)
 	prefixBucket := consensusdatabase.MakeBucket(dbPrefix.Serialize())
 
-	pruningWindowSizeForCaches := int(config.PruningDepth()) / 2
-	finalityWindowSizeForCaches := int(config.FinalityDepth()) / 2
+	pruningWindowSizeForCaches := int(config.PruningDepth())
+	finalityWindowSizeForCaches := int(config.FinalityDepth())
 	// This is used for caches that are used as part of deletePastBlocks that need to traverse until
 	// the previous pruning point.
 	pruningWindowSizePlusFinalityDepthForCache := int(pruningWindowSizeForCaches + finalityWindowSizeForCaches)

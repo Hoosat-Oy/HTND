@@ -39,8 +39,11 @@ func Options(cacheSizeMiB int) *pebble.Options {
 	// MemTable & write stall protection
 	// ────────────────────────────────────────────────
 	const (
-		defaultMemTableMB           = 256
-		defaultMemTablesBeforeStall = 64
+		// Keep defaults conservative for memory-bounded nodes.
+		// Effective memtable memory upper bound is:
+		//   MemTableSize * MemTableStopWritesThreshold
+		defaultMemTableMB           = 64
+		defaultMemTablesBeforeStall = 8
 	)
 
 	memTableBytes := int64(defaultMemTableMB) * 1 << 20
@@ -57,12 +60,47 @@ func Options(cacheSizeMiB int) *pebble.Options {
 		}
 	}
 
-	baseFileSize := memTableBytes * int64(memTableStopThreshold)
+	// Hard cap total memtable memory to keep the whole node under control.
+	// This caps: MemTableSize * MemTableStopWritesThreshold.
+	// Default is 1GiB (safe for an 8GiB node). Override with HTND_PEBBLE_MEMTABLE_BUDGET_MB.
+	memtableBudgetBytes := int64(getEnvInt("HTND_PEBBLE_MEMTABLE_BUDGET_MB", 1024)) << 20
+	if memtableBudgetBytes > 0 && memTableBytes > 0 {
+		maxThreshold := int(memtableBudgetBytes / memTableBytes)
+		if memTableStopThreshold > maxThreshold {
+			memTableStopThreshold = maxThreshold
+		}
+	}
+
+	// ────────────────────────────────────────────────
+	// Target file sizes
+	// ────────────────────────────────────────────────
+	// For point lookups, extremely large sstables tend to hurt cache locality
+	// (index/filter blocks) and make compactions heavier/longer.
+	// We derive a sane default from MemTableSize but allow explicit override.
+	//
+	// Default: MemTableSize/4 clamped to [16MiB, 256MiB].
+	baseFileSize := memTableBytes / 4
+	const (
+		minBaseFileSize = int64(16) << 20
+		maxBaseFileSize = int64(256) << 20
+	)
+	if baseFileSize < minBaseFileSize {
+		baseFileSize = minBaseFileSize
+	}
+	if baseFileSize > maxBaseFileSize {
+		baseFileSize = maxBaseFileSize
+	}
+	if v := os.Getenv("HTND_BASE_FILE_SIZE_MB"); v != "" {
+		if mb, err := strconv.Atoi(v); err == nil && mb > 0 {
+			baseFileSize = int64(mb) << 20
+		}
+	}
 
 	// ────────────────────────────────────────────────
 	// Block cache size
 	// ────────────────────────────────────────────────
-	cacheBytes := int64(2024) << 20 // 1 GiB fallback
+	// Default is 512MiB to stay within an 8GiB node budget.
+	cacheBytes := int64(512) << 20
 	if cacheSizeMiB > 0 {
 		cacheBytes = int64(cacheSizeMiB) << 20
 	}
@@ -77,6 +115,16 @@ func Options(cacheSizeMiB int) *pebble.Options {
 		}
 	}
 
+	// Clamp cache to avoid runaway memory usage.
+	// Default max is 2GiB; override with HTND_PEBBLE_CACHE_MAX_MB.
+	cacheMaxMiB := getEnvInt("HTND_PEBBLE_CACHE_MAX_MB", 2048)
+	if cacheMaxMiB > 0 {
+		maxCacheBytes := int64(cacheMaxMiB) << 20
+		if cacheBytes > maxCacheBytes {
+			cacheBytes = maxCacheBytes
+		}
+	}
+
 	// ────────────────────────────────────────────────
 	// Main Pebble options
 	// ────────────────────────────────────────────────
@@ -88,10 +136,15 @@ func Options(cacheSizeMiB int) *pebble.Options {
 		MemTableSize:                uint64(memTableBytes),
 		MemTableStopWritesThreshold: memTableStopThreshold,
 
-		// L0 tuning – aggressive for high write throughput
-		L0CompactionThreshold:     getEnvInt("HTND_L0_COMPACTION_THRESHOLD", 8),
-		L0StopWritesThreshold:     getEnvInt("HTND_L0_STOP_WRITES_THRESHOLD", 48),
-		L0CompactionFileThreshold: 1024,
+		// Split flushes into smaller L0 files for better compaction concurrency.
+		// This helps reduce L0 read amplification during IBD and improves point lookups.
+		FlushSplitBytes: baseFileSize,
+
+		// L0 tuning – keep L0 read-amplification under control for faster point lookups.
+		// Lower thresholds reduce point-lookup work at the cost of more compaction.
+		L0CompactionThreshold:     getEnvInt("HTND_L0_COMPACTION_THRESHOLD", 6),
+		L0StopWritesThreshold:     getEnvInt("HTND_L0_STOP_WRITES_THRESHOLD", 32),
+		L0CompactionFileThreshold: getEnvInt("HTND_L0_COMPACTION_FILE_THRESHOLD", 8),
 
 		TargetFileSizes: [7]int64{
 			baseFileSize,      // L0
@@ -119,8 +172,9 @@ func Options(cacheSizeMiB int) *pebble.Options {
 			{ // L0 – fastest ingestion
 				BlockSize:      8 << 10,
 				IndexBlockSize: 4 << 10,
-				Compression:    func() *sstable.CompressionProfile { return sstable.NoCompression },
-				FilterPolicy:   bloomPolicy,
+				// Snappy improves read IO during IBD with minimal CPU overhead.
+				Compression:  func() *sstable.CompressionProfile { return sstable.SnappyCompression },
+				FilterPolicy: bloomPolicy,
 			},
 			{ // L1
 				BlockSize:      8 << 10,
@@ -159,6 +213,30 @@ func Options(cacheSizeMiB int) *pebble.Options {
 				FilterPolicy:   bloomPolicy,
 			},
 		},
+	}
+
+	// Allow disabling flush splitting if desired (eg. for certain disks).
+	if envBool("HTND_PEBBLE_DISABLE_FLUSH_SPLIT") {
+		opts.FlushSplitBytes = 0
+	}
+
+	// Enable extra compaction concurrency as L0 read-amp/debt grows.
+	// This helps avoid a large number of overlapping files, which makes point
+	// lookups slower (more table probes, more iterator work).
+	opts.Experimental.L0CompactionConcurrency = getEnvInt("HTND_L0_COMPACTION_CONCURRENCY", 2)
+	opts.Experimental.CompactionDebtConcurrency = uint64(getEnvInt("HTND_COMPACTION_DEBT_CONCURRENCY_GB", 2)) << 30
+
+	// Optional read-triggered compactions (can help point lookups if the DB is read-heavy).
+	// Defaults are conservative/off because IBD tends to be write-heavy.
+	if v := os.Getenv("HTND_READ_COMPACTION_RATE_KB"); v != "" {
+		if kb, err := strconv.Atoi(v); err == nil && kb > 0 {
+			opts.Experimental.ReadCompactionRate = int64(kb) << 10
+		}
+	}
+	if v := os.Getenv("HTND_READ_SAMPLING_MULTIPLIER"); v != "" {
+		if m, err := strconv.Atoi(v); err == nil {
+			opts.Experimental.ReadSamplingMultiplier = int64(m)
+		}
 	}
 
 	// ────────────────────────────────────────────────
