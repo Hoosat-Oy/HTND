@@ -14,7 +14,7 @@ var bucketName = []byte("multisets")
 // multisetStore represents a store of Multisets
 type multisetStore struct {
 	shardID model.StagingShardID
-	cache   *lrucache.LRUCache
+	cache   *lrucache.LRUCache[model.Multiset]
 	bucket  model.DBBucket
 }
 
@@ -22,7 +22,7 @@ type multisetStore struct {
 func New(prefixBucket model.DBBucket, cacheSize int, preallocate bool) model.MultisetStore {
 	return &multisetStore{
 		shardID: staging.GenerateShardingID(),
-		cache:   lrucache.New(cacheSize, preallocate),
+		cache:   lrucache.New[model.Multiset](cacheSize, preallocate),
 		bucket:  prefixBucket.Bucket(bucketName),
 	}
 }
@@ -47,7 +47,7 @@ func (ms *multisetStore) Get(dbContext model.DBReader, stagingArea *model.Stagin
 	}
 	multisetCached, ok := ms.cache.Get(blockHash)
 	if ok && multisetCached != nil {
-		return multisetCached.(model.Multiset).Clone(), nil
+		return multisetCached.Clone(), nil
 	}
 
 	multisetBytes, err := dbContext.Get(ms.hashAsKey(blockHash))

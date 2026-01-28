@@ -14,7 +14,7 @@ func newTestHash(t *testing.T, b byte) *externalapi.DomainHash {
 }
 
 func TestLRUCache_AddGetHasRemove_NoEvictionWithinCapacity(t *testing.T) {
-	cache := New(10, false)
+	cache := New[any](10, false)
 
 	key1 := newTestHash(t, 1)
 	key2 := newTestHash(t, 2)
@@ -45,7 +45,7 @@ func TestLRUCache_AddGetHasRemove_NoEvictionWithinCapacity(t *testing.T) {
 }
 
 func TestLRUCache_KeyEqualityByValue(t *testing.T) {
-	cache := New(10, true)
+	cache := New[any](10, true)
 
 	keyA1 := newTestHash(t, 7)
 	keyA2 := newTestHash(t, 7) // same bytes, different pointer
@@ -61,7 +61,7 @@ func TestLRUCache_KeyEqualityByValue(t *testing.T) {
 }
 
 func TestLRUCache_OverwriteDoesNotGrow(t *testing.T) {
-	cache := New(10, false)
+	cache := New[any](10, false)
 	key := newTestHash(t, 3)
 
 	cache.Add(key, "first")
@@ -81,7 +81,7 @@ func TestLRUCache_OverwriteDoesNotGrow(t *testing.T) {
 }
 
 func TestLRUCache_EvictsExactlyOneWhenOverCapacity(t *testing.T) {
-	cache := New(2, false)
+	cache := New[any](2, false)
 
 	key1 := newTestHash(t, 1)
 	key2 := newTestHash(t, 2)
@@ -130,7 +130,7 @@ func TestLRUCache_RandomEvictionVariesAcrossTrials(t *testing.T) {
 	evicted := make(map[byte]int)
 
 	for i := 0; i < trials; i++ {
-		cache := New(2, false)
+		cache := New[string](2, false)
 		key1 := newTestHash(t, 1)
 		key2 := newTestHash(t, 2)
 		key3 := newTestHash(t, 3)
