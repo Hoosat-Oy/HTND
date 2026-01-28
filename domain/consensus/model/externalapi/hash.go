@@ -117,7 +117,14 @@ func (hash *DomainHash) LessOrEqual(other *DomainHash) bool {
 // CloneHashes returns a clone of the given hashes slice.
 // Note: since DomainHash is a read-only type, the clone is shallow
 func CloneHashes(hashes []*DomainHash) []*DomainHash {
-	clone := make([]*DomainHash, len(hashes))
+	if hashes == nil {
+		return nil
+	}
+	n := len(hashes)
+	if n == 0 {
+		return nil
+	}
+	clone := make([]*DomainHash, n)
 	copy(clone, hashes)
 	return clone
 }

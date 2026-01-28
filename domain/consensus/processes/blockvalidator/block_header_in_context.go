@@ -82,7 +82,6 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 	if err != nil {
 		return err
 	}
-	v.updateBlockVersion(header)
 
 	if !isBlockWithTrustedData {
 		// TODO: Enable these on block v5 after finding reason for the issues with the blocks

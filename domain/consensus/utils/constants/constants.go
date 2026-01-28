@@ -27,7 +27,10 @@ func GetBlockVersion() uint16 {
 
 // SetBlockVersion sets the current block version (atomic store).
 func SetBlockVersion(v uint16) {
-	atomic.StoreUint32(&blockVersion, uint32(v))
+	if v > uint16(atomic.LoadUint32(&blockVersion)) {
+		log.Infof("Set block version to %d", v)
+		atomic.StoreUint32(&blockVersion, uint32(v))
+	}
 }
 
 var BannedAddresses = []string{

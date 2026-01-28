@@ -110,8 +110,8 @@ func (bhs *blockHeaderStore) blockHeader(dbContext model.DBReader, stagingShard 
 // HasBlock returns whether a block header with a given hash exists in the store.
 func (bhs *blockHeaderStore) HasBlockHeader(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
 	stagingShard := bhs.stagingShard(stagingArea)
-
-	if _, ok := stagingShard.toAdd[*blockHash]; ok {
+	block, ok := stagingShard.toAdd[*blockHash]
+	if ok && block != nil {
 		return true, nil
 	}
 
