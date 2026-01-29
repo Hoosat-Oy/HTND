@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"os"
+	"strconv"
 	"sync"
 
 	"github.com/Hoosat-Oy/HTND/domain/consensus/datastructures/blockwindowheapslicestore"
@@ -120,11 +121,18 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	dbManager := consensusdatabase.New(db)
 	prefixBucket := consensusdatabase.MakeBucket(dbPrefix.Serialize())
 
+	var largeCacheDivisor int = 1
+	if v := os.Getenv("HTND_LARGE_CACHE_DIVISOR"); v != "" {
+		if mb, err := strconv.Atoi(v); err == nil && mb > 0 {
+			largeCacheDivisor = mb << 20
+		}
+	}
+
 	pruningWindowSizeForCaches := int(config.PruningDepth())
 	finalityWindowSizeForCaches := int(config.FinalityDepth())
 	// This is used for caches that are used as part of deletePastBlocks that need to traverse until
 	// the previous pruning point.
-	pruningWindowSizePlusFinalityDepthForCache := int(pruningWindowSizeForCaches + finalityWindowSizeForCaches)
+	pruningWindowSizePlusFinalityDepthForCache := int(pruningWindowSizeForCaches+finalityWindowSizeForCaches) / largeCacheDivisor
 	log.Infof("Largest cache sizes %d, %d, %d", finalityWindowSizeForCaches, pruningWindowSizeForCaches, pruningWindowSizePlusFinalityDepthForCache)
 
 	var preallocateCaches bool
@@ -136,7 +144,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 
 	// Data Structures
 	mergeDepthRootStore := mergedepthrootstore.New(prefixBucket, 1000, preallocateCaches)
-	daaWindowStore := daawindowstore.New(prefixBucket, 10_000, preallocateCaches)
+	daaWindowStore := daawindowstore.New(prefixBucket, 1000, preallocateCaches)
 	acceptanceDataStore := acceptancedatastore.New(prefixBucket, 1000, preallocateCaches)
 	blockStore, err := blockstore.New(dbManager, prefixBucket, 1000, preallocateCaches)
 	if err != nil {
