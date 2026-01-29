@@ -27,10 +27,6 @@ func Options(cacheSizeMiB int) *pebble.Options {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			bloomBitsPerKey = n
 		}
-	} else if v := os.Getenv("BLOOM_FILTER_LEVEL"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil && n > 0 {
-			bloomBitsPerKey = n
-		}
 	}
 
 	bloomPolicy := bloom.FilterPolicy(bloomBitsPerKey)
@@ -46,28 +42,17 @@ func Options(cacheSizeMiB int) *pebble.Options {
 		defaultMemTablesBeforeStall = 8
 	)
 
-	memTableBytes := int64(defaultMemTableMB) * 1 << 20
+	memTableBytes := int64(defaultMemTableMB) << 20
 	if v := os.Getenv("HTND_MEMTABLE_SIZE_MB"); v != "" {
 		if mb, err := strconv.Atoi(v); err == nil && mb > 0 {
-			memTableBytes = int64(mb) * 1 << 20
+			memTableBytes = int64(mb) << 20
 		}
 	}
 
 	memTableStopThreshold := defaultMemTablesBeforeStall
-	if v := os.Getenv("HTND_MEMTABLE_THRESHOLD"); v != "" {
+	if v := os.Getenv("HTND_MEMTABLE_STOP_THRESHOLD"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			memTableStopThreshold = n
-		}
-	}
-
-	// Hard cap total memtable memory to keep the whole node under control.
-	// This caps: MemTableSize * MemTableStopWritesThreshold.
-	// Default is 1GiB (safe for an 8GiB node). Override with HTND_PEBBLE_MEMTABLE_BUDGET_MB.
-	memtableBudgetBytes := int64(getEnvInt("HTND_PEBBLE_MEMTABLE_BUDGET_MB", 1024)) << 20
-	if memtableBudgetBytes > 0 && memTableBytes > 0 {
-		maxThreshold := int(memtableBudgetBytes / memTableBytes)
-		if memTableStopThreshold > maxThreshold {
-			memTableStopThreshold = maxThreshold
 		}
 	}
 
@@ -108,20 +93,6 @@ func Options(cacheSizeMiB int) *pebble.Options {
 	if v := os.Getenv("HTND_PEBBLE_CACHE_MB"); v != "" {
 		if mb, err := strconv.Atoi(v); err == nil && mb > 0 {
 			cacheBytes = int64(mb) << 20
-		}
-	} else if v := os.Getenv("PEBBLE_CACHE_MB"); v != "" {
-		if mb, err := strconv.Atoi(v); err == nil && mb > 0 {
-			cacheBytes = int64(mb) << 20
-		}
-	}
-
-	// Clamp cache to avoid runaway memory usage.
-	// Default max is 2GiB; override with HTND_PEBBLE_CACHE_MAX_MB.
-	cacheMaxMiB := getEnvInt("HTND_PEBBLE_CACHE_MAX_MB", 2048)
-	if cacheMaxMiB > 0 {
-		maxCacheBytes := int64(cacheMaxMiB) << 20
-		if cacheBytes > maxCacheBytes {
-			cacheBytes = maxCacheBytes
 		}
 	}
 
