@@ -33,6 +33,10 @@ func SetBlockVersion(v uint16) {
 	}
 }
 
+func ForceSetBlockVersion(v uint) {
+	atomic.StoreUint32(&blockVersion, uint32(v))
+}
+
 var BannedAddresses = []string{
 	"",
 }
