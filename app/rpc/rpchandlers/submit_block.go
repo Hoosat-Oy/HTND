@@ -62,11 +62,26 @@ func HandleSubmitBlock(context *rpccontext.Context, _ *router.Router, request ap
 
 // validateBlockVersion checks if the block version is correct based on DAA score
 func validateBlockVersion(context *rpccontext.Context, req *appmessage.SubmitBlockRequestMessage) error {
-	if req.Block.Header.Version != uint32(constants.GetBlockVersion()) {
+	expectedVersion := expectedBlockVersionForDAAScore(req.Block.Header.DAAScore, context.Config.ActiveNetParams.POWScores)
+	if req.Block.Header.Version != expectedVersion {
 		submitBlockRequestJSON, _ := json.MarshalIndent(req.Block, "", "    ")
 		return fmt.Errorf("wrong block version: %s", string(submitBlockRequestJSON))
 	}
 	return nil
+}
+
+func expectedBlockVersionForDAAScore(daaScore uint64, powScores []uint64) uint32 {
+	// Keep behavior consistent with consensus validation/building: DAA score 0 stays at version 1.
+	if daaScore == 0 {
+		return 1
+	}
+	version := uint32(1)
+	for _, powScore := range powScores {
+		if daaScore >= powScore {
+			version++
+		}
+	}
+	return version
 }
 
 // validatePoW checks if the Proof of Work is valid for the block

@@ -605,10 +605,12 @@ func (f *factory) NewTestConsensus(config *Config, testName string) (
 	}
 
 	testConsensusDBPrefix := &prefix.Prefix{}
+	constants.ForceSetBlockVersion(1)
 	consensusAsInterface, shouldMigrate, err := f.NewConsensus(config, db, testConsensusDBPrefix, nil)
 	if err != nil {
 		return nil, nil, err
 	}
+	constants.ForceSetBlockVersion(1)
 
 	if shouldMigrate {
 		return nil, nil, errors.Errorf("A fresh consensus should never return shouldMigrate=true")
@@ -631,7 +633,7 @@ func (f *factory) NewTestConsensus(config *Config, testName string) (
 	teardown = func(keepDataDir bool) {
 		db.Close()
 		if !keepDataDir {
-			err := os.RemoveAll(f.dataDir)
+			err := os.RemoveAll(datadir)
 			if err != nil {
 				log.Errorf("Error removing data directory for test consensus: %s", err)
 			}
