@@ -2,6 +2,7 @@ package blockrelay
 
 import (
 	"fmt"
+	"runtime/debug"
 	"time"
 
 	"github.com/Hoosat-Oy/HTND/app/appmessage"
@@ -60,8 +61,7 @@ func (flow *handleIBDFlow) start() error {
 		}
 		err := flow.runIBDIfNotRunning(block)
 		if err != nil {
-			log.Infof("Continue IBD as previous failed.")
-			continue
+			return err
 		}
 	}
 }
@@ -87,6 +87,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	var err error = nil
 	defer func() {
 		flow.UnsetIBDRunning()
+		debug.FreeOSMemory()
 		err = flow.logIBDFinished(isFinishedSuccessfully, err)
 	}()
 
