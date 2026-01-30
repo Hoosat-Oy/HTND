@@ -1,6 +1,7 @@
 package pruningmanager
 
 import (
+	"runtime/debug"
 	"sort"
 	"time"
 
@@ -1072,6 +1073,7 @@ func (pm *pruningManager) CheckIfShouldDeletePastBlocks(stagingArea *model.Stagi
 	if currentPruningPointHeader.BlueScore()-previousDeletionPointHeader.BlueScore() < pm.pruningDepth {
 		return false, nil
 	}
+	debug.FreeOSMemory()
 	return true, previousDeletionPoint
 }
 
@@ -1157,7 +1159,7 @@ func (pm *pruningManager) PruneAllBlocksBelow(stagingArea *model.StagingArea, pr
 			return err
 		}
 	}
-
+	debug.FreeOSMemory()
 	return nil
 }
 
