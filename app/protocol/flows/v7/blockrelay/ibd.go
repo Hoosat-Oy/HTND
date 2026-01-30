@@ -530,8 +530,8 @@ func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlo
 		if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 			return nil
 		} else {
-			log.Errorf("Rejected block header %s from %s during IBD: %+v", blockHash, flow.peer, err)
-
+			log.Errorf("Rejected block header %s from %s during IBD: %+v", blockHash, flow.peer, errors.WithStack(err))
+			return err
 		}
 
 	}
